@@ -47,7 +47,8 @@ const productSchema = z.object({
   isNewArrival: z.boolean().default(false),
   isBestSeller: z.boolean().default(false),
   onSale: z.boolean().default(false),
-  rating: z.coerce.number().min(0).max(5).default(0)
+  rating: z.coerce.number().min(0).max(5).default(0),
+  reviews: z.array(z.any()).default([]),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -70,7 +71,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     control,
     watch,
     setValue,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting: isFormSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -81,11 +82,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       rating: initialData?.rating ?? 0,
       imageUrls: initialData?.imageUrls ?? [],
       category: initialData?.category ?? '',
+      reviews: initialData?.reviews ?? [],
     },
   });
   
   const isEditMode = !!initialData;
   const currentImageUrls = watch('imageUrls');
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (files.length > 0) {
@@ -111,30 +114,41 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         return;
     }
 
-    try {
-        let finalImageUrls: string[] = data.imageUrls || [];
+    let finalImageUrls: string[] = data.imageUrls || [];
 
-        if (files.length > 0) {
-            setUploadProgress(0);
+    if (files.length > 0) {
+        setIsUploading(true);
+        setUploadProgress(0);
+        try {
             const storage = getStorage();
             const uploadedUrls = await uploadImages(storage, files, (progress) => {
                 setUploadProgress(progress);
             });
-            finalImageUrls = [...finalImageUrls, ...uploadedUrls];
+            finalImageUrls = [...(data.imageUrls || []), ...uploadedUrls];
+        } catch (error) {
+            console.error("Image upload failed:", error);
+            toast({ variant: 'destructive', title: 'Image Upload Failed', description: 'Could not upload images. Please try again.' });
+            setIsUploading(false);
+            setUploadProgress(null);
+            return; // Stop form submission if image upload fails
+        } finally {
+            setIsUploading(false);
             setUploadProgress(null);
         }
+    }
         
-        const productData = {
-            ...data,
-            imageUrls: finalImageUrls,
-            discountedPrice: data.discountedPrice || null,
-        }
+    const productData = {
+        ...data,
+        imageUrls: finalImageUrls,
+        discountedPrice: data.discountedPrice || null,
+    };
 
+    try {
         if (isEditMode) {
-            await updateProduct(firestore, initialData.id, { ...initialData, ...productData });
+            await updateProduct(firestore, initialData.id, productData);
             toast({ title: 'Success', description: 'Product updated successfully.' });
         } else {
-            await addProduct(firestore, { ...productData, reviews: [] });
+            await addProduct(firestore, productData);
             toast({ title: 'Success', description: 'Product added successfully.' });
         }
         
@@ -144,9 +158,10 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     } catch (error: any) {
         console.error("Form submission error:", error);
         toast({ variant: 'destructive', title: 'Operation Failed', description: error.message || "An unknown error occurred." });
-        setUploadProgress(null);
     }
   };
+  
+  const isSubmitting = isFormSubmitting || isUploading;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -306,8 +321,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             </CardContent>
         </Card>
         
-        <Button type="submit" size="lg" disabled={isSubmitting || uploadProgress !== null} className="w-full">
-          {isSubmitting ? 'Saving...' : (initialData ? 'Save Changes' : 'Add Product')}
+        <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
+          {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Product')}
         </Button>
       </div>
     </form>
