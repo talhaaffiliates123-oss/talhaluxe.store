@@ -1,11 +1,11 @@
 'use client';
 import { Button } from '@/components/ui/button';
-import { useFirestore } from '@/firebase';
-import { getProducts, deleteProduct } from '@/lib/products';
+import { useFirestore, useCollection } from '@/firebase';
+import { deleteProduct, getProductsCollection } from '@/lib/products';
 import { Product } from '@/lib/types';
 import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import {
   Table,
   TableBody,
@@ -35,25 +35,19 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
+import { collection, query, orderBy } from 'firebase/firestore';
 
 export default function AdminProductsPage() {
   const firestore = useFirestore();
-  const [products, setProducts] = useState<Product[]>([]);
-  const [loading, setLoading] = useState(true);
   const { toast } = useToast();
 
-  const fetchProducts = async () => {
-    if (firestore) {
-      setLoading(true);
-      const productsData = await getProducts(firestore);
-      setProducts(productsData);
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchProducts();
+  const productsQuery = useMemo(() => {
+    if (!firestore) return null;
+    const productsCollection = getProductsCollection(firestore);
+    return query(productsCollection, orderBy('name', 'asc'));
   }, [firestore]);
+
+  const { data: products, loading } = useCollection<Product>(productsQuery);
 
   const handleDeleteProduct = async (productId: string) => {
     if (!firestore) return;
@@ -63,8 +57,7 @@ export default function AdminProductsPage() {
             title: "Product Deleted",
             description: "The product has been successfully removed.",
         });
-        // Refresh the product list after deletion
-        fetchProducts();
+        // No need to fetch products, useCollection handles updates
     } catch (error: any) {
         toast({
             variant: "destructive",
@@ -92,7 +85,7 @@ export default function AdminProductsPage() {
       <Card>
         <CardHeader>
             <CardTitle>Product List</CardTitle>
-            <CardDescription>{products.length} products found.</CardDescription>
+            <CardDescription>{!loading && products ? `${products.length} products found.` : 'Loading...'}</CardDescription>
         </CardHeader>
         <CardContent>
             <Table>
@@ -115,7 +108,7 @@ export default function AdminProductsPage() {
                     <TableRow>
                         <TableCell colSpan={6} className="text-center">Loading products...</TableCell>
                     </TableRow>
-                ) : products.length === 0 ? (
+                ) : !products || products.length === 0 ? (
                     <TableRow>
                         <TableCell colSpan={6} className="text-center py-10">
                             <p>No products found.</p>
@@ -139,7 +132,7 @@ export default function AdminProductsPage() {
                             <TableCell>
                                 {product.stock > 0 ? <Badge variant="outline">In stock</Badge> : <Badge variant="destructive">Out of stock</Badge>}
                             </TableCell>
-                            <TableCell>${product.price.toFixed(2)}</TableCell>
+                            <TableCell>PKR {product.price.toFixed(2)}</TableCell>
                             <TableCell className="hidden md:table-cell">{product.stock}</TableCell>
                             <TableCell className="text-right">
                                 <Link href={`/admin/products/${product.id}/edit`}>
