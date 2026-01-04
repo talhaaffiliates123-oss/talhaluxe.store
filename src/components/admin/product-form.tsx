@@ -92,7 +92,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       const urls = files.map(file => URL.createObjectURL(file));
       setNewImagePreviews(urls);
       
-      // Cleanup function to revoke the object URLs
       return () => {
         urls.forEach(url => URL.revokeObjectURL(url));
       };
@@ -115,7 +114,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     try {
         let finalImageUrls: string[] = data.imageUrls || [];
 
-        // 1. Upload new files if any
         if (files.length > 0) {
             setUploadProgress(0);
             const storage = getStorage();
@@ -126,24 +124,28 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             setUploadProgress(null);
         }
         
-        // 2. Prepare product data, ensuring discountedPrice is a number or null
         const productData = {
             ...data,
             imageUrls: finalImageUrls,
-            reviews: initialData?.reviews ?? [],
             discountedPrice: data.discountedPrice || null,
         }
 
-        // 3. Call update or add product
         if (isEditMode) {
-            await updateProduct(firestore, initialData.id, productData);
+            const updateData = {
+                ...productData,
+                reviews: initialData.reviews || []
+            }
+            await updateProduct(firestore, initialData.id, updateData);
             toast({ title: 'Success', description: 'Product updated successfully.' });
         } else {
-            await addProduct(firestore, productData);
+             const createData = {
+                ...productData,
+                reviews: []
+            }
+            await addProduct(firestore, createData);
             toast({ title: 'Success', description: 'Product added successfully.' });
         }
         
-        // 4. Redirect on success
         router.push('/admin/products');
         router.refresh();
 

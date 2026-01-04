@@ -44,13 +44,10 @@ export async function getPaginatedProducts(
       productsQuery = query(baseQuery, limit(pageSize));
     }
   } else { // 'prev'
-    // For 'prev', we need to reverse the query, get the docs, then reverse the result array.
-    // This is a Firestore limitation.
     const prevBaseQuery = query(productsCollection, orderBy('name', 'desc'));
     if (cursor) {
       productsQuery = query(prevBaseQuery, startAfter(cursor), limit(pageSize));
     } else {
-      // This case should ideally not happen if 'prev' is disabled on page 1
       productsQuery = query(prevBaseQuery, limit(pageSize));
     }
   }
@@ -59,7 +56,7 @@ export async function getPaginatedProducts(
   const products = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Product));
 
   if (direction === 'prev') {
-    products.reverse(); // Reverse the array to get the correct order
+    products.reverse();
   }
 
   const newCursor = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
@@ -90,7 +87,6 @@ export async function getProduct(
 
 export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
     const productsCollection = getProductsCollection(db);
-    // This returns a promise that can be awaited in the calling component.
     return addDoc(productsCollection, productData)
     .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
@@ -99,16 +95,14 @@ export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
           requestResourceData: productData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        // Re-throw the original error so the form's catch block can handle it
         throw serverError;
       });
 }
 
-export async function updateProduct(db: Firestore, id: string, productData: Partial<Omit<Product, 'id'>>) {
+export async function updateProduct(db: Firestore, id: string, productData: Partial<Product>) {
     const docRef = doc(db, 'products', id);
     const originalProduct = await getProduct(db, id);
 
-    // Delete images that were removed in the form
     if (originalProduct && originalProduct.imageUrls) {
         const newUrls = productData.imageUrls || [];
         const urlsToDelete = originalProduct.imageUrls.filter(url => !newUrls.includes(url));
@@ -117,23 +111,20 @@ export async function updateProduct(db: Firestore, id: string, productData: Part
             const storage = getStorage();
             const deletePromises = urlsToDelete.map(url => {
                 try {
-                    // Only attempt to delete if it's a gs:// or https:// URL from Firebase Storage
                     if (url.includes('firebasestorage.googleapis.com')) {
                         const imageRef = ref(storage, url);
                         return deleteObject(imageRef);
                     }
-                    return Promise.resolve(); // Ignore placeholders
+                    return Promise.resolve();
                 } catch (error) {
-                    console.error(`Failed to create ref for deletion, possibly invalid URL: ${url}`, error);
+                    console.error(`Failed to create ref for deletion: ${url}`, error);
                     return Promise.resolve();
                 }
             });
-            await Promise.all(deletePromises).catch(err => console.error("Error deleting one or more images from storage", err));
+            await Promise.all(deletePromises).catch(err => console.error("Error deleting images", err));
         }
     }
 
-
-    // This returns a promise that can be awaited in the calling component.
     return updateDoc(docRef, productData)
     .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
@@ -142,7 +133,6 @@ export async function updateProduct(db: Firestore, id: string, productData: Part
           requestResourceData: productData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        // Re-throw the original error so the form's catch block can handle it
         throw serverError;
       });
 }
@@ -185,17 +175,15 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
     const productsCollection = getProductsCollection(db);
     const storage = getStorage();
 
-    // 1. Get all existing products to delete them
     const existingProducts = await getProducts(db);
     
-    // 2. Delete all existing images from storage
     if (existingProducts.length > 0) {
         const imageDeletePromises = existingProducts.flatMap(product => 
             product.imageUrls ? product.imageUrls.map(url => {
                 try {
                      if (url.includes('picsum.photos')) return Promise.resolve();
                     const imageRef = ref(storage, url);
-                    return deleteObject(imageRef).catch(e => console.error(`Failed to delete image ${url}`, e)); // Catch errors per image
+                    return deleteObject(imageRef).catch(e => console.error(`Failed to delete image ${url}`, e));
                 } catch(e) {
                     console.log(`Could not create ref for ${url}`);
                     return Promise.resolve();
@@ -205,23 +193,19 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
         await Promise.allSettled(imageDeletePromises);
     }
     
-    // 3. Delete all existing documents from Firestore using a batch
     if (existingProducts.length > 0) {
         const deleteBatch = writeBatch(db);
         existingProducts.forEach(p => deleteBatch.delete(doc(db, 'products', p.id)));
         await deleteBatch.commit();
     }
     
-    // 4. Add new products using a batch for efficiency
     const addBatch = writeBatch(db);
     productsToSeed.forEach(product => {
-      const newDocRef = doc(productsCollection); // Auto-generates an ID
+      const newDocRef = doc(productsCollection);
       addBatch.set(newDocRef, product);
     });
 
     return addBatch.commit().catch(async (serverError) => {
-        // This is a simplified error handler for batch writes. 
-        // A full implementation might need more specific context.
         const permissionError = new FirestorePermissionError({
           path: productsCollection.path,
           operation: 'create',

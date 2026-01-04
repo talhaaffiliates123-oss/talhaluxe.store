@@ -5,7 +5,7 @@ export type Product = {
   shortDescription: string;
   description: string;
   price: number;
-  discountedPrice?: number;
+  discountedPrice?: number | null;
   category: Category['slug'];
   imageUrls: string[];
   stock: number;
