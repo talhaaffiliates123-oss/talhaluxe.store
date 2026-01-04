@@ -12,25 +12,31 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useUser();
   const router = useRouter();
 
+  // This value is set in next.config.ts and the .env file
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
+  const isAuthorized = !loading && user && user.email === adminEmail;
+
   useEffect(() => {
-    if (!loading && (!user || user.email !== adminEmail)) {
+    if (!loading && !isAuthorized) {
+      // If loading is complete and the user is not the admin, redirect.
       router.replace('/');
     }
-  }, [user, loading, router, adminEmail]);
+  }, [user, loading, router, isAuthorized]);
 
-  if (loading || !user || user.email !== adminEmail) {
+  if (!isAuthorized) {
+    // Show a loading/verification screen while checking or if unauthorized.
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-            <p className="text-muted-foreground">Verifying access...</p>
-            <Skeleton className="h-6 w-32" />
+          <p className="text-muted-foreground">Verifying access...</p>
+          <Skeleton className="h-6 w-32" />
         </div>
       </div>
     );
   }
 
+  // If authorized, render the admin layout.
   return (
     <div className="grid min-h-screen w-full lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 lg:block">
