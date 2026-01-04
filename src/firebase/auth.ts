@@ -30,7 +30,8 @@ export const signOut = async () => {
   }
   try {
     await firebaseSignOut(auth);
-  } catch (error) {
+  } catch (error)
+ {
     console.error('Error signing out:', error);
     throw error;
   }
