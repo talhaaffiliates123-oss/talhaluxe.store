@@ -1,6 +1,7 @@
+'use client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { products, testimonials } from '@/lib/data';
+import { products } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -8,6 +9,7 @@ import { ArrowRight, Mail } from 'lucide-react';
 import ProductCard from '@/components/products/product-card';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useEffect, useState } from 'react';
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-banner');
@@ -112,48 +114,6 @@ export default function Home() {
           {bestSellers.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
-      <section className="bg-muted">
-        <div className="container mx-auto px-4 py-16 md:py-24 text-center">
-          <h2 className="text-3xl font-bold tracking-tight font-headline">
-            What Our Customers Say
-          </h2>
-          <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
-            We pride ourselves on quality and service. Here&apos;s what our happy customers think.
-          </p>
-          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
-            {testimonials.map((testimonial) => {
-              const avatar = PlaceHolderImages.find(
-                (img) => img.id === testimonial.avatarId
-              );
-              return (
-                <Card key={testimonial.id}>
-                  <CardContent className="pt-6">
-                    <div className="flex flex-col items-center text-center">
-                       {avatar && (
-                        <Avatar className="w-20 h-20 mb-4">
-                          <AvatarImage
-                            src={avatar.imageUrl}
-                            alt={testimonial.name}
-                            data-ai-hint={avatar.imageHint}
-                          />
-                          <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                      )}
-                      <p className="text-muted-foreground italic">
-                        &quot;{testimonial.quote}&quot;
-                      </p>
-                      <p className="font-semibold mt-4">{testimonial.name}</p>
-                      <p className="text-sm text-muted-foreground">{testimonial.location}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-          </div>
         </div>
       </section>
 
