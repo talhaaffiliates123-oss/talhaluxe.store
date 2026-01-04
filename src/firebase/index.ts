@@ -16,23 +16,25 @@ import {
   useAuth,
 } from './provider';
 
-let app: FirebaseApp;
-let auth: Auth;
-let firestore: Firestore;
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let firestore: Firestore | null = null;
 
 function initializeFirebase() {
-  if (global.window && !getApps().length) {
-    try {
-      app = initializeApp(firebaseConfig);
+  if (typeof window !== 'undefined') {
+    if (!getApps().length) {
+      try {
+        app = initializeApp(firebaseConfig);
+        auth = getAuth(app);
+        firestore = getFirestore(app);
+      } catch (e) {
+        console.error("Failed to initialize Firebase", e);
+      }
+    } else {
+      app = getApp();
       auth = getAuth(app);
       firestore = getFirestore(app);
-    } catch (e) {
-      console.log(e);
     }
-  } else if (getApps().length) {
-    app = getApp();
-    auth = getAuth(app);
-    firestore = getFirestore(app);
   }
   return { app, auth, firestore };
 }

@@ -11,20 +11,21 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth, useUser } from '@/firebase';
+import { useUser } from '@/firebase';
 import { signOut } from '@/firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export function UserNav() {
   const { user } = useUser();
-  const auth = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
-    if (auth) {
+    try {
       await signOut();
       router.push('/');
+    } catch (error) {
+      console.error("Sign out failed", error);
     }
   };
 
