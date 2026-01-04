@@ -9,6 +9,15 @@ import {
   deleteDoc,
   Firestore,
   writeBatch,
+  query,
+  orderBy,
+  limit,
+  startAfter,
+  limitToLast,
+  endBefore,
+  Query,
+  DocumentSnapshot,
+  DocumentData,
 } from 'firebase/firestore';
 import type { Product } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -18,6 +27,48 @@ import { getStorage, ref, deleteObject } from 'firebase/storage';
 export function getProductsCollection(db: Firestore) {
   return collection(db, 'products');
 }
+
+export async function getPaginatedProducts(
+  db: Firestore,
+  direction: 'next' | 'prev',
+  cursor: DocumentSnapshot<DocumentData, DocumentData> | null,
+  pageSize: number
+): Promise<{ products: Product[], newCursor: DocumentSnapshot<DocumentData, DocumentData> | null }> {
+  const productsCollection = getProductsCollection(db);
+  let productsQuery: Query;
+
+  const baseQuery = query(productsCollection, orderBy('name', 'asc'));
+
+  if (direction === 'next') {
+    if (cursor) {
+      productsQuery = query(baseQuery, startAfter(cursor), limit(pageSize));
+    } else {
+      productsQuery = query(baseQuery, limit(pageSize));
+    }
+  } else { // 'prev'
+    // For 'prev', we need to reverse the query, get the docs, then reverse the result array.
+    // This is a Firestore limitation.
+    const prevBaseQuery = query(productsCollection, orderBy('name', 'desc'));
+    if (cursor) {
+      productsQuery = query(prevBaseQuery, startAfter(cursor), limit(pageSize));
+    } else {
+      // This case should ideally not happen if 'prev' is disabled on page 1
+      productsQuery = query(prevBaseQuery, limit(pageSize));
+    }
+  }
+
+  const snapshot = await getDocs(productsQuery);
+  const products = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Product));
+
+  if (direction === 'prev') {
+    products.reverse(); // Reverse the array to get the correct order
+  }
+
+  const newCursor = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+
+  return { products, newCursor };
+}
+
 
 export async function getProducts(db: Firestore): Promise<Product[]> {
   const productsCollection = getProductsCollection(db);
@@ -57,9 +108,6 @@ export async function updateProduct(db: Firestore, id: string, productData: Part
     const docRef = doc(db, 'products', id);
     const originalProduct = await getProduct(db, id);
 
-    // This logic is flawed. We should not delete images that are still in use.
-    // The user might just be adding new images. The form logic now replaces URLs.
-    // Let's adjust this to only delete images that are NO LONGER in the productData.imageUrls array.
     if (originalProduct && originalProduct.imageUrls && productData.imageUrls) {
         const storage = getStorage();
         const urlsToDelete = originalProduct.imageUrls.filter(url => !productData.imageUrls!.includes(url));
@@ -70,7 +118,7 @@ export async function updateProduct(db: Firestore, id: string, productData: Part
                 return deleteObject(imageRef);
             } catch (error) {
                 console.error(`Failed to create ref for deletion, possibly invalid URL: ${url}`, error);
-                return Promise.resolve(); // Don't block update if deletion fails for one image
+                return Promise.resolve();
             }
         });
         await Promise.all(deletePromises).catch(err => console.error("Error deleting one or more images from storage", err));
@@ -94,7 +142,6 @@ export async function deleteProduct(db: Firestore, id: string) {
     const product = await getProduct(db, id);
     const storage = getStorage();
 
-    // Also delete associated images from storage
     if (product && product.imageUrls && product.imageUrls.length > 0) {
         const deletePromises = product.imageUrls.map(url => {
             try {
@@ -103,7 +150,7 @@ export async function deleteProduct(db: Firestore, id: string) {
             }
             catch (error) {
                 console.error(`Failed to create ref for deletion, possibly invalid URL: ${url}`, error);
-                return Promise.resolve(); // Don't block deletion if one image fails
+                return Promise.resolve();
             }
         });
         await Promise.all(deletePromises).catch(err => console.error("Error deleting one or more images from storage", err));
@@ -120,12 +167,10 @@ export async function deleteProduct(db: Firestore, id: string) {
       });
 }
 
-// A function to seed the database, which also needs to delete old images if any
 export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 'id'>[]) {
     const productsCollection = getProductsCollection(db);
     const storage = getStorage();
 
-    // 1. Get all existing products to delete their images
     const existingProducts = await getProducts(db);
     const imageDeletePromises: Promise<void>[] = [];
     existingProducts.forEach(product => {
@@ -141,13 +186,10 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
         }
     });
 
-    // 2. Delete all existing documents in the collection
     const docDeletePromises: Promise<void>[] = existingProducts.map(p => deleteDoc(doc(db, 'products', p.id)));
 
-    // Execute all deletions
     await Promise.allSettled([...imageDeletePromises, ...docDeletePromises]);
 
-    // 3. Add new products
     const batch = writeBatch(db);
     productsToSeed.forEach(product => {
         const newDocRef = doc(productsCollection);
