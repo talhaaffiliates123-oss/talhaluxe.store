@@ -24,6 +24,7 @@ import { FirebaseStorage, getStorage, ref, deleteObject } from 'firebase/storage
 
 function getPathFromUrl(url: string): string | null {
     if (!url.includes('firebasestorage.googleapis.com')) {
+        console.warn(`URL was not a Firebase Storage URL: ${url}`);
         return null;
     }
     try {
@@ -107,31 +108,29 @@ export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
       });
 }
 
-export async function updateProduct(db: Firestore, storage: FirebaseStorage, id: string, productData: Partial<Product>) {
+export async function updateProduct(db: Firestore, storage: FirebaseStorage, id: string, productData: Partial<Product>, originalImageUrls: string[] = []) {
     const docRef = doc(db, 'products', id);
-    const originalProduct = await getProduct(db, id);
 
-    if (originalProduct && originalProduct.imageUrls) {
-        const newUrls = productData.imageUrls || [];
-        const urlsToDelete = originalProduct.imageUrls.filter(url => !newUrls.includes(url));
-        
-        if(urlsToDelete.length > 0) {
-            const deletePromises = urlsToDelete.map(url => {
-                const storagePath = getPathFromUrl(url);
-                if (storagePath) {
-                    try {
-                        const imageRef = ref(storage, storagePath);
-                        return deleteObject(imageRef);
-                    } catch (error) {
-                        console.error(`Failed to create ref for deletion: ${storagePath}`, error);
-                        return Promise.resolve(); // Don't block update if one image fails to delete
-                    }
+    const newUrls = productData.imageUrls || [];
+    const urlsToDelete = originalImageUrls.filter(url => !newUrls.includes(url));
+    
+    if (urlsToDelete.length > 0) {
+        const deletePromises = urlsToDelete.map(url => {
+            const storagePath = getPathFromUrl(url);
+            if (storagePath) {
+                try {
+                    const imageRef = ref(storage, storagePath);
+                    return deleteObject(imageRef);
+                } catch (error) {
+                    console.error(`Failed to create ref for deletion: ${storagePath}`, error);
+                    return Promise.resolve(); // Don't block update if one image fails to delete
                 }
-                return Promise.resolve();
-            });
-            await Promise.all(deletePromises).catch(err => console.error("Error deleting images", err));
-        }
+            }
+            return Promise.resolve();
+        });
+        await Promise.all(deletePromises).catch(err => console.error("Error deleting images", err));
     }
+
 
     return updateDoc(docRef, productData)
     .catch(async (serverError) => {
@@ -184,9 +183,11 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
     const productsCollection = getProductsCollection(db);
     const storage = getStorage();
 
+    // Clear existing products and images
     const existingProducts = await getProducts(db);
     
     if (existingProducts.length > 0) {
+        // Delete images from storage
         const imageDeletePromises = existingProducts.flatMap(product => 
             product.imageUrls ? product.imageUrls.map(url => {
                 const storagePath = getPathFromUrl(url);
@@ -195,7 +196,7 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
                         const imageRef = ref(storage, storagePath);
                         return deleteObject(imageRef).catch(e => console.error(`Failed to delete image ${url}`, e));
                     } catch(e) {
-                        console.log(`Could not create ref for ${storagePath}`);
+                        console.error(`Could not create ref for ${storagePath}`);
                         return Promise.resolve();
                     }
                 }
@@ -203,14 +204,14 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
             }) : []
         );
         await Promise.allSettled(imageDeletePromises);
-    }
-    
-    if (existingProducts.length > 0) {
+
+        // Delete documents from firestore
         const deleteBatch = writeBatch(db);
         existingProducts.forEach(p => deleteBatch.delete(doc(db, 'products', p.id)));
         await deleteBatch.commit();
     }
     
+    // Add new products
     const addBatch = writeBatch(db);
     productsToSeed.forEach(product => {
       const newDocRef = doc(productsCollection);
@@ -227,5 +228,3 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
         throw serverError;
     });
 }
-
-    
