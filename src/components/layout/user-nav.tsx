@@ -11,21 +11,26 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useUser } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
 import { signOut } from '@/firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 
 export function UserNav() {
   const { user } = useUser();
+  const auth = useAuth();
   const router = useRouter();
 
   const handleSignOut = async () => {
+    if (!auth) {
+      console.error('Auth service is not available.');
+      return;
+    }
     try {
-      await signOut();
+      await signOut(auth);
       router.push('/');
     } catch (error) {
-      console.error("Sign out failed", error);
+      console.error('Sign out failed', error);
     }
   };
 
@@ -35,7 +40,7 @@ export function UserNav() {
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage
-              src={user?.photoURL ?? "https://picsum.photos/seed/user-avatar/100/100"}
+              src={user?.photoURL ?? 'https://picsum.photos/seed/user-avatar/100/100'}
               alt={user?.displayName ?? 'User'}
               data-ai-hint="person avatar"
             />
@@ -71,7 +76,7 @@ export function UserNav() {
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleSignOut}>Log out</DropdownMenuItem>
+            <DropdownMenuItem onClick={handleSignOut} disabled={!auth}>Log out</DropdownMenuItem>
           </>
         ) : (
           <>

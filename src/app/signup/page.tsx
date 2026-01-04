@@ -11,17 +11,23 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import Link from 'next/link';
-import { FcGoogle } from 'react-icons/fc';
+import { useAuth } from '@/firebase';
 import { signInWithGoogle } from '@/firebase/auth';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { FcGoogle } from 'react-icons/fc';
 
 export default function SignupPage() {
+  const auth = useAuth();
   const router = useRouter();
 
   const handleGoogleSignIn = async () => {
+    if (!auth) {
+      console.error('Auth service is not available.');
+      return;
+    }
     try {
-      await signInWithGoogle();
+      await signInWithGoogle(auth);
       router.push('/'); // Redirect to homepage on successful signup
     } catch (error) {
       console.error('Sign up failed', error);
@@ -45,6 +51,7 @@ export default function SignupPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
+            disabled={!auth}
           >
             <FcGoogle className="mr-2 h-5 w-5" />
             Sign Up with Google

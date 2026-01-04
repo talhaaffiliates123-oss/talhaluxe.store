@@ -25,13 +25,10 @@ function initializeFirebase() {
     if (!getApps().length) {
       try {
         app = initializeApp(firebaseConfig);
-        // Explicitly set the authDomain to ensure it's correct
-        auth = getAuth(app, {
-          authDomain: firebaseConfig.authDomain,
-        });
+        auth = getAuth(app);
         firestore = getFirestore(app);
       } catch (e) {
-        console.error("Failed to initialize Firebase", e);
+        console.error('Failed to initialize Firebase', e);
       }
     } else {
       app = getApp();
