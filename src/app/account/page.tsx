@@ -1,22 +1,51 @@
+'use client';
+
+import { useMemo } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { products } from "@/lib/data";
 import { Badge } from "@/components/ui/badge";
+import { useCollection, useFirestore, useUser } from '@/firebase';
+import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { Skeleton } from '@/components/ui/skeleton';
+import { format } from 'date-fns';
 
-// Mock data for orders
-const orders = [
-  { id: 'ORD-001', date: '2023-10-26', status: 'Delivered', total: '$450.00', items: [products[0]] },
-  { id: 'ORD-002', date: '2023-10-28', status: 'Shipped', total: '$180.00', items: [products[6]] },
-  { id: 'ORD-003', date: '2023-10-29', status: 'Processing', total: '$1200.00', items: [products[4]] },
-];
+type OrderItem = {
+  productId: string;
+  name: string;
+  quantity: number;
+  price: number;
+};
+
+type Order = {
+  id: string;
+  userId: string;
+  items: OrderItem[];
+  totalPrice: number;
+  paymentMethod: string;
+  status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  createdAt: Timestamp;
+};
 
 
 export default function AccountPage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+
+  const ordersQuery = useMemo(() => {
+    if (!firestore || !user) return null;
+    return query(
+      collection(firestore, 'orders'),
+      where('userId', '==', user.uid),
+      orderBy('createdAt', 'desc')
+    );
+  }, [firestore, user]);
+
+  const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -38,30 +67,40 @@ export default function AccountPage() {
               <CardDescription>View the status and details of your past orders.</CardDescription>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Order ID</TableHead>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Status</TableHead>
-                    <TableHead>Total</TableHead>
-                    <TableHead></TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {orders.map(order => (
-                    <TableRow key={order.id}>
-                      <TableCell className="font-medium">{order.id}</TableCell>
-                      <TableCell>{order.date}</TableCell>
-                      <TableCell>
-                        <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
-                      </TableCell>
-                      <TableCell>{order.total}</TableCell>
-                      <TableCell><Button variant="outline" size="sm">View Details</Button></TableCell>
+              {ordersLoading ? (
+                <div className="space-y-4">
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                  <Skeleton className="h-10 w-full" />
+                </div>
+              ) : !orders || orders.length === 0 ? (
+                <p className="text-center text-muted-foreground py-8">You haven't placed any orders yet.</p>
+              ) : (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Order ID</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Total</TableHead>
+                      <TableHead></TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {orders.map(order => (
+                      <TableRow key={order.id}>
+                        <TableCell className="font-medium truncate max-w-[100px]">{order.id}</TableCell>
+                        <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
+                        <TableCell>
+                          <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
+                        </TableCell>
+                        <TableCell>${order.totalPrice.toFixed(2)}</TableCell>
+                        <TableCell><Button variant="outline" size="sm">View Details</Button></TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -75,11 +114,11 @@ export default function AccountPage() {
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Name</Label>
-                <Input id="name" defaultValue="Talha" />
+                <Input id="name" defaultValue={user?.displayName ?? ''} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue="user@example.com" />
+                <Input id="email" type="email" defaultValue={user?.email ?? ''} disabled/>
               </div>
                <Button>Save Changes</Button>
             </CardContent>
