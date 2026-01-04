@@ -40,7 +40,7 @@ const productSchema = z.object({
   shortDescription: z.string().min(1, 'Short description is required'),
   description: z.string().min(1, 'Description is required'),
   price: z.coerce.number().positive('Price must be a positive number'),
-  discountedPrice: z.coerce.number().optional(),
+  discountedPrice: z.coerce.number().optional().nullable(),
   category: z.string().min(1, 'Category is required'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   imageUrls: z.array(z.string()).optional().default([]), // Keep existing URLs
@@ -76,7 +76,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     defaultValues: {
       ...initialData,
       price: initialData?.price ?? 0,
-      discountedPrice: initialData?.discountedPrice,
+      discountedPrice: initialData?.discountedPrice ?? null,
       stock: initialData?.stock ?? 0,
       rating: initialData?.rating ?? 0,
       imageUrls: initialData?.imageUrls ?? [],
@@ -112,33 +112,29 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         return;
     }
 
-    let finalImageUrls: string[] = data.imageUrls || [];
+    try {
+        let finalImageUrls: string[] = data.imageUrls || [];
 
-    if (files.length > 0) {
-        setUploadProgress(0);
-        const storage = getStorage();
-        try {
+        // 1. Upload new files if any
+        if (files.length > 0) {
+            setUploadProgress(0);
+            const storage = getStorage();
             const uploadedUrls = await uploadImages(storage, files, (progress) => {
                 setUploadProgress(progress);
             });
-            // If editing, new images are added to the existing ones (after some were potentially removed)
-            // If creating, they are the initial set.
-            finalImageUrls = isEditMode ? [...finalImageUrls, ...uploadedUrls] : uploadedUrls;
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Image Upload Failed', description: 'Could not upload images.'});
+            finalImageUrls = [...finalImageUrls, ...uploadedUrls];
             setUploadProgress(null);
-            return;
         }
-        setUploadProgress(null);
-    }
-    
-    const productData: Omit<Product, 'id' | 'reviews'> = {
-        ...data,
-        imageUrls: finalImageUrls,
-        reviews: initialData?.reviews ?? [],
-    }
+        
+        // 2. Prepare product data, ensuring discountedPrice is a number or null
+        const productData = {
+            ...data,
+            imageUrls: finalImageUrls,
+            reviews: initialData?.reviews ?? [],
+            discountedPrice: data.discountedPrice || null,
+        }
 
-    try {
+        // 3. Call update or add product
         if (isEditMode) {
             await updateProduct(firestore, initialData.id, productData);
             toast({ title: 'Success', description: 'Product updated successfully.' });
@@ -146,10 +142,15 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             await addProduct(firestore, productData);
             toast({ title: 'Success', description: 'Product added successfully.' });
         }
+        
+        // 4. Redirect on success
         router.push('/admin/products');
         router.refresh();
+
     } catch (error: any) {
-        toast({ variant: 'destructive', title: 'Error', description: error.message });
+        console.error("Form submission error:", error);
+        toast({ variant: 'destructive', title: 'Operation Failed', description: error.message || "An unknown error occurred." });
+        setUploadProgress(null);
     }
   };
 
@@ -198,7 +199,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                         </div>
                     )}
 
-                    {isEditMode && currentImageUrls && currentImageUrls.length > 0 && (
+                    {currentImageUrls && currentImageUrls.length > 0 && (
                         <div className="mt-4">
                             <Label className="mb-2 block">Current Images</Label>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">

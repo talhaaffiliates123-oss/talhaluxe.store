@@ -48,11 +48,10 @@ export default function ProductsTable() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [lastVisible, setLastVisible] = useState<DocumentSnapshot<DocumentData, DocumentData> | null>(null);
-  const [firstVisible, setFirstVisible] = useState<DocumentSnapshot<DocumentData, DocumentData> | null>(null);
   const [isLastPage, setIsLastPage] = useState(false);
   const [totalProducts, setTotalProducts] = useState(0);
 
-  const fetchProducts = useCallback(async (direction: 'next' | 'prev' | 'initial' = 'initial') => {
+  const fetchProducts = useCallback(async (direction: 'next' | 'initial' = 'initial') => {
     if (!firestore) return;
     setLoading(true);
 
@@ -67,13 +66,17 @@ export default function ProductsTable() {
         }
         
         const documentSnapshots = await getDocs(q);
-
         const newProducts = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() } as Product));
 
         if (!documentSnapshots.empty) {
+            if (direction === 'initial') {
+                setProducts(newProducts);
+            } else { // next
+                setProducts(prev => [...prev, ...newProducts]);
+            }
             setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1]);
-            setFirstVisible(documentSnapshots.docs[0]);
-            setProducts(newProducts);
+        } else if (direction === 'initial') {
+            setProducts([]); // No products found at all
         }
 
         setIsLastPage(documentSnapshots.docs.length < PAGE_SIZE);
@@ -91,18 +94,18 @@ export default function ProductsTable() {
 }, [firestore, lastVisible, toast]);
 
     // Fetch total count for description
-    useEffect(() => {
-        if(firestore) {
+    const fetchTotalCount = useCallback(async () => {
+         if(firestore) {
             const coll = collection(firestore, 'products');
-            getDocs(coll).then(snap => {
-                setTotalProducts(snap.size);
-            });
+            const snap = await getDocs(coll);
+            setTotalProducts(snap.size);
         }
     }, [firestore]);
   
   useEffect(() => {
+    fetchTotalCount();
     fetchProducts('initial');
-  }, []);
+  }, [fetchProducts, fetchTotalCount]);
 
   const handleDeleteProduct = async (productId: string) => {
     if (!firestore) return;
@@ -112,7 +115,10 @@ export default function ProductsTable() {
             title: "Product Deleted",
             description: "The product has been successfully removed.",
         });
-        fetchProducts(); // Refetch current page
+        // Refresh the list from the beginning
+        setLastVisible(null);
+        setPage(1);
+        fetchProducts('initial').then(() => fetchTotalCount());
     } catch (error: any) {
         toast({
             variant: "destructive",
@@ -123,14 +129,13 @@ export default function ProductsTable() {
   }
 
   const handleNextPage = () => {
+    if (isLastPage) return;
     setPage(p => p + 1);
     fetchProducts('next');
   }
 
   const handlePrevPage = () => {
-    // Note: A true 'previous' requires a more complex query. 
-    // For simplicity, this implementation will just reset to the first page.
-    // A full implementation would require storing cursors for each page.
+    // A true 'previous' is complex. Resetting to page 1 is the simplest approach.
     setPage(1);
     setLastVisible(null);
     fetchProducts('initial');
@@ -140,7 +145,7 @@ export default function ProductsTable() {
     <Card>
       <CardHeader>
           <CardTitle>Product List</CardTitle>
-          <CardDescription>{totalProducts > 0 ? `Showing ${products.length} of ${totalProducts} products.` : 'Loading...'}</CardDescription>
+          <CardDescription>{!loading ? `Showing ${products.length} of ${totalProducts} products.` : 'Loading...'}</CardDescription>
       </CardHeader>
       <CardContent>
           <Table>
@@ -159,7 +164,7 @@ export default function ProductsTable() {
               </TableRow>
               </TableHeader>
               <TableBody>
-              {loading ? (
+              {loading && products.length === 0 ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                         <TableCell className="hidden sm:table-cell"><Skeleton className="h-16 w-16" /></TableCell>
@@ -170,7 +175,7 @@ export default function ProductsTable() {
                         <TableCell className="text-right"><Skeleton className="h-8 w-24" /></TableCell>
                     </TableRow>
                   ))
-              ) : !products || products.length === 0 ? (
+              ) : products.length === 0 ? (
                   <TableRow>
                       <TableCell colSpan={6} className="text-center py-10">
                           <p>No products found.</p>
