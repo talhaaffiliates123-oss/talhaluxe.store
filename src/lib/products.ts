@@ -20,28 +20,6 @@ import {
 import type { Product } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { FirebaseStorage, getStorage, ref, deleteObject } from 'firebase/storage';
-
-function getPathFromUrl(url: string): string | null {
-    if (!url.includes('firebasestorage.googleapis.com')) {
-        console.warn(`URL was not a Firebase Storage URL: ${url}`);
-        return null;
-    }
-    try {
-        const urlObject = new URL(url);
-        // Pathname is /v0/b/your-bucket.appspot.com/o/path%2Fto%2Ffile.jpg
-        const pathName = urlObject.pathname;
-        const parts = pathName.split('/o/');
-        if (parts.length > 1) {
-            // Remove the query parameters like ?alt=media&token=...
-            const encodedPath = parts[1].split('?')[0];
-            return decodeURIComponent(encodedPath);
-        }
-    } catch(e) {
-        console.error("Could not parse URL to get storage path", e);
-    }
-    return null;
-}
 
 export function getProductsCollection(db: Firestore) {
   return collection(db, 'products');
@@ -108,29 +86,8 @@ export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
       });
 }
 
-export async function updateProduct(db: Firestore, storage: FirebaseStorage, id: string, productData: Partial<Product>, originalImageUrls: string[] = []) {
+export async function updateProduct(db: Firestore, id: string, productData: Partial<Product>) {
     const docRef = doc(db, 'products', id);
-
-    const newUrls = productData.imageUrls || [];
-    const urlsToDelete = originalImageUrls.filter(url => !newUrls.includes(url));
-    
-    if (urlsToDelete.length > 0) {
-        const deletePromises = urlsToDelete.map(url => {
-            const storagePath = getPathFromUrl(url);
-            if (storagePath) {
-                try {
-                    const imageRef = ref(storage, storagePath);
-                    return deleteObject(imageRef);
-                } catch (error) {
-                    console.error(`Failed to create ref for deletion: ${storagePath}`, error);
-                    return Promise.resolve(); // Don't block update if one image fails to delete
-                }
-            }
-            return Promise.resolve();
-        });
-        await Promise.all(deletePromises).catch(err => console.error("Error deleting images", err));
-    }
-
 
     return updateDoc(docRef, productData)
     .catch(async (serverError) => {
@@ -147,27 +104,7 @@ export async function updateProduct(db: Firestore, storage: FirebaseStorage, id:
 
 export async function deleteProduct(db: Firestore, id: string) {
     const docRef = doc(db, 'products', id);
-    const product = await getProduct(db, id);
-    const storage = getStorage();
-
-    if (product && product.imageUrls && product.imageUrls.length > 0) {
-        const deletePromises = product.imageUrls.map(url => {
-            const storagePath = getPathFromUrl(url);
-            if (storagePath) {
-                try {
-                     const imageRef = ref(storage, storagePath);
-                     return deleteObject(imageRef);
-                }
-                catch (error) {
-                    console.error(`Failed to create ref for deletion: ${storagePath}`, error);
-                    return Promise.resolve(); // Don't block if one image fails
-                }
-            }
-            return Promise.resolve();
-        });
-        await Promise.all(deletePromises).catch(err => console.error("Error deleting one or more images from storage", err));
-    }
-
+   
     return deleteDoc(docRef)
     .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
@@ -181,30 +118,10 @@ export async function deleteProduct(db: Firestore, id: string) {
 
 export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 'id'>[]) {
     const productsCollection = getProductsCollection(db);
-    const storage = getStorage();
 
-    // Clear existing products and images
     const existingProducts = await getProducts(db);
     
     if (existingProducts.length > 0) {
-        // Delete images from storage
-        const imageDeletePromises = existingProducts.flatMap(product => 
-            product.imageUrls ? product.imageUrls.map(url => {
-                const storagePath = getPathFromUrl(url);
-                if (storagePath) {
-                    try {
-                        const imageRef = ref(storage, storagePath);
-                        return deleteObject(imageRef).catch(e => console.error(`Failed to delete image ${url}`, e));
-                    } catch(e) {
-                        console.error(`Could not create ref for ${storagePath}`);
-                        return Promise.resolve();
-                    }
-                }
-                return Promise.resolve();
-            }) : []
-        );
-        await Promise.allSettled(imageDeletePromises);
-
         // Delete documents from firestore
         const deleteBatch = writeBatch(db);
         existingProducts.forEach(p => deleteBatch.delete(doc(db, 'products', p.id)));
@@ -228,3 +145,5 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
         throw serverError;
     });
 }
+
+    

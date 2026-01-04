@@ -1,6 +1,6 @@
 'use client';
 
-import { useForm, Controller } from 'react-hook-form';
+import { useForm, Controller, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { categories } from '@/lib/data';
 import type { Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useStorage } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { addProduct, updateProduct } from '@/lib/products';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -28,11 +28,9 @@ import {
     CardTitle,
     CardDescription,
   } from '@/components/ui/card';
-import { useEffect, useState } from 'react';
-import { uploadImages } from '@/lib/storage';
-import { Progress } from '../ui/progress';
+import { useState } from 'react';
 import Image from 'next/image';
-import { X } from 'lucide-react';
+import { Trash2, X } from 'lucide-react';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -42,7 +40,7 @@ const productSchema = z.object({
   discountedPrice: z.coerce.number().optional().nullable(),
   category: z.string().min(1, 'Category is required'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
-  imageUrls: z.array(z.string()).optional().default([]),
+  imageUrls: z.array(z.string().url("Must be a valid URL")).default([]),
   isNewArrival: z.boolean().default(false),
   isBestSeller: z.boolean().default(false),
   onSale: z.boolean().default(false),
@@ -59,20 +57,14 @@ interface ProductFormProps {
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
-  const [files, setFiles] = useState<File[]>([]);
-  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
-  const [isUploading, setIsUploading] = useState(false);
+  const [newImageUrl, setNewImageUrl] = useState('');
 
   const {
     register,
     handleSubmit,
     control,
-    watch,
-    setValue,
-    formState: { errors, isSubmitting: isFormSubmitting },
+    formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -87,53 +79,41 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     },
   });
   
+  const { fields, append, remove } = useFieldArray({
+    control,
+    name: "imageUrls"
+  });
+
   const isEditMode = !!initialData;
-  const currentImageUrls = watch('imageUrls');
 
-  useEffect(() => {
-    if (files.length > 0) {
-      const urls = files.map(file => URL.createObjectURL(file));
-      setNewImagePreviews(urls);
-      
-      return () => {
-        urls.forEach(url => URL.revokeObjectURL(url));
-      };
+  const handleAddUrl = () => {
+    if (newImageUrl && z.string().url().safeParse(newImageUrl).success) {
+      append(newImageUrl);
+      setNewImageUrl('');
     } else {
-        setNewImagePreviews([]);
+        toast({
+            variant: 'destructive',
+            title: 'Invalid URL',
+            description: 'Please enter a valid image URL.',
+        })
     }
-  }, [files]);
+  };
 
-  const handleRemoveImage = (urlToRemove: string) => {
-    const updatedUrls = currentImageUrls?.filter(url => url !== urlToRemove);
-    setValue('imageUrls', updatedUrls, { shouldValidate: true, shouldDirty: true });
-  }
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!firestore || !storage) {
+    if (!firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'Firebase services not available.' });
         return;
     }
 
-    setIsUploading(true);
-    let finalImageUrls: string[] = data.imageUrls || [];
-
     try {
-        if (files.length > 0) {
-            setUploadProgress(0);
-            const uploadedUrls = await uploadImages(storage, files, (progress) => {
-                setUploadProgress(progress);
-            });
-            finalImageUrls = [...(data.imageUrls || []), ...uploadedUrls];
-        }
-        
         const productData = {
             ...data,
-            imageUrls: finalImageUrls,
             discountedPrice: data.discountedPrice || null,
         };
 
         if (isEditMode) {
-            await updateProduct(firestore, storage, initialData.id, productData, initialData.imageUrls);
+            await updateProduct(firestore, initialData.id, productData);
             toast({ title: 'Success', description: 'Product updated successfully.' });
         } else {
             await addProduct(firestore, productData);
@@ -146,14 +126,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     } catch (error: any) {
         console.error("Form submission error:", error);
         toast({ variant: 'destructive', title: 'Operation Failed', description: error.message || "An unknown error occurred." });
-    } finally {
-        setIsUploading(false);
-        setUploadProgress(null);
     }
   };
   
-  const isSubmitting = isFormSubmitting || isUploading;
-
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 space-y-6">
@@ -179,48 +154,33 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     {errors.description && <p className="text-destructive text-sm mt-1">{errors.description.message}</p>}
                 </div>
                  <div>
-                    <Label htmlFor="images">Product Images</Label>
-                     <div className="flex gap-2 items-center">
-                        <Input 
-                          id="images" 
-                          type="file" 
-                          multiple 
-                          onChange={(e) => setFiles(Array.from(e.target.files || []))} 
-                          disabled={isUploading}
-                          className="flex-grow"
-                        />
-                    </div>
-                    <p className="text-muted-foreground text-sm mt-1">
-                        Upload one or more images for the product.
-                    </p>
-                    {uploadProgress !== null && <Progress value={uploadProgress} className="mt-2" />}
-                    
-                    {newImagePreviews.length > 0 && (
-                        <div className="mt-4">
-                             <Label className="mb-2 block">New Images Preview</Label>
-                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                                {newImagePreviews.map((url, index) => (
-                                    <div key={index} className="relative">
-                                        <Image src={url} alt={`New image preview ${index + 1}`} width={100} height={100} className="rounded-md object-cover w-full aspect-square" />
-                                    </div>
-                                ))}
-                             </div>
+                    <Label htmlFor="image-url">Product Image URLs</Label>
+                     <div className="flex gap-2 items-start">
+                        <div className="flex-grow">
+                            <Input 
+                            id="image-url" 
+                            placeholder="https://example.com/image.jpg"
+                            value={newImageUrl}
+                            onChange={(e) => setNewImageUrl(e.target.value)}
+                            />
                         </div>
-                    )}
-
-                    {currentImageUrls && currentImageUrls.length > 0 && (
+                        <Button type="button" variant="outline" onClick={handleAddUrl}>Add URL</Button>
+                    </div>
+                    {errors.imageUrls && <p className="text-destructive text-sm mt-1">{errors.imageUrls.message}</p>}
+                    
+                    {fields.length > 0 && (
                         <div className="mt-4">
                             <Label className="mb-2 block">Current Images</Label>
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                                {currentImageUrls.map(url => (
-                                   <div key={url} className="relative group">
-                                        <Image src={url} alt="Existing product image" width={100} height={100} className="rounded-md object-cover w-full aspect-square"/>
+                                {fields.map((field, index) => (
+                                   <div key={field.id} className="relative group">
+                                        <Image src={field.value} alt={`Product image ${index + 1}`} width={100} height={100} className="rounded-md object-cover w-full aspect-square" onError={(e) => e.currentTarget.src = 'https://placehold.co/100x100/EEE/31343C?text=Invalid'}/>
                                         <Button
                                             type="button"
                                             variant="destructive"
                                             size="icon"
                                             className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={() => handleRemoveImage(url)}
+                                            onClick={() => remove(index)}
                                             disabled={isSubmitting}
                                         >
                                             <X className="h-4 w-4" />
@@ -243,12 +203,12 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             <CardContent className="space-y-4">
                  <div className="grid grid-cols-2 gap-4">
                     <div>
-                        <Label htmlFor="price">Price</Label>
+                        <Label htmlFor="price">Price (PKR)</Label>
                         <Input id="price" type="number" step="0.01" {...register('price')} />
                         {errors.price && <p className="text-destructive text-sm mt-1">{errors.price.message}</p>}
                     </div>
                     <div>
-                        <Label htmlFor="discountedPrice">Discounted Price (Optional)</Label>
+                        <Label htmlFor="discountedPrice">Discounted Price (PKR)</Label>
                         <Input id="discountedPrice" type="number" step="0.01" {...register('discountedPrice')} />
                         {errors.discountedPrice && <p className="text-destructive text-sm mt-1">{errors.discountedPrice.message}</p>}
                     </div>
@@ -323,9 +283,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         </Card>
         
         <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
-          {isUploading ? `Uploading... ${uploadProgress?.toFixed(0) ?? 0}%` : (isFormSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Product'))}
+          {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Product')}
         </Button>
       </div>
     </form>
   );
 }
+
+    
