@@ -20,23 +20,24 @@ import {
 import type { Product } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { getStorage, ref, deleteObject } from 'firebase/storage';
+import { FirebaseStorage, getStorage, ref, deleteObject } from 'firebase/storage';
 
-function getPathFromUrl(url: string) {
+function getPathFromUrl(url: string): string | null {
     if (!url.includes('firebasestorage.googleapis.com')) {
         return null;
     }
     try {
         const urlObject = new URL(url);
+        // Pathname is /v0/b/your-bucket.appspot.com/o/path%2Fto%2Ffile.jpg
         const pathName = urlObject.pathname;
-        // The path in the URL is /v0/b/your-bucket-name/o/path%2Fto%2Ffile.jpg
-        // We need to extract "path/to/file.jpg"
         const parts = pathName.split('/o/');
         if (parts.length > 1) {
-            return decodeURIComponent(parts[1].split('?')[0]);
+            // Remove the query parameters like ?alt=media&token=...
+            const encodedPath = parts[1].split('?')[0];
+            return decodeURIComponent(encodedPath);
         }
     } catch(e) {
-        console.error("Could not parse URL", e);
+        console.error("Could not parse URL to get storage path", e);
     }
     return null;
 }
@@ -106,7 +107,7 @@ export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
       });
 }
 
-export async function updateProduct(db: Firestore, id: string, productData: Partial<Product>) {
+export async function updateProduct(db: Firestore, storage: FirebaseStorage, id: string, productData: Partial<Product>) {
     const docRef = doc(db, 'products', id);
     const originalProduct = await getProduct(db, id);
 
@@ -115,7 +116,6 @@ export async function updateProduct(db: Firestore, id: string, productData: Part
         const urlsToDelete = originalProduct.imageUrls.filter(url => !newUrls.includes(url));
         
         if(urlsToDelete.length > 0) {
-            const storage = getStorage();
             const deletePromises = urlsToDelete.map(url => {
                 const storagePath = getPathFromUrl(url);
                 if (storagePath) {
@@ -227,3 +227,5 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
         throw serverError;
     });
 }
+
+    

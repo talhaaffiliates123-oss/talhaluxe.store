@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { categories } from '@/lib/data';
 import type { Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useStorage } from '@/firebase';
 import { addProduct, updateProduct } from '@/lib/products';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -30,7 +30,6 @@ import {
   } from '@/components/ui/card';
 import { useEffect, useState } from 'react';
 import { uploadImages } from '@/lib/storage';
-import { getStorage } from 'firebase/storage';
 import { Progress } from '../ui/progress';
 import Image from 'next/image';
 import { X } from 'lucide-react';
@@ -43,7 +42,7 @@ const productSchema = z.object({
   discountedPrice: z.coerce.number().optional().nullable(),
   category: z.string().min(1, 'Category is required'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
-  imageUrls: z.array(z.string()).optional().default([]), // Keep existing URLs
+  imageUrls: z.array(z.string()).optional().default([]),
   isNewArrival: z.boolean().default(false),
   isBestSeller: z.boolean().default(false),
   onSale: z.boolean().default(false),
@@ -60,10 +59,12 @@ interface ProductFormProps {
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+  const [isUploading, setIsUploading] = useState(false);
 
   const {
     register,
@@ -88,7 +89,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   
   const isEditMode = !!initialData;
   const currentImageUrls = watch('imageUrls');
-  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
     if (files.length > 0) {
@@ -109,43 +109,31 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   }
 
   const onSubmit = async (data: ProductFormData) => {
-    if (!firestore) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Firestore not available.' });
+    if (!firestore || !storage) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Firebase services not available.' });
         return;
     }
 
+    setIsUploading(true);
     let finalImageUrls: string[] = data.imageUrls || [];
 
-    if (files.length > 0) {
-        setIsUploading(true);
-        setUploadProgress(0);
-        try {
-            const storage = getStorage();
+    try {
+        if (files.length > 0) {
+            setUploadProgress(0);
             const uploadedUrls = await uploadImages(storage, files, (progress) => {
                 setUploadProgress(progress);
             });
             finalImageUrls = [...(data.imageUrls || []), ...uploadedUrls];
-        } catch (error) {
-            console.error("Image upload failed:", error);
-            toast({ variant: 'destructive', title: 'Image Upload Failed', description: 'Could not upload images. Please try again.' });
-            setIsUploading(false);
-            setUploadProgress(null);
-            return; // Stop form submission if image upload fails
-        } finally {
-            setIsUploading(false);
-            setUploadProgress(null);
         }
-    }
         
-    const productData = {
-        ...data,
-        imageUrls: finalImageUrls,
-        discountedPrice: data.discountedPrice || null,
-    };
+        const productData = {
+            ...data,
+            imageUrls: finalImageUrls,
+            discountedPrice: data.discountedPrice || null,
+        };
 
-    try {
         if (isEditMode) {
-            await updateProduct(firestore, initialData.id, productData);
+            await updateProduct(firestore, storage, initialData.id, productData);
             toast({ title: 'Success', description: 'Product updated successfully.' });
         } else {
             await addProduct(firestore, productData);
@@ -158,6 +146,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     } catch (error: any) {
         console.error("Form submission error:", error);
         toast({ variant: 'destructive', title: 'Operation Failed', description: error.message || "An unknown error occurred." });
+    } finally {
+        setIsUploading(false);
+        setUploadProgress(null);
     }
   };
   
@@ -189,7 +180,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 </div>
                  <div>
                     <Label htmlFor="images">Product Images</Label>
-                    <Input id="images" type="file" multiple onChange={(e) => setFiles(Array.from(e.target.files || []))} />
+                    <Input id="images" type="file" multiple onChange={(e) => setFiles(Array.from(e.target.files || []))} disabled={isUploading}/>
                     <p className="text-muted-foreground text-sm mt-1">
                         Upload one or more images for the product.
                     </p>
@@ -221,6 +212,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                                             size="icon"
                                             className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
                                             onClick={() => handleRemoveImage(url)}
+                                            disabled={isUploading}
                                         >
                                             <X className="h-4 w-4" />
                                         </Button>
@@ -322,9 +314,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         </Card>
         
         <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
-          {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Product')}
+          {isUploading ? `Uploading... ${uploadProgress?.toFixed(0) ?? 0}%` : (isFormSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Product'))}
         </Button>
       </div>
     </form>
   );
 }
+
+    

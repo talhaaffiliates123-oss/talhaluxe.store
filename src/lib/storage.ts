@@ -1,4 +1,3 @@
-
 import { getDownloadURL, ref, uploadBytesResumable, type FirebaseStorage } from "firebase/storage";
 import { v4 as uuidv4 } from 'uuid';
 
@@ -7,6 +6,9 @@ export const uploadImages = async (
     files: File[],
     onProgress: (progress: number) => void
 ): Promise<string[]> => {
+    
+    let totalBytes = files.reduce((acc, file) => acc + file.size, 0);
+    let bytesTransferred = 0;
 
     const uploadPromises = files.map(file => {
         return new Promise<string>((resolve, reject) => {
@@ -17,17 +19,23 @@ export const uploadImages = async (
 
             uploadTask.on('state_changed',
                 (snapshot) => {
-                    const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                    onProgress(progress);
+                    // This reports progress for an individual file, we need to aggregate
                 },
                 (error) => {
-                    console.error("Upload failed:", error);
+                    console.error("Upload failed for a file:", error);
                     reject(error);
                 },
-                () => {
-                    getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                async () => {
+                    try {
+                        const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                        // After each successful upload, update the total progress
+                        bytesTransferred += file.size;
+                        const progress = (bytesTransferred / totalBytes) * 100;
+                        onProgress(progress);
                         resolve(downloadURL);
-                    });
+                    } catch (error) {
+                        reject(error);
+                    }
                 }
             );
         });
@@ -35,3 +43,5 @@ export const uploadImages = async (
 
     return Promise.all(uploadPromises);
 };
+
+    
