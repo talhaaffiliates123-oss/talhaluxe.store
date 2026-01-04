@@ -32,8 +32,7 @@ import { useEffect, useState } from 'react';
 import { uploadImages } from '@/lib/storage';
 import { Progress } from '../ui/progress';
 import Image from 'next/image';
-import { X, Sparkles } from 'lucide-react';
-import { generateProductImage } from '@/ai/flows/generate-product-image';
+import { X } from 'lucide-react';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -66,7 +65,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
 
   const {
     register,
@@ -74,7 +72,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     control,
     watch,
     setValue,
-    getValues,
     formState: { errors, isSubmitting: isFormSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -109,41 +106,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const handleRemoveImage = (urlToRemove: string) => {
     const updatedUrls = currentImageUrls?.filter(url => url !== urlToRemove);
     setValue('imageUrls', updatedUrls, { shouldValidate: true, shouldDirty: true });
-  }
-
-  const handleGenerateImage = async () => {
-    const name = getValues('name');
-    const description = getValues('description');
-
-    if (!name || !description) {
-        toast({
-            variant: 'destructive',
-            title: 'Name and Description Required',
-            description: 'Please fill out the product name and description before generating an image.',
-        });
-        return;
-    }
-
-    setIsGenerating(true);
-    toast({ title: 'Generating AI Image...', description: 'This may take a moment.' });
-    try {
-        const result = await generateProductImage({ name, description });
-        if (result && result.dataUri) {
-            // Convert data URI to File object
-            const response = await fetch(result.dataUri);
-            const blob = await response.blob();
-            const newFile = new File([blob], `${name.replace(/\s+/g, '-')}.png`, { type: 'image/png' });
-            setFiles(prev => [...prev, newFile]);
-            toast({ title: 'Success!', description: 'AI image has been added to the upload queue.' });
-        } else {
-            throw new Error('No image data returned from AI.');
-        }
-    } catch (error: any) {
-        console.error("AI image generation error:", error);
-        toast({ variant: 'destructive', title: 'Generation Failed', description: error.message || "Could not generate image." });
-    } finally {
-        setIsGenerating(false);
-    }
   }
 
   const onSubmit = async (data: ProductFormData) => {
@@ -190,7 +152,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     }
   };
   
-  const isSubmitting = isFormSubmitting || isUploading || isGenerating;
+  const isSubmitting = isFormSubmitting || isUploading;
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -224,16 +186,12 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                           type="file" 
                           multiple 
                           onChange={(e) => setFiles(Array.from(e.target.files || []))} 
-                          disabled={isUploading || isGenerating}
+                          disabled={isUploading}
                           className="flex-grow"
                         />
-                         <Button type="button" variant="outline" onClick={handleGenerateImage} disabled={isSubmitting}>
-                            <Sparkles className="mr-2 h-4 w-4" />
-                            {isGenerating ? 'Generating...' : 'Generate Image with AI'}
-                        </Button>
                     </div>
                     <p className="text-muted-foreground text-sm mt-1">
-                        Upload one or more images for the product, or generate one using AI.
+                        Upload one or more images for the product.
                     </p>
                     {uploadProgress !== null && <Progress value={uploadProgress} className="mt-2" />}
                     
