@@ -1,6 +1,6 @@
 
 'use client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
 import { Package, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,7 +33,8 @@ export default function AdminDashboard() {
 
     try {
       // Use Promise.all to wait for all products to be added
-      await Promise.all(seedProducts.map(product => addProduct(firestore, product)));
+      const promises = seedProducts.map(product => addProduct(firestore, product));
+      await Promise.all(promises);
 
       toast({
         title: 'Success!',
@@ -55,30 +56,30 @@ export default function AdminDashboard() {
     <div>
       <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Link href="/admin/products">
-            <Card className="hover:bg-muted/50 transition-colors">
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                <CardTitle className="text-sm font-medium">Products</CardTitle>
-                <Package className="h-4 w-4 text-muted-foreground" />
+        <Card>
+            <CardHeader>
+                <CardTitle>Manage Products</CardTitle>
+                <CardDescription>Add, edit, and view all products in your store.</CardDescription>
             </CardHeader>
             <CardContent>
-                <div className="text-2xl font-bold">Manage Products</div>
-                <p className="text-xs text-muted-foreground">
-                Add, edit, and view all products in your store.
-                </p>
+                <Link href="/admin/products">
+                    <Button>
+                        <Package className="mr-2 h-4 w-4" />
+                        Go to Products
+                    </Button>
+                </Link>
             </CardContent>
-            </Card>
-        </Link>
+        </Card>
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Seed Database</CardTitle>
-            <Database className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle>Seed Database</CardTitle>
+            <CardDescription>
+              Click to populate your Firestore database with the initial product data. This is a one-time setup.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-sm text-muted-foreground mb-4">
-              Click to populate your Firestore database with the initial product data.
-            </p>
             <Button onClick={handleSeed} disabled={isSeeding}>
+              <Database className="mr-2 h-4 w-4" />
               {isSeeding ? 'Seeding...' : 'Seed Products'}
             </Button>
           </CardContent>
