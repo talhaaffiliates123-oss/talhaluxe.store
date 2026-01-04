@@ -10,7 +10,6 @@ import { useState } from 'react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import ProductRecommendations from '@/components/product-recommendations';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -136,11 +135,6 @@ export default function ProductDetailPage() {
         </div>
       </div>
       
-      {/* Product Recommendations */}
-      <div className="mt-16 md:mt-24">
-        <h2 className="text-2xl font-bold tracking-tight mb-8 text-center font-headline">You Might Also Like</h2>
-        <ProductRecommendations currentProductId={product.id} />
-      </div>
     </div>
   );
 }
