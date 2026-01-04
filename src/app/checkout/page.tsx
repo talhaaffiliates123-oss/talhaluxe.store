@@ -9,21 +9,29 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Separator } from '@/components/ui/separator';
 import { CreditCard, Truck } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth, useFirestore, useUser } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function CheckoutPage() {
   const { items, totalPrice, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('card');
   const router = useRouter();
   const { toast } = useToast();
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const firestore = useFirestore();
+
+  useEffect(() => {
+    // If user loading is finished and there is no user, redirect to login
+    if (!userLoading && !user) {
+      router.push('/login');
+    }
+  }, [user, userLoading, router]);
 
   const handlePlaceOrder = async () => {
     if (!user || !firestore) {
@@ -77,6 +85,25 @@ export default function CheckoutPage() {
         });
     }
   };
+  
+  if (userLoading || !user) {
+    return (
+        <div className="container mx-auto px-4 py-8">
+            <div className="text-center mb-8">
+                <Skeleton className="h-10 w-64 mx-auto" />
+            </div>
+            <div className="grid lg:grid-cols-2 gap-12">
+                <div className="space-y-4">
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-64 w-full" />
+                </div>
+                <div>
+                    <Skeleton className="h-96 w-full" />
+                </div>
+            </div>
+        </div>
+    )
+  }
 
   return (
     <div className="container mx-auto px-4 py-8">
