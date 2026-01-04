@@ -33,6 +33,7 @@ import { uploadImages } from '@/lib/storage';
 import { getStorage } from 'firebase/storage';
 import { Progress } from '../ui/progress';
 import Image from 'next/image';
+import { X } from 'lucide-react';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -66,6 +67,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     register,
     handleSubmit,
     control,
+    watch,
+    setValue,
     formState: { errors, isSubmitting },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
@@ -81,6 +84,12 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   });
   
   const isEditMode = !!initialData;
+  const currentImageUrls = watch('imageUrls');
+
+  const handleRemoveImage = (urlToRemove: string) => {
+    const updatedUrls = currentImageUrls?.filter(url => url !== urlToRemove);
+    setValue('imageUrls', updatedUrls, { shouldValidate: true, shouldDirty: true });
+  }
 
   const onSubmit = async (data: ProductFormData) => {
     if (!firestore) {
@@ -88,15 +97,17 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         return;
     }
 
-    let uploadedImageUrls: string[] = initialData?.imageUrls || [];
+    let finalImageUrls: string[] = data.imageUrls || [];
 
     if (files.length > 0) {
         setUploadProgress(0);
         const storage = getStorage();
         try {
-            uploadedImageUrls = await uploadImages(storage, files, (progress) => {
+            const uploadedUrls = await uploadImages(storage, files, (progress) => {
                 setUploadProgress(progress);
             });
+            // If editing, new images replace old ones. If creating, they are the initial set.
+            finalImageUrls = uploadedUrls;
         } catch (error) {
             toast({ variant: 'destructive', title: 'Image Upload Failed', description: 'Could not upload images.'});
             setUploadProgress(null);
@@ -105,10 +116,16 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         setUploadProgress(null);
     }
     
+    // The data from the form already has the updated imageUrls (if any were removed)
     const productData: Omit<Product, 'id' | 'reviews'> = {
         ...data,
-        imageUrls: uploadedImageUrls,
+        imageUrls: finalImageUrls,
         reviews: initialData?.reviews ?? [],
+    }
+
+    // In edit mode, if we are not uploading new files, we use the imageUrls from the form state (which may have had items removed).
+    if (isEditMode && files.length === 0) {
+      productData.imageUrls = data.imageUrls;
     }
 
     try {
@@ -154,14 +171,29 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <Label htmlFor="images">Product Images</Label>
                     <Input id="images" type="file" multiple onChange={(e) => setFiles(Array.from(e.target.files || []))} />
                     <p className="text-muted-foreground text-sm mt-1">
-                        Select one or more images to upload. In edit mode, new images will replace existing ones.
+                        In edit mode, uploading new images will <span className="font-bold">replace all existing images</span>.
                     </p>
                     {uploadProgress !== null && <Progress value={uploadProgress} className="mt-2" />}
-                    {isEditMode && initialData.imageUrls.length > 0 && (
-                        <div className="mt-4 grid grid-cols-4 gap-2">
-                            {initialData.imageUrls.map(url => (
-                                <Image key={url} src={url} alt="Existing product image" width={100} height={100} className="rounded-md object-cover"/>
-                            ))}
+                    
+                    {isEditMode && currentImageUrls && currentImageUrls.length > 0 && (
+                        <div className="mt-4">
+                            <Label className="mb-2 block">Current Images</Label>
+                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                {currentImageUrls.map(url => (
+                                   <div key={url} className="relative group">
+                                        <Image src={url} alt="Existing product image" width={100} height={100} className="rounded-md object-cover w-full aspect-square"/>
+                                        <Button
+                                            type="button"
+                                            variant="destructive"
+                                            size="icon"
+                                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                                            onClick={() => handleRemoveImage(url)}
+                                        >
+                                            <X className="h-4 w-4" />
+                                        </Button>
+                                   </div>
+                                ))}
+                            </div>
                         </div>
                     )}
                 </div>

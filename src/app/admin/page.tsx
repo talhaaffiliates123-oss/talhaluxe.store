@@ -5,7 +5,7 @@ import { Package, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useFirestore } from '@/firebase';
 import { products as seedProducts } from '@/lib/data';
-import { addProduct } from '@/lib/products';
+import { seedDatabase } from '@/lib/products';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
@@ -31,13 +31,14 @@ export default function AdminDashboard() {
     });
 
     try {
-      const promises = seedProducts.map(product => addProduct(firestore, product));
-      await Promise.all(promises);
+      await seedDatabase(firestore, seedProducts);
 
       toast({
         title: 'Success!',
         description: 'Database has been seeded with product data.',
       });
+      // Maybe force a refresh or redirect to ensure product list is updated
+      window.location.reload();
     } catch (error: any) {
       console.error("Seeding error:", error);
       toast({
@@ -72,7 +73,7 @@ export default function AdminDashboard() {
           <CardHeader>
             <CardTitle>Seed Database</CardTitle>
             <CardDescription>
-              Populate your Firestore database with initial product data. Run this once if your product list is empty.
+              Populate your Firestore database with initial product data. This will delete all existing products and images.
             </CardDescription>
           </CardHeader>
           <CardContent>
