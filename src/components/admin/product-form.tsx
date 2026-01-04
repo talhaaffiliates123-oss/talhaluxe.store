@@ -131,18 +131,10 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         }
 
         if (isEditMode) {
-            const updateData = {
-                ...productData,
-                reviews: initialData.reviews || []
-            }
-            await updateProduct(firestore, initialData.id, updateData);
+            await updateProduct(firestore, initialData.id, { ...initialData, ...productData });
             toast({ title: 'Success', description: 'Product updated successfully.' });
         } else {
-             const createData = {
-                ...productData,
-                reviews: []
-            }
-            await addProduct(firestore, createData);
+            await addProduct(firestore, { ...productData, reviews: [] });
             toast({ title: 'Success', description: 'Product added successfully.' });
         }
         
