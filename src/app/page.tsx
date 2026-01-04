@@ -1,3 +1,182 @@
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { products, testimonials } from '@/lib/data';
+import { PlaceHolderImages } from '@/lib/placeholder-images';
+import Image from 'next/image';
+import Link from 'next/link';
+import { ArrowRight, Mail } from 'lucide-react';
+import ProductCard from '@/components/products/product-card';
+import { Card, CardContent } from '@/components/ui/card';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+
 export default function Home() {
-  return <></>;
+  const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-banner');
+  const newArrivals = products.filter((p) => p.isNewArrival).slice(0, 4);
+  const bestSellers = products.filter((p) => p.isBestSeller).slice(0, 4);
+
+  return (
+    <div className="space-y-16 md:space-y-24">
+      {/* Hero Section */}
+      <section className="relative h-[60vh] md:h-[80vh] w-full">
+        {heroImage && (
+          <Image
+            src={heroImage.imageUrl}
+            alt={heroImage.description}
+            fill
+            className="object-cover"
+            priority
+            data-ai-hint={heroImage.imageHint}
+          />
+        )}
+        <div className="absolute inset-0 bg-black/50" />
+        <div className="relative z-10 flex h-full flex-col items-center justify-center text-center text-white p-4">
+          <h1 className="text-4xl md:text-6xl font-bold tracking-tight font-headline">
+            Elegance in Every Detail
+          </h1>
+          <p className="mt-4 max-w-2xl text-lg md:text-xl text-gray-200">
+            Discover our curated collection of premium fashion accessories.
+            Uncompromising quality, timeless style.
+          </p>
+          <Button
+            asChild
+            size="lg"
+            className="mt-8 bg-accent text-accent-foreground hover:bg-accent/90"
+          >
+            <Link href="/shop">Shop Now</Link>
+          </Button>
+        </div>
+      </section>
+
+      {/* New Arrivals Section */}
+      <section className="container mx-auto px-4">
+        <div className="flex justify-between items-baseline mb-8">
+          <h2 className="text-3xl font-bold tracking-tight font-headline">
+            New Arrivals
+          </h2>
+          <Link
+            href="/shop?sort=newest"
+            className="text-sm font-medium text-accent-foreground hover:text-accent flex items-center gap-1"
+          >
+            View All <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+          {newArrivals.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      </section>
+
+      {/* Limited Time Offer */}
+      <section className="bg-muted">
+        <div className="container mx-auto px-4 py-16 md:py-24">
+          <div className="grid md:grid-cols-2 gap-8 items-center">
+            <div>
+              <p className="text-sm font-semibold uppercase tracking-wider text-accent">Limited Time Offer</p>
+              <h2 className="text-3xl md:text-4xl font-bold tracking-tight font-headline mt-2">
+                Special Collection Sale
+              </h2>
+              <p className="mt-4 text-lg text-muted-foreground">
+                For a limited time, enjoy up to 30% off on our exclusive collections. Don&apos;t miss out on these incredible savings.
+              </p>
+              <Button
+                asChild
+                size="lg"
+                className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90"
+              >
+                <Link href="/shop?category=sale">Shop The Sale</Link>
+              </Button>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+                <ProductCard product={products[4]} />
+                <ProductCard product={products[5]} />
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Best Sellers Section */}
+      <section className="container mx-auto px-4">
+        <div className="flex justify-between items-baseline mb-8">
+          <h2 className="text-3xl font-bold tracking-tight font-headline">
+            Our Best Sellers
+          </h2>
+           <Link
+            href="/shop?sort=best-selling"
+            className="text-sm font-medium text-accent-foreground hover:text-accent flex items-center gap-1"
+          >
+            View All <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
+          {bestSellers.map((product) => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      </section>
+
+      {/* Testimonials Section */}
+      <section className="bg-muted">
+        <div className="container mx-auto px-4 py-16 md:py-24 text-center">
+          <h2 className="text-3xl font-bold tracking-tight font-headline">
+            What Our Customers Say
+          </h2>
+          <p className="mt-2 text-lg text-muted-foreground max-w-2xl mx-auto">
+            We pride ourselves on quality and service. Here&apos;s what our happy customers think.
+          </p>
+          <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+            {testimonials.map((testimonial) => {
+              const avatar = PlaceHolderImages.find(
+                (img) => img.id === testimonial.avatarId
+              );
+              return (
+                <Card key={testimonial.id}>
+                  <CardContent className="pt-6">
+                    <div className="flex flex-col items-center text-center">
+                       {avatar && (
+                        <Avatar className="w-20 h-20 mb-4">
+                          <AvatarImage
+                            src={avatar.imageUrl}
+                            alt={testimonial.name}
+                            data-ai-hint={avatar.imageHint}
+                          />
+                          <AvatarFallback>{testimonial.name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                      )}
+                      <p className="text-muted-foreground italic">
+                        &quot;{testimonial.quote}&quot;
+                      </p>
+                      <p className="font-semibold mt-4">{testimonial.name}</p>
+                      <p className="text-sm text-muted-foreground">{testimonial.location}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        </div>
+      </section>
+
+      {/* Newsletter Signup */}
+      <section className="container mx-auto px-4 text-center">
+        <div className="max-w-xl mx-auto">
+            <h2 className="text-3xl font-bold tracking-tight font-headline">
+                Join Our Newsletter
+            </h2>
+            <p className="mt-2 text-lg text-muted-foreground">
+                Stay up to date with the latest arrivals, offers, and style tips.
+            </p>
+            <form className="mt-6 flex max-w-md mx-auto">
+                <div className="relative flex-grow">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+                    <Input type="email" placeholder="Enter your email" className="pl-10 h-12" />
+                </div>
+                <Button type="submit" className="h-12 ml-2 bg-accent text-accent-foreground hover:bg-accent/90">
+                    Subscribe
+                </Button>
+            </form>
+        </div>
+      </section>
+    </div>
+  );
 }

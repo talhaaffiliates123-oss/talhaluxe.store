@@ -1,3 +1,130 @@
 {
-  "placeholderImages": []
+  "placeholderImages": [
+    {
+      "id": "hero-banner",
+      "description": "Elegant fashion accessories displayed on a dark background.",
+      "imageUrl": "https://images.unsplash.com/photo-1614208194190-5bf690ad8a98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYXNoaW9uJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "fashion background"
+    },
+    {
+      "id": "watch-1",
+      "description": "A classic silver wristwatch with a black dial.",
+      "imageUrl": "https://images.unsplash.com/photo-1612817159949-195b6eb9e31a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxjbGFzc2ljJTIwd2F0Y2h8ZW58MHx8fHwxNzY3NTIwODk1fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "classic watch"
+    },
+    {
+      "id": "watch-2",
+      "description": "A modern gold smartwatch with a customizable screen.",
+      "imageUrl": "https://images.unsplash.com/photo-1766208048323-d6fdddba4c8e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxzbWFydHdhdGNoJTIwZ29sZHxlbnwwfHx8fDE3Njc1MTcwODB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "smartwatch gold"
+    },
+    {
+      "id": "watch-3",
+      "description": "A minimalist leather strap watch.",
+      "imageUrl": "https://images.unsplash.com/photo-1580837428500-74aa7eefc672?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxtaW5pbWFsaXN0JTIwd2F0Y2h8ZW58MHx8fHwxNzY3NDUzOTQ5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "minimalist watch"
+    },
+    {
+      "id": "watch-4",
+      "description": "A luxury chronograph watch with multiple dials.",
+      "imageUrl": "https://images.unsplash.com/photo-1548171916-c0dea7f94ca6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8bHV4dXJ5JTIwd2F0Y2h8ZW58MHx8fHwxNzY3NTA5NjMxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "luxury watch"
+    },
+    {
+      "id": "bag-1",
+      "description": "A stylish black leather handbag.",
+      "imageUrl": "https://images.unsplash.com/photo-1548036328-c9fa89d128fa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxsZWF0aGVyJTIwaGFuZGJhZ3xlbnwwfHx8fDE3Njc1MjA4OTR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "leather handbag"
+    },
+    {
+      "id": "bag-2",
+      "description": "A brown canvas tote bag for everyday use.",
+      "imageUrl": "https://images.unsplash.com/photo-1663573690125-d326a87a2535?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx0b3RlJTIwYmFnfGVufDB8fHx8MTc2NzUxMTY2MHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tote bag"
+    },
+    {
+      "id": "bag-3",
+      "description": "A premium leather backpack.",
+      "imageUrl": "https://images.unsplash.com/photo-1624687751372-25f9e6f08e46?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxsZWF0aGVyJTIwYmFja3BhY2t8ZW58MHx8fHwxNzY3NDQzNzMxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "leather backpack"
+    },
+    {
+      "id": "bag-4",
+      "description": "A chic crossbody bag in tan color.",
+      "imageUrl": "https://images.unsplash.com/photo-1709899504137-575171b3258d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjcm9zc2JvZHklMjBiYWd8ZW58MHx8fHwxNzY3NDY5MDM2fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "crossbody bag"
+    },
+    {
+      "id": "ring-1",
+      "description": "A gold ring with a diamond.",
+      "imageUrl": "https://images.unsplash.com/photo-1603561591411-07134e71a2a9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxkaWFtb25kJTIwcmluZ3xlbnwwfHx8fDE3Njc1MDk5ODV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "diamond ring"
+    },
+    {
+      "id": "chain-1",
+      "description": "A delicate silver chain necklace.",
+      "imageUrl": "https://images.unsplash.com/photo-1611012844392-f4f96c7fd052?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzaWx2ZXIlMjBuZWNrbGFjZXxlbnwwfHx8fDE3Njc0NDM0NjR8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "silver necklace"
+    },
+    {
+      "id": "bracelet-1",
+      "description": "A gold chain link bracelet.",
+      "imageUrl": "https://images.unsplash.com/photo-1655707063513-a08dad26440e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxnb2xkJTIwYnJhY2VsZXR8ZW58MHx8fHwxNzY3NDc0OTMxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "gold bracelet"
+    },
+    {
+      "id": "sunglasses-1",
+      "description": "Classic aviator sunglasses.",
+      "imageUrl": "https://images.unsplash.com/photo-1562548726-43b650c82f8e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxhdmlhdG9yJTIwc3VuZ2xhc3Nlc3xlbnwwfHx8fDE3Njc0OTU1Njd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "aviator sunglasses"
+    },
+    {
+      "id": "sunglasses-2",
+      "description": "Modern wayfarer style sunglasses.",
+      "imageUrl": "https://images.unsplash.com/photo-1653038282366-09ae0df227be?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHx3YXlmYXJlciUyMHN1bmdsYXNzZXN8ZW58MHx8fHwxNzY3NTQ0NDU4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wayfarer sunglasses"
+    },
+    {
+      "id": "sunglasses-3",
+      "description": "Round vintage-style sunglasses.",
+      "imageUrl": "https://images.unsplash.com/photo-1762328012173-00c725c97afa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxyb3VuZCUyMHN1bmdsYXNzZXN8ZW58MHx8fHwxNzY3NTQ0NDU4fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "round sunglasses"
+    },
+    {
+      "id": "sunglasses-4",
+      "description": "Sleek, sporty sunglasses.",
+      "imageUrl": "https://images.unsplash.com/photo-1761637328025-bccb6ce8af34?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxzcG9ydHklMjBzdW5nbGFzc2VzfGVufDB8fHx8MTc2NzU0NDQ1OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "sporty sunglasses"
+    },
+    {
+      "id": "about-us-image",
+      "description": "A workshop view of a craftsman making jewelry.",
+      "imageUrl": "https://images.unsplash.com/photo-1683115096447-5d01c11d3ead?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjcmFmdHNtYW4lMjB3b3Jrc2hvcHxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "craftsman workshop"
+    },
+    {
+      "id": "testimonial-1-avatar",
+      "description": "A smiling woman.",
+      "imageUrl": "https://images.unsplash.com/photo-1592621385612-4d7129426394?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3b21hbiUyMHNtaWxpbmd8ZW58MHx8fHwxNzY3NTI2NTExfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "woman smiling"
+    },
+    {
+      "id": "testimonial-2-avatar",
+      "description": "A man with glasses.",
+      "imageUrl": "https://images.unsplash.com/photo-1714356590155-f896e15d21c9?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxtYW4lMjBnbGFzc2VzfGVufDB8fHx8MTc2NzU0NDQ1OHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "man glasses"
+    },
+    {
+      "id": "testimonial-3-avatar",
+      "description": "A person looking thoughtful.",
+      "imageUrl": "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxwZXJzb24lMjBwb3J0cmFpdHxlbnwwfHx8fDE3Njc1MTExMDd8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "person portrait"
+    },
+    {
+      "id": "contact-us-banner",
+      "description": "A stylish flat lay of contact items like a phone and notebook.",
+      "imageUrl": "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb250YWN0JTIwZmxhdGxheXxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "contact flatlay"
+    }
+  ]
 }
