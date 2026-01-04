@@ -13,8 +13,6 @@ import {
   orderBy,
   limit,
   startAfter,
-  limitToLast,
-  endBefore,
   Query,
   DocumentSnapshot,
   DocumentData,
@@ -110,6 +108,7 @@ export async function updateProduct(db: Firestore, id: string, productData: Part
 
     if (originalProduct && originalProduct.imageUrls && productData.imageUrls) {
         const storage = getStorage();
+        // This logic is now safer: only delete images that are in the original list but NOT in the new list.
         const urlsToDelete = originalProduct.imageUrls.filter(url => !productData.imageUrls!.includes(url));
         
         const deletePromises = urlsToDelete.map(url => {
@@ -171,30 +170,40 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
     const productsCollection = getProductsCollection(db);
     const storage = getStorage();
 
+    // 1. Get all existing products to delete them
     const existingProducts = await getProducts(db);
-    const imageDeletePromises: Promise<void>[] = [];
-    existingProducts.forEach(product => {
-        if (product.imageUrls) {
-            product.imageUrls.forEach(url => {
+    
+    // 2. Delete all existing images from storage
+    if (existingProducts.length > 0) {
+        const imageDeletePromises = existingProducts.flatMap(product => 
+            product.imageUrls ? product.imageUrls.map(url => {
                 try {
                     const imageRef = ref(storage, url);
-                    imageDeletePromises.push(deleteObject(imageRef));
+                    return deleteObject(imageRef).catch(e => console.error(`Failed to delete image ${url}`, e)); // Catch errors per image
                 } catch(e) {
                     console.log(`Could not create ref for ${url}`);
+                    return Promise.resolve();
                 }
-            });
-        }
+            }) : []
+        );
+        await Promise.allSettled(imageDeletePromises);
+    }
+    
+    // 3. Delete all existing documents from Firestore
+    if (existingProducts.length > 0) {
+        const deleteBatch = writeBatch(db);
+        existingProducts.forEach(p => deleteBatch.delete(doc(db, 'products', p.id)));
+        await deleteBatch.commit();
+    }
+    
+    // 4. Add new products one by one
+    const addPromises = productsToSeed.map(product => {
+        return addProduct(db, product).catch(e => {
+            console.error("Failed to add product:", product.name, e);
+            // We'll let it continue to try and seed the rest
+            return null;
+        });
     });
 
-    const docDeletePromises: Promise<void>[] = existingProducts.map(p => deleteDoc(doc(db, 'products', p.id)));
-
-    await Promise.allSettled([...imageDeletePromises, ...docDeletePromises]);
-
-    const batch = writeBatch(db);
-    productsToSeed.forEach(product => {
-        const newDocRef = doc(productsCollection);
-        batch.set(newDocRef, product);
-    });
-
-    return batch.commit();
+    return Promise.all(addPromises);
 }

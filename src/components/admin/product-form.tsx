@@ -121,8 +121,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             const uploadedUrls = await uploadImages(storage, files, (progress) => {
                 setUploadProgress(progress);
             });
-            // If editing, new images replace old ones. If creating, they are the initial set.
-            finalImageUrls = uploadedUrls;
+            // If editing, new images are added to the existing ones (after some were potentially removed)
+            // If creating, they are the initial set.
+            finalImageUrls = isEditMode ? [...finalImageUrls, ...uploadedUrls] : uploadedUrls;
         } catch (error) {
             toast({ variant: 'destructive', title: 'Image Upload Failed', description: 'Could not upload images.'});
             setUploadProgress(null);
@@ -131,16 +132,10 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         setUploadProgress(null);
     }
     
-    // The data from the form already has the updated imageUrls (if any were removed)
     const productData: Omit<Product, 'id' | 'reviews'> = {
         ...data,
         imageUrls: finalImageUrls,
         reviews: initialData?.reviews ?? [],
-    }
-
-    // In edit mode, if we are not uploading new files, we use the imageUrls from the form state (which may have had items removed).
-    if (isEditMode && files.length === 0) {
-      productData.imageUrls = data.imageUrls;
     }
 
     try {
@@ -186,7 +181,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <Label htmlFor="images">Product Images</Label>
                     <Input id="images" type="file" multiple onChange={(e) => setFiles(Array.from(e.target.files || []))} />
                     <p className="text-muted-foreground text-sm mt-1">
-                        In edit mode, uploading new images will <span className="font-bold">replace all existing images</span>.
+                        Upload one or more images for the product.
                     </p>
                     {uploadProgress !== null && <Progress value={uploadProgress} className="mt-2" />}
                     
