@@ -1,6 +1,6 @@
 'use client';
 
-import { notFound, useParams } from 'next/navigation';
+import { notFound, useParams, useRouter } from 'next/navigation';
 import { products } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
@@ -13,6 +13,7 @@ import { Separator } from '@/components/ui/separator';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
+  const router = useRouter();
   const product = products.find((p) => p.id === id);
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
@@ -31,6 +32,11 @@ export default function ProductDetailPage() {
         title: "Added to cart",
         description: `${quantity} x ${product.name} added to your cart.`,
     });
+  };
+
+  const handleBuyNow = () => {
+    addItem(product, quantity);
+    router.push('/checkout');
   };
 
   return (
@@ -125,7 +131,7 @@ export default function ProductDetailPage() {
             <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleAddToCart} disabled={product.stock === 0}>
               Add to Cart
             </Button>
-            <Button size="lg" variant="outline" className="flex-1">
+            <Button size="lg" variant="outline" className="flex-1" onClick={handleBuyNow} disabled={product.stock === 0}>
               Buy Now
             </Button>
              <Button size="lg" variant="outline" className="px-4">
