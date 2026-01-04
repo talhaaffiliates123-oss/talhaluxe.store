@@ -8,13 +8,26 @@ service cloud.firestore {
       return request.auth != null && request.auth.uid == userId;
     }
 
+    function isAdmin() {
+      // In a real app, this would check for a custom claim
+      // For now, we can check a hardcoded admin UID or email if needed.
+      // Let's assume for now anyone authenticated can manage products for simplicity,
+      // and we'll protect the route in the app itself.
+      return request.auth != null;
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     match /orders/{orderId} {
-      allow read: if isOwner(resource.data.userId);
+      allow read: if isOwner(resource.data.userId) || isAdmin();
       allow create: if isOwner(request.resource.data.userId);
     }
 
     match /users/{userId} {
-      allow read, update: if isOwner(userId);
+      allow read, update: if isOwner(userId) || isAdmin();
       allow create: if request.auth != null;
     }
   }

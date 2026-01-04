@@ -1,3 +1,4 @@
+'use client';
 import ProductCard from "@/components/products/product-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -6,10 +7,29 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { categories, products } from "@/lib/data";
+import { categories } from "@/lib/data";
 import { Filter } from "lucide-react";
+import { useFirestore } from "@/firebase";
+import { useEffect, useState } from "react";
+import { getProducts } from "@/lib/products";
+import type { Product } from "@/lib/types";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function ShopPage() {
+  const firestore = useFirestore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (firestore) {
+      getProducts(firestore).then(prods => {
+        setProducts(prods);
+        setLoading(false);
+      });
+    }
+  }, [firestore]);
+
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8 text-center">
@@ -54,7 +74,7 @@ export default function ShopPage() {
         {/* Products Grid */}
         <main className="md:col-span-3">
           <div className="flex justify-between items-center mb-6">
-            <p className="text-sm text-muted-foreground">{products.length} products</p>
+            <p className="text-sm text-muted-foreground">{loading ? '...' : `${products.length} products`}</p>
             <div className="flex items-center gap-2">
               <Label htmlFor="sort-by">Sort by:</Label>
               <Select defaultValue="newest">
@@ -72,9 +92,19 @@ export default function ShopPage() {
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {products.map(product => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+            {loading ? (
+                Array.from({ length: 9 }).map((_, i) => (
+                    <div key={i} className="space-y-2">
+                        <Skeleton className="h-64 w-full" />
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-4 w-1/2" />
+                    </div>
+                ))
+            ) : (
+                products.map(product => (
+                <ProductCard key={product.id} product={product} />
+                ))
+            )}
           </div>
         </main>
       </div>

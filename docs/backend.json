@@ -1,5 +1,52 @@
 {
   "entities": {
+    "Product": {
+      "title": "Product",
+      "description": "Represents a product in the store.",
+      "type": "object",
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "shortDescription": {
+          "type": "string"
+        },
+        "description": {
+          "type": "string"
+        },
+        "price": {
+          "type": "number"
+        },
+        "discountedPrice": {
+          "type": "number"
+        },
+        "category": {
+          "type": "string"
+        },
+        "imageIds": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "stock": {
+          "type": "number"
+        },
+        "rating": {
+          "type": "number"
+        },
+        "isNewArrival": {
+          "type": "boolean"
+        },
+        "isBestSeller": {
+          "type": "boolean"
+        },
+        "onSale": {
+          "type": "boolean"
+        }
+      },
+      "required": ["name", "shortDescription", "description", "price", "category", "imageIds", "stock", "rating", "isNewArrival", "isBestSeller"]
+    },
     "Order": {
       "title": "Order",
       "description": "Represents a customer's order.",
@@ -74,6 +121,10 @@
     "providers": ["google.com", "password"]
   },
   "firestore": {
+    "/products/{productId}": {
+      "schema": { "$ref": "#/entities/Product" },
+      "description": "Stores all products available in the store."
+    },
     "/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
       "description": "Stores individual order details."

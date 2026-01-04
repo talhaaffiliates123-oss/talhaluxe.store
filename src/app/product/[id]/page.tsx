@@ -1,30 +1,78 @@
 'use client';
 
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { products } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Heart, Minus, Plus, Star, Truck } from 'lucide-react';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { useFirestore } from '@/firebase';
+import { getProduct } from '@/lib/products';
+import { Product } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function ProductDetailPage() {
   const { id } = useParams();
   const router = useRouter();
-  const product = products.find((p) => p.id === id);
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
   const { toast } = useToast();
+  const firestore = useFirestore();
+  const [product, setProduct] = useState<Product | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  if (!product) {
-    notFound();
-  }
-
-  const productImages = product.imageIds.map(id => PlaceHolderImages.find(img => img.id === id)).filter(Boolean);
+  useEffect(() => {
+    if (firestore && id) {
+        getProduct(firestore, id as string).then(p => {
+            if (p) {
+                setProduct(p);
+            } else {
+                notFound();
+            }
+            setLoading(false);
+        });
+    }
+  }, [firestore, id]);
+  
+  const productImages = product?.imageIds.map(id => PlaceHolderImages.find(img => img.id === id)).filter(Boolean) ?? [];
   const [mainImage, setMainImage] = useState(productImages[0]);
+
+  useEffect(() => {
+    if(productImages.length > 0) {
+        setMainImage(productImages[0]);
+    }
+  }, [product]);
+
+  if (loading || !product) {
+    return (
+        <div className="container mx-auto px-4 py-8 md:py-12">
+            <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+                <div>
+                    <Skeleton className="aspect-square w-full rounded-lg"/>
+                    <div className="mt-4 grid grid-cols-4 gap-4">
+                        <Skeleton className="aspect-square w-full rounded-md"/>
+                        <Skeleton className="aspect-square w-full rounded-md"/>
+                        <Skeleton className="aspect-square w-full rounded-md"/>
+                        <Skeleton className="aspect-square w-full rounded-md"/>
+                    </div>
+                </div>
+                <div className="space-y-6">
+                    <Skeleton className="h-10 w-3/4" />
+                    <Skeleton className="h-6 w-1/2" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-8 w-1/4" />
+                    <div className="flex gap-4">
+                        <Skeleton className="h-12 w-32" />
+                        <Skeleton className="h-12 flex-1" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+  }
 
   const handleAddToCart = () => {
     addItem(product, quantity);

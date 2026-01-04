@@ -1,7 +1,6 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { products } from '@/lib/data';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -10,11 +9,30 @@ import ProductCard from '@/components/products/product-card';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useEffect, useState } from 'react';
+import { useFirestore } from '@/firebase';
+import { getProducts } from '@/lib/products';
+import type { Product } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
   const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-banner');
+  const firestore = useFirestore();
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (firestore) {
+      getProducts(firestore).then(prods => {
+        setProducts(prods);
+        setLoading(false);
+      });
+    }
+  }, [firestore]);
+  
   const newArrivals = products.filter((p) => p.isNewArrival).slice(0, 4);
   const bestSellers = products.filter((p) => p.isBestSeller).slice(0, 4);
+  const saleProducts = products.filter(p => p.onSale).slice(0, 2);
+
 
   return (
     <div className="space-y-16 md:space-y-24">
@@ -63,7 +81,7 @@ export default function Home() {
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-          {newArrivals.map((product) => (
+          {loading ? Array.from({length: 4}).map((_,i) => <Skeleton key={i} className='h-96 w-full'/>) : newArrivals.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
@@ -90,8 +108,7 @@ export default function Home() {
               </Button>
             </div>
             <div className="grid grid-cols-2 gap-4">
-                <ProductCard product={products[4]} />
-                <ProductCard product={products[5]} />
+                {loading ? Array.from({length: 2}).map((_,i) => <Skeleton key={i} className='h-96 w-full'/>) : saleProducts.map(p => <ProductCard key={p.id} product={p} />)}
             </div>
           </div>
         </div>
@@ -111,7 +128,7 @@ export default function Home() {
           </Link>
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 md:gap-8">
-          {bestSellers.map((product) => (
+          {loading ? Array.from({length: 4}).map((_,i) => <Skeleton key={i} className='h-96 w-full'/>) : bestSellers.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
