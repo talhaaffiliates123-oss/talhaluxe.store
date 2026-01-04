@@ -28,7 +28,7 @@ import {
     CardTitle,
     CardDescription,
   } from '@/components/ui/card';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { uploadImages } from '@/lib/storage';
 import { getStorage } from 'firebase/storage';
 import { Progress } from '../ui/progress';
@@ -62,6 +62,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const { toast } = useToast();
   const [files, setFiles] = useState<File[]>([]);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
 
   const {
     register,
@@ -85,6 +86,20 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   
   const isEditMode = !!initialData;
   const currentImageUrls = watch('imageUrls');
+
+  useEffect(() => {
+    if (files.length > 0) {
+      const urls = files.map(file => URL.createObjectURL(file));
+      setNewImagePreviews(urls);
+      
+      // Cleanup function to revoke the object URLs
+      return () => {
+        urls.forEach(url => URL.revokeObjectURL(url));
+      };
+    } else {
+        setNewImagePreviews([]);
+    }
+  }, [files]);
 
   const handleRemoveImage = (urlToRemove: string) => {
     const updatedUrls = currentImageUrls?.filter(url => url !== urlToRemove);
@@ -175,6 +190,19 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     </p>
                     {uploadProgress !== null && <Progress value={uploadProgress} className="mt-2" />}
                     
+                    {newImagePreviews.length > 0 && (
+                        <div className="mt-4">
+                             <Label className="mb-2 block">New Images Preview</Label>
+                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
+                                {newImagePreviews.map((url, index) => (
+                                    <div key={index} className="relative">
+                                        <Image src={url} alt={`New image preview ${index + 1}`} width={100} height={100} className="rounded-md object-cover w-full aspect-square" />
+                                    </div>
+                                ))}
+                             </div>
+                        </div>
+                    )}
+
                     {isEditMode && currentImageUrls && currentImageUrls.length > 0 && (
                         <div className="mt-4">
                             <Label className="mb-2 block">Current Images</Label>
