@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Card,
@@ -11,27 +12,119 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth } from '@/firebase';
-import { signInWithGoogle } from '@/firebase/auth';
+import { useAuth, useFirestore } from '@/firebase';
+import { signInWithGoogle, signOut } from '@/firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
+import { useToast } from '@/hooks/use-toast';
+import { FirestorePermissionError } from '@/firebase/errors';
+import { errorEmitter } from '@/firebase/error-emitter';
 
 export default function SignupPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
+  const { toast } = useToast();
+
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  const handleEmailSignUp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!auth || !firestore) {
+      toast({
+        variant: 'destructive',
+        title: 'Error',
+        description: 'Firebase is not available.',
+      });
+      return;
+    }
+    setLoading(true);
+    try {
+      // 1. Create user with Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // 2. Update Firebase Auth profile
+      await updateProfile(user, { displayName: name });
+
+      // 3. Create user profile in Firestore
+      const userDocRef = doc(firestore, 'users', user.uid);
+      
+      const userData = {
+        name: name,
+        email: email,
+        createdAt: serverTimestamp(),
+      };
+
+      setDoc(userDocRef, userData)
+      .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: userDocRef.path,
+          operation: 'create',
+          requestResourceData: userData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+
+      toast({
+        title: 'Account Created!',
+        description: "Welcome to Talha Luxe!",
+      });
+
+      router.push('/');
+
+    } catch (error: any) {
+      console.error('Sign up failed', error);
+      toast({
+        variant: 'destructive',
+        title: 'Sign Up Failed',
+        description: error.message || 'An unexpected error occurred.',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleGoogleSignIn = async () => {
-    if (!auth) {
+    if (!auth || !firestore) {
       console.error('Auth service is not available.');
       return;
     }
     try {
-      await signInWithGoogle(auth);
-      router.push('/'); // Redirect to homepage on successful signup
+      const user = await signInWithGoogle(auth);
+      if (user) {
+        // Create user profile in Firestore for Google Sign-In as well
+        const userDocRef = doc(firestore, 'users', user.uid);
+        const userData = {
+            name: user.displayName,
+            email: user.email,
+            createdAt: serverTimestamp(),
+        };
+        // Use setDoc with merge:true to avoid overwriting existing data if user signed up before
+        setDoc(userDocRef, userData, { merge: true })
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+                path: userDocRef.path,
+                operation: 'create',
+                requestResourceData: userData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        });
+      }
+      router.push('/');
     } catch (error) {
       console.error('Sign up failed', error);
-      // Optionally, show a toast notification to the user
+      toast({
+        variant: 'destructive',
+        title: 'Sign Up Failed',
+        description: 'Could not sign up with Google.',
+      });
     }
   };
 
@@ -51,7 +144,7 @@ export default function SignupPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
-            disabled={!auth}
+            disabled={!auth || loading}
           >
             <FcGoogle className="mr-2 h-5 w-5" />
             Sign Up with Google
@@ -66,28 +159,45 @@ export default function SignupPage() {
               </span>
             </div>
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="name">Name</Label>
-            <Input id="name" type="text" placeholder="Your Name" required />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              type="email"
-              placeholder="you@example.com"
-              required
-            />
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="password">Password</Label>
-            <Input id="password" type="password" required />
-          </div>
+          <form onSubmit={handleEmailSignUp} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Name</Label>
+              <Input 
+                id="name" 
+                type="text" 
+                placeholder="Your Name" 
+                required 
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input 
+                id="password" 
+                type="password" 
+                required 
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            </div>
+            <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={loading}>
+              {loading ? 'Creating Account...' : 'Create Account'}
+            </Button>
+          </form>
         </CardContent>
         <CardFooter className="flex flex-col gap-4">
-          <Button className="w-full bg-accent text-accent-foreground hover:bg-accent/90">
-            Create Account
-          </Button>
           <p className="text-sm text-center text-muted-foreground">
             Already have an account?{' '}
             <Link

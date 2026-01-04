@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -8,10 +8,13 @@ import { Label } from "@/components/ui/label";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { useCollection, useFirestore, useUser } from '@/firebase';
-import { collection, query, where, orderBy, Timestamp } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useUser } from '@/firebase';
+import { collection, query, where, orderBy, Timestamp, doc, updateDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 type OrderItem = {
   productId: string;
@@ -30,10 +33,30 @@ type Order = {
   createdAt: Timestamp;
 };
 
+type UserProfile = {
+  name: string;
+  email: string;
+};
 
 export default function AccountPage() {
   const { user } = useUser();
   const firestore = useFirestore();
+  const { toast } = useToast();
+
+  const [displayName, setDisplayName] = useState('');
+
+  const userProfileRef = useMemo(() => {
+    if (!firestore || !user) return null;
+    return doc(firestore, 'users', user.uid);
+  }, [firestore, user]);
+
+  const { data: userProfile, loading: profileLoading } = useDoc<UserProfile>(userProfileRef);
+
+  useEffect(() => {
+    if (userProfile) {
+      setDisplayName(userProfile.name);
+    }
+  }, [userProfile]);
 
   const ordersQuery = useMemo(() => {
     if (!firestore || !user) return null;
@@ -45,6 +68,25 @@ export default function AccountPage() {
   }, [firestore, user]);
 
   const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
+
+  const handleProfileUpdate = async () => {
+    if (!userProfileRef) return;
+    const updatedData = { name: displayName };
+    updateDoc(userProfileRef, updatedData)
+    .catch(async (serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: userProfileRef.path,
+          operation: 'update',
+          requestResourceData: updatedData,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+      });
+
+    toast({
+      title: 'Profile Updated',
+      description: 'Your name has been successfully updated.',
+    });
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -112,15 +154,30 @@ export default function AccountPage() {
               <CardDescription>Update your personal details.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="name">Name</Label>
-                <Input id="name" defaultValue={user?.displayName ?? ''} />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input id="email" type="email" defaultValue={user?.email ?? ''} disabled/>
-              </div>
-               <Button>Save Changes</Button>
+             {profileLoading ? (
+                <div className="space-y-4">
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-8 w-1/4" />
+                    <Skeleton className="h-10 w-full" />
+                </div>
+             ) : (
+                <>
+                    <div className="space-y-2">
+                        <Label htmlFor="name">Name</Label>
+                        <Input 
+                            id="name" 
+                            value={displayName} 
+                            onChange={(e) => setDisplayName(e.target.value)} 
+                        />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input id="email" type="email" value={userProfile?.email ?? ''} disabled/>
+                    </div>
+                    <Button onClick={handleProfileUpdate}>Save Changes</Button>
+                </>
+             )}
             </CardContent>
           </Card>
         </TabsContent>
