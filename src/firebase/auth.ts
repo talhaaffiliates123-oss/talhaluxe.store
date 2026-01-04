@@ -4,6 +4,8 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut as firebaseSignOut,
+  setPersistence,
+  browserLocalPersistence,
   type Auth,
 } from 'firebase/auth';
 
@@ -11,11 +13,17 @@ const provider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async (auth: Auth) => {
   try {
+    // Explicitly setting the auth domain for the provider
+    provider.setCustomParameters({
+      authDomain: auth.config.authDomain
+    });
+    
+    await setPersistence(auth, browserLocalPersistence);
     const result = await signInWithPopup(auth, provider);
     return result.user;
-  } catch (error) {
-    console.error('Error signing in with Google:', error);
-    // Let the UI handle the error state
+  } catch (error: any) {
+    // Don't toast here, let the UI components handle user feedback
+    console.error('Error signing in with Google:', error.message);
     throw error;
   }
 };
@@ -23,9 +31,8 @@ export const signInWithGoogle = async (auth: Auth) => {
 export const signOut = async (auth: Auth) => {
   try {
     await firebaseSignOut(auth);
-  } catch (error) {
-    console.error('Error signing out:', error);
-    // Let the UI handle the error state
+  } catch (error: any) {
+    console.error('Error signing out:', error.message);
     throw error;
   }
 };
