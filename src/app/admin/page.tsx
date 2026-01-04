@@ -1,4 +1,3 @@
-
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
@@ -32,7 +31,6 @@ export default function AdminDashboard() {
     });
 
     try {
-      // Use Promise.all to wait for all products to be added
       const promises = seedProducts.map(product => addProduct(firestore, product));
       await Promise.all(promises);
 
@@ -54,7 +52,7 @@ export default function AdminDashboard() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold mb-6">Admin Dashboard</h1>
+      <h1 className="text-3xl font-bold mb-6">Welcome, Admin</h1>
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card>
             <CardHeader>
@@ -63,7 +61,7 @@ export default function AdminDashboard() {
             </CardHeader>
             <CardContent>
                 <Link href="/admin/products">
-                    <Button>
+                    <Button variant="secondary">
                         <Package className="mr-2 h-4 w-4" />
                         Go to Products
                     </Button>
@@ -74,11 +72,11 @@ export default function AdminDashboard() {
           <CardHeader>
             <CardTitle>Seed Database</CardTitle>
             <CardDescription>
-              Click to populate your Firestore database with the initial product data. This is a one-time setup.
+              Populate your Firestore database with initial product data. Run this once if your product list is empty.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button onClick={handleSeed} disabled={isSeeding}>
+            <Button onClick={handleSeed} disabled={isSeeding} variant="secondary">
               <Database className="mr-2 h-4 w-4" />
               {isSeeding ? 'Seeding...' : 'Seed Products'}
             </Button>
