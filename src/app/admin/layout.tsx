@@ -2,7 +2,7 @@
 
 import { useUser } from '@/firebase';
 import { useRouter } from 'next/navigation';
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useState } from 'react';
 import { AdminNav } from '@/components/admin/admin-nav';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Package2 } from 'lucide-react';
@@ -11,21 +11,26 @@ import Link from 'next/link';
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, loading } = useUser();
   const router = useRouter();
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true);
 
   // This value is set in next.config.ts and the .env file
   const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
 
-  const isAuthorized = !loading && user && user.email === adminEmail;
-
   useEffect(() => {
-    if (!loading && !isAuthorized) {
-      // If loading is complete and the user is not the admin, redirect.
-      router.replace('/');
+    if (!loading) {
+      if (user && user.email === adminEmail) {
+        setIsAuthorized(true);
+      } else {
+        setIsAuthorized(false);
+        router.replace('/');
+      }
+      setIsVerifying(false);
     }
-  }, [user, loading, router, isAuthorized]);
+  }, [user, loading, router, adminEmail]);
 
-  if (!isAuthorized) {
-    // Show a loading/verification screen while checking or if unauthorized.
+  if (isVerifying) {
+    // Show a loading/verification screen while checking.
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <div className="flex flex-col items-center gap-4">
@@ -34,6 +39,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
       </div>
     );
+  }
+
+  if (!isAuthorized) {
+    // This will be shown briefly before the redirect happens.
+    return null;
   }
 
   // If authorized, render the admin layout.

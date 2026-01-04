@@ -55,7 +55,8 @@ export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
 
 export function updateProduct(db: Firestore, id: string, productData: Partial<Product>) {
     const docRef = doc(db, 'products', id);
-    updateDoc(docRef, productData)
+    // This MUST return the promise
+    return updateDoc(docRef, productData)
     .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: docRef.path,
@@ -63,17 +64,20 @@ export function updateProduct(db: Firestore, id: string, productData: Partial<Pr
           requestResourceData: productData,
         });
         errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
       });
 }
 
 export function deleteProduct(db: Firestore, id: string) {
     const docRef = doc(db, 'products', id);
-    deleteDoc(docRef)
+    // This MUST return the promise
+    return deleteDoc(docRef)
     .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: docRef.path,
           operation: 'delete',
         });
         errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
       });
 }

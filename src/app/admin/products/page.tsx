@@ -1,9 +1,9 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { useFirestore } from '@/firebase';
-import { getProducts } from '@/lib/products';
+import { getProducts, deleteProduct } from '@/lib/products';
 import { Product } from '@/lib/types';
-import { PlusCircle, MoreHorizontal } from 'lucide-react';
+import { PlusCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import {
@@ -15,6 +15,17 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
+import {
     Card,
     CardContent,
     CardHeader,
@@ -24,23 +35,45 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { PlaceHolderImages } from '@/lib/placeholder-images';
+import { useToast } from '@/hooks/use-toast';
 
 export default function AdminProductsPage() {
   const firestore = useFirestore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
+
+  const fetchProducts = async () => {
+    if (firestore) {
+      setLoading(true);
+      const productsData = await getProducts(firestore);
+      setProducts(productsData);
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchProducts = async () => {
-      if (firestore) {
-        setLoading(true);
-        const productsData = await getProducts(firestore);
-        setProducts(productsData);
-        setLoading(false);
-      }
-    };
     fetchProducts();
   }, [firestore]);
+
+  const handleDeleteProduct = async (productId: string) => {
+    if (!firestore) return;
+    try {
+        await deleteProduct(firestore, productId);
+        toast({
+            title: "Product Deleted",
+            description: "The product has been successfully removed.",
+        });
+        // Refresh the product list after deletion
+        fetchProducts();
+    } catch (error: any) {
+        toast({
+            variant: "destructive",
+            title: "Error Deleting Product",
+            description: error.message || "An unexpected error occurred.",
+        });
+    }
+  }
 
   return (
     <div>
@@ -83,6 +116,13 @@ export default function AdminProductsPage() {
                     <TableRow>
                         <TableCell colSpan={6} className="text-center">Loading products...</TableCell>
                     </TableRow>
+                ) : products.length === 0 ? (
+                    <TableRow>
+                        <TableCell colSpan={6} className="text-center py-10">
+                            <p>No products found.</p>
+                            <p className="text-muted-foreground text-sm">Try seeding the database from the main admin page.</p>
+                        </TableCell>
+                    </TableRow>
                 ) : products.map((product) => {
                     const image = PlaceHolderImages.find(img => img.id === product.imageIds[0]);
                     return (
@@ -105,10 +145,35 @@ export default function AdminProductsPage() {
                             </TableCell>
                             <TableCell>${product.price.toFixed(2)}</TableCell>
                             <TableCell className="hidden md:table-cell">{product.stock}</TableCell>
-                            <TableCell>
+                            <TableCell className="text-right">
                                 <Link href={`/admin/products/${product.id}/edit`}>
                                     <Button variant="ghost" size="sm">Edit</Button>
                                 </Link>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive/80">
+                                            Delete
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                        <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                        <AlertDialogDescription>
+                                            This action cannot be undone. This will permanently delete the product
+                                            from your database.
+                                        </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                        <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                        <AlertDialogAction
+                                            onClick={() => handleDeleteProduct(product.id)}
+                                            className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                                        >
+                                            Continue
+                                        </AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </TableCell>
                         </TableRow>
                     )
