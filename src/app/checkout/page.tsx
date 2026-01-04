@@ -9,9 +9,11 @@ import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Separator } from '@/components/ui/separator';
 import { CreditCard, Truck } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { useState } from 'react';
 
 export default function CheckoutPage() {
   const { items, totalPrice } = useCart();
+  const [paymentMethod, setPaymentMethod] = useState('card');
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -74,34 +76,36 @@ export default function CheckoutPage() {
               {/* Payment Method */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Payment Method</h3>
-                <RadioGroup defaultValue="card" className="space-y-2">
-                    <Label htmlFor="card" className="flex items-center gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent">
+                <RadioGroup defaultValue="card" className="space-y-2" onValueChange={setPaymentMethod}>
+                    <Label htmlFor="card" className="flex items-center gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent cursor-pointer">
                         <RadioGroupItem value="card" id="card" />
                         <CreditCard className="w-5 h-5"/>
                         <span className="font-medium">Credit/Debit Card</span>
                     </Label>
-                     <Label htmlFor="cod" className="flex items-center gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent">
+                     <Label htmlFor="cod" className="flex items-center gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent cursor-pointer">
                         <RadioGroupItem value="cod" id="cod" />
                         <Truck className="w-5 h-5"/>
                         <span className="font-medium">Cash on Delivery</span>
                     </Label>
                 </RadioGroup>
-                <div className="grid grid-cols-1 gap-4 pt-4">
-                  <div>
-                    <Label htmlFor="card-number">Card Number</Label>
-                    <Input id="card-number" placeholder="•••• •••• •••• ••••" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+                {paymentMethod === 'card' && (
+                  <div className="grid grid-cols-1 gap-4 pt-4 border-t mt-4">
                     <div>
-                      <Label htmlFor="expiry-date">Expiry Date</Label>
-                      <Input id="expiry-date" placeholder="MM / YY" />
+                      <Label htmlFor="card-number">Card Number</Label>
+                      <Input id="card-number" placeholder="•••• •••• •••• ••••" />
                     </div>
-                    <div>
-                      <Label htmlFor="cvc">CVC</Label>
-                      <Input id="cvc" placeholder="•••" />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="expiry-date">Expiry Date</Label>
+                        <Input id="expiry-date" placeholder="MM / YY" />
+                      </div>
+                      <div>
+                        <Label htmlFor="cvc">CVC</Label>
+                        <Input id="cvc" placeholder="•••" />
+                      </div>
                     </div>
                   </div>
-                </div>
+                )}
               </div>
             </CardContent>
           </Card>
