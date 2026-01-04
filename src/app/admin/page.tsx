@@ -8,10 +8,12 @@ import { useFirestore } from '@/firebase';
 import { products as seedProducts } from '@/lib/data';
 import { addProduct } from '@/lib/products';
 import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 export default function AdminDashboard() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [isSeeding, setIsSeeding] = useState(false);
 
   const handleSeed = async () => {
     if (!firestore) {
@@ -23,26 +25,29 @@ export default function AdminDashboard() {
       return;
     }
 
-    try {
-      toast({
-        title: 'Seeding database...',
-        description: 'This may take a moment.',
-      });
+    setIsSeeding(true);
+    toast({
+      title: 'Seeding database...',
+      description: 'This may take a moment. Please wait.',
+    });
 
-      for (const product of seedProducts) {
-        await addProduct(firestore, product);
-      }
+    try {
+      // Use Promise.all to wait for all products to be added
+      await Promise.all(seedProducts.map(product => addProduct(firestore, product)));
 
       toast({
         title: 'Success!',
         description: 'Database has been seeded with product data.',
       });
     } catch (error: any) {
+      console.error("Seeding error:", error);
       toast({
         variant: 'destructive',
         title: 'Error seeding database',
-        description: error.message,
+        description: error.message || 'An unknown error occurred.',
       });
+    } finally {
+        setIsSeeding(false);
     }
   };
 
@@ -73,7 +78,9 @@ export default function AdminDashboard() {
             <p className="text-sm text-muted-foreground mb-4">
               Click to populate your Firestore database with the initial product data.
             </p>
-            <Button onClick={handleSeed}>Seed Products</Button>
+            <Button onClick={handleSeed} disabled={isSeeding}>
+              {isSeeding ? 'Seeding...' : 'Seed Products'}
+            </Button>
           </CardContent>
         </Card>
       </div>

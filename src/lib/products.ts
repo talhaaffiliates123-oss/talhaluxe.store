@@ -39,7 +39,8 @@ export async function getProduct(
 
 export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
     const productsCollection = getProductsCollection(db);
-    addDoc(productsCollection, productData)
+    // This MUST return the promise
+    return addDoc(productsCollection, productData)
     .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: productsCollection.path,
@@ -47,6 +48,8 @@ export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
           requestResourceData: productData,
         });
         errorEmitter.emit('permission-error', permissionError);
+        // Re-throw the original error after logging
+        throw serverError;
       });
 }
 
