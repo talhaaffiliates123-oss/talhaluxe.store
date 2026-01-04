@@ -4,7 +4,6 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut as firebaseSignOut,
-  getAuth,
 } from 'firebase/auth';
 import { initializeFirebase } from '@/firebase';
 
