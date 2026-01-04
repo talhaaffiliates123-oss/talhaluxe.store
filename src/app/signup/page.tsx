@@ -25,6 +25,7 @@ export default function SignupPage() {
       router.push('/'); // Redirect to homepage on successful signup
     } catch (error) {
       console.error('Sign up failed', error);
+      // Optionally, show a toast notification to the user
     }
   };
 

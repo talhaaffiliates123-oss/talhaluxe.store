@@ -25,6 +25,7 @@ export default function LoginPage() {
       router.push('/'); // Redirect to homepage on successful login
     } catch (error) {
       console.error('Login failed', error);
+      // Optionally, show a toast notification to the user
     }
   };
 
