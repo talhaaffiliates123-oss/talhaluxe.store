@@ -4,19 +4,20 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut as firebaseSignOut,
-  Auth,
 } from 'firebase/auth';
 import { initializeFirebase } from '@/firebase';
 
 const provider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async () => {
+  // Always get a fresh instance on call
   const { auth } = initializeFirebase();
   if (!auth) {
     throw new Error('Firebase Auth has not been initialized for signInWithGoogle.');
   }
   try {
-    await signInWithPopup(auth, provider);
+    const result = await signInWithPopup(auth, provider);
+    return result.user;
   } catch (error) {
     console.error('Error signing in with Google:', error);
     throw error;
@@ -24,6 +25,7 @@ export const signInWithGoogle = async () => {
 };
 
 export const signOut = async () => {
+  // Always get a fresh instance on call
   const { auth } = initializeFirebase();
    if (!auth) {
     throw new Error('Firebase Auth has not been initialized for signOut.');
