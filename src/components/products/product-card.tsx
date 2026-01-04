@@ -63,13 +63,13 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="mt-2 flex items-baseline gap-2">
             {product.discountedPrice ? (
               <>
-                <p className="text-lg font-bold">${product.discountedPrice}</p>
+                <p className="text-lg font-bold">PKR {product.discountedPrice}</p>
                 <p className="text-sm text-muted-foreground line-through">
-                  ${product.price}
+                  PKR {product.price}
                 </p>
               </>
             ) : (
-              <p className="text-lg font-bold">${product.price}</p>
+              <p className="text-lg font-bold">PKR {product.price}</p>
             )}
           </div>
           <Button

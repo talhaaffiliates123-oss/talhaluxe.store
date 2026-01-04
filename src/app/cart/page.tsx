@@ -52,7 +52,7 @@ export default function CartPage() {
                         <Link href={`/product/${product.id}`}>{product.name}</Link>
                       </h3>
                       <p className="text-sm text-muted-foreground">{product.shortDescription}</p>
-                      <p className="mt-2 font-bold">${price.toFixed(2)}</p>
+                      <p className="mt-2 font-bold">PKR {price.toFixed(2)}</p>
                     </div>
                     <div className="flex items-center justify-between mt-2">
                         <div className="flex items-center border rounded-md">
@@ -67,7 +67,7 @@ export default function CartPage() {
                     </div>
                   </div>
                   <div className="flex flex-col justify-between items-end">
-                    <p className="font-bold text-lg">${(price * quantity).toFixed(2)}</p>
+                    <p className="font-bold text-lg">PKR {(price * quantity).toFixed(2)}</p>
                     <Button variant="ghost" size="icon" onClick={() => removeItem(product.id)}>
                         <Trash2 className="h-5 w-5 text-muted-foreground hover:text-destructive" />
                     </Button>
@@ -87,7 +87,7 @@ export default function CartPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                <span>PKR {totalPrice.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
@@ -95,7 +95,7 @@ export default function CartPage() {
               </div>
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
-                <span>${totalPrice.toFixed(2)}</span>
+                <span>PKR {totalPrice.toFixed(2)}</span>
               </div>
               <div className="space-y-2 pt-4">
                 <Input placeholder="Discount code" />

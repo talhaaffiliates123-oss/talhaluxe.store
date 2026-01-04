@@ -226,7 +226,7 @@ export default function CheckoutPage() {
                         <p className="text-sm text-muted-foreground">Qty: {quantity}</p>
                       </div>
                       <p className="font-medium">
-                        ${((product.discountedPrice ?? product.price) * quantity).toFixed(2)}
+                        PKR {((product.discountedPrice ?? product.price) * quantity).toFixed(2)}
                       </p>
                     </div>
                   );
@@ -236,7 +236,7 @@ export default function CheckoutPage() {
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span>Subtotal</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+                  <span>PKR {totalPrice.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span>Shipping</span>
@@ -245,7 +245,7 @@ export default function CheckoutPage() {
                 <Separator className="my-2" />
                 <div className="flex justify-between font-bold text-lg">
                   <span>Total</span>
-                  <span>${totalPrice.toFixed(2)}</span>
+                  <span>PKR {totalPrice.toFixed(2)}</span>
                 </div>
               </div>
               <Button 

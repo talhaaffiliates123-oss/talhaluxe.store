@@ -136,12 +136,12 @@ export default function ProductDetailPage() {
           <div className="flex items-baseline gap-2">
             {product.discountedPrice ? (
               <>
-                <span className="text-3xl font-bold">${product.discountedPrice}</span>
-                <span className="text-xl text-muted-foreground line-through">${product.price}</span>
+                <span className="text-3xl font-bold">PKR {product.discountedPrice}</span>
+                <span className="text-xl text-muted-foreground line-through">PKR {product.price}</span>
                 <span className="ml-2 inline-block bg-destructive text-destructive-foreground text-sm font-medium px-2 py-1 rounded-md">SALE</span>
               </>
             ) : (
-              <span className="text-3xl font-bold">${product.price}</span>
+              <span className="text-3xl font-bold">PKR {product.price}</span>
             )}
           </div>
 

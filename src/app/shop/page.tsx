@@ -61,10 +61,10 @@ export default function ShopPage() {
               {/* Price Range Filter */}
               <div className="space-y-4 pt-6">
                 <h3 className="font-medium">Price Range</h3>
-                <Slider defaultValue={[0, 1500]} max={1500} step={50} />
+                <Slider defaultValue={[0, 150000]} max={150000} step={5000} />
                 <div className="flex justify-between text-sm text-muted-foreground">
-                    <span>$0</span>
-                    <span>$1500</span>
+                    <span>PKR 0</span>
+                    <span>PKR 150000</span>
                 </div>
               </div>
             </CardContent>

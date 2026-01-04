@@ -136,7 +136,7 @@ export default function AccountPage() {
                         <TableCell>
                           <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
                         </TableCell>
-                        <TableCell>${order.totalPrice.toFixed(2)}</TableCell>
+                        <TableCell>PKR {order.totalPrice.toFixed(2)}</TableCell>
                         <TableCell><Button variant="outline" size="sm">View Details</Button></TableCell>
                       </TableRow>
                     ))}
