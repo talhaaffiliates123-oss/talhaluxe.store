@@ -30,7 +30,7 @@ import {
   } from '@/components/ui/card';
 import { useState } from 'react';
 import Image from 'next/image';
-import { Trash2, X } from 'lucide-react';
+import { X } from 'lucide-react';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -59,12 +59,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [newImageUrl, setNewImageUrl] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const {
     register,
     handleSubmit,
     control,
-    formState: { errors, isSubmitting },
+    formState: { errors },
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -105,6 +106,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         toast({ variant: 'destructive', title: 'Error', description: 'Firebase services not available.' });
         return;
     }
+    
+    setIsSubmitting(true);
 
     try {
         const productData = {
@@ -126,6 +129,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     } catch (error: any) {
         console.error("Form submission error:", error);
         toast({ variant: 'destructive', title: 'Operation Failed', description: error.message || "An unknown error occurred." });
+    } finally {
+        setIsSubmitting(false);
     }
   };
   
@@ -174,7 +179,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                             <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
                                 {fields.map((field, index) => (
                                    <div key={field.id} className="relative group">
-                                        <Image src={field.value} alt={`Product image ${index + 1}`} width={100} height={100} className="rounded-md object-cover w-full aspect-square" onError={(e) => e.currentTarget.src = 'https://placehold.co/100x100/EEE/31343C?text=Invalid'}/>
+                                        <Image src={field.value || 'https://placehold.co/100x100/EEE/31343C?text=New'} alt={`Product image ${index + 1}`} width={100} height={100} className="rounded-md object-cover w-full aspect-square" onError={(e) => e.currentTarget.src = 'https://placehold.co/100x100/EEE/31343C?text=Invalid'}/>
                                         <Button
                                             type="button"
                                             variant="destructive"
@@ -289,5 +294,3 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     </form>
   );
 }
-
-    
