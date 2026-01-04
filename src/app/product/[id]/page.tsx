@@ -1,7 +1,6 @@
 'use client';
 
 import { notFound, useParams, useRouter } from 'next/navigation';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Heart, Minus, Plus, Star, Truck } from 'lucide-react';
@@ -23,12 +22,17 @@ export default function ProductDetailPage() {
   const firestore = useFirestore();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  
+  const [mainImage, setMainImage] = useState<string | null>(null);
 
   useEffect(() => {
     if (firestore && id) {
         getProduct(firestore, id as string).then(p => {
             if (p) {
                 setProduct(p);
+                if (p.imageUrls && p.imageUrls.length > 0) {
+                    setMainImage(p.imageUrls[0]);
+                }
             } else {
                 notFound();
             }
@@ -36,15 +40,6 @@ export default function ProductDetailPage() {
         });
     }
   }, [firestore, id]);
-  
-  const productImages = product?.imageIds.map(id => PlaceHolderImages.find(img => img.id === id)).filter(Boolean) ?? [];
-  const [mainImage, setMainImage] = useState(productImages[0]);
-
-  useEffect(() => {
-    if(productImages.length > 0) {
-        setMainImage(productImages[0]);
-    }
-  }, [product]);
 
   if (loading || !product) {
     return (
@@ -95,29 +90,27 @@ export default function ProductDetailPage() {
           <div className="aspect-square w-full overflow-hidden rounded-lg border">
             {mainImage && (
                 <Image
-                src={mainImage.imageUrl}
+                src={mainImage}
                 alt={product.name}
                 width={800}
                 height={800}
                 className="h-full w-full object-cover"
-                data-ai-hint={mainImage.imageHint}
                 />
             )}
           </div>
           <div className="mt-4 grid grid-cols-4 gap-4">
-            {productImages.map((img, index) => img && (
+            {product.imageUrls.map((imgUrl, index) => (
               <button
                 key={index}
-                onClick={() => setMainImage(img)}
-                className={`aspect-square w-full overflow-hidden rounded-md border-2 ${mainImage?.id === img.id ? 'border-accent' : 'border-transparent'}`}
+                onClick={() => setMainImage(imgUrl)}
+                className={`aspect-square w-full overflow-hidden rounded-md border-2 ${mainImage === imgUrl ? 'border-accent' : 'border-transparent'}`}
               >
                 <Image
-                  src={img.imageUrl}
+                  src={imgUrl}
                   alt={`${product.name} thumbnail ${index + 1}`}
                   width={200}
                   height={200}
                   className="h-full w-full object-cover"
-                  data-ai-hint={img.imageHint}
                 />
               </button>
             ))}

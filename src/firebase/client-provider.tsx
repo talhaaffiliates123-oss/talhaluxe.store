@@ -8,8 +8,8 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
   const [firebase, setFirebase] = useState<FirebaseContextValue | null>(null);
 
   useEffect(() => {
-    const { app, auth, firestore } = initializeFirebase();
-    setFirebase({ app, auth, firestore });
+    const { app, auth, firestore, storage } = initializeFirebase();
+    setFirebase({ app, auth, firestore, storage });
   }, []);
 
   if (!firebase) {

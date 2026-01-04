@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Separator } from '@/components/ui/separator';
 import { CreditCard, Truck } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -209,20 +208,17 @@ export default function CheckoutPage() {
             <CardContent>
               <div className="space-y-4">
                 {items.map(({ product, quantity }) => {
-                  const image = PlaceHolderImages.find((img) => img.id === product.imageIds[0]);
+                  const imageUrl = product.imageUrls?.[0] || 'https://placehold.co/64x64/EEE/31343C?text=No+Image';
                   return (
                     <div key={product.id} className="flex items-center gap-4">
                       <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
-                        {image && (
                           <Image
-                            src={image.imageUrl}
+                            src={imageUrl}
                             alt={product.name}
                             width={64}
                             height={64}
                             className="h-full w-full object-cover"
-                            data-ai-hint={image.imageHint}
                           />
-                        )}
                          <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-muted text-sm">{quantity}</span>
                       </div>
                       <div className="flex-1">

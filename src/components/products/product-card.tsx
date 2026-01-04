@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Heart, ShoppingCart, Star } from 'lucide-react';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 
@@ -17,9 +16,9 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
 
-  const firstImage = PlaceHolderImages.find(
-    (img) => img.id === product.imageIds[0]
-  );
+  const firstImageUrl = product.imageUrls && product.imageUrls.length > 0
+    ? product.imageUrls[0]
+    : 'https://placehold.co/600x600/EEE/31343C?text=No+Image';
 
   const handleAddToCart = () => {
     addItem(product);
@@ -35,16 +34,13 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className="relative">
           <Link href={`/product/${product.id}`} className="block">
             <div className="aspect-square w-full overflow-hidden">
-              {firstImage && (
                 <Image
-                  src={firstImage.imageUrl}
+                  src={firstImageUrl}
                   alt={product.name}
                   width={600}
                   height={600}
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
-                  data-ai-hint={firstImage.imageHint}
                 />
-              )}
             </div>
           </Link>
           <div className="absolute top-3 right-3 opacity-0 group-hover:opacity-100 transition-opacity">

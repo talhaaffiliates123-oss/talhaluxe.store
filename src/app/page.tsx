@@ -1,13 +1,10 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Mail } from 'lucide-react';
 import ProductCard from '@/components/products/product-card';
-import { Card, CardContent } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useEffect, useState } from 'react';
 import { useFirestore } from '@/firebase';
 import { getProducts } from '@/lib/products';
@@ -15,7 +12,7 @@ import type { Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function Home() {
-  const heroImage = PlaceHolderImages.find((img) => img.id === 'hero-banner');
+  const heroImageUrl = "https://images.unsplash.com/photo-1614208194190-5bf690ad8a98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYXNoaW9uJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
   const firestore = useFirestore();
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -38,16 +35,14 @@ export default function Home() {
     <div className="space-y-16 md:space-y-24">
       {/* Hero Section */}
       <section className="relative h-[60vh] md:h-[80vh] w-full">
-        {heroImage && (
           <Image
-            src={heroImage.imageUrl}
-            alt={heroImage.description}
+            src={heroImageUrl}
+            alt="Elegant fashion accessories displayed on a dark background."
             fill
             className="object-cover"
             priority
-            data-ai-hint={heroImage.imageHint}
+            data-ai-hint="fashion background"
           />
-        )}
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center text-white p-4">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight font-headline">

@@ -7,7 +7,7 @@ export type Product = {
   price: number;
   discountedPrice?: number;
   category: Category['slug'];
-  imageIds: string[];
+  imageUrls: string[];
   stock: number;
   rating: number;
   reviews: Review[];

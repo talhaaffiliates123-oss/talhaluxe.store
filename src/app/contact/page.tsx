@@ -3,26 +3,23 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { PlaceHolderImages } from "@/lib/placeholder-images";
 import { Mail, Phone, Pin } from "lucide-react";
 import Image from 'next/image';
 
 export default function ContactPage() {
-  const contactImage = PlaceHolderImages.find((img) => img.id === 'contact-us-banner');
+  const contactImageUrl = "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb250YWN0JTIwZmxhdGxheXxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
 
   return (
     <div>
         <section className="relative h-[40vh] w-full">
-            {contactImage && (
             <Image
-                src={contactImage.imageUrl}
-                alt={contactImage.description}
+                src={contactImageUrl}
+                alt="A stylish flat lay of contact items like a phone and notebook."
                 fill
                 className="object-cover"
                 priority
-                data-ai-hint={contactImage.imageHint}
+                data-ai-hint="contact flatlay"
             />
-            )}
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative z-10 flex h-full flex-col items-center justify-center text-center text-white p-4">
                 <h1 className="text-4xl md:text-5xl font-bold tracking-tight font-headline">

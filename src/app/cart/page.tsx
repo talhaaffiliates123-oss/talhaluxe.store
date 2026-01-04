@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
@@ -33,22 +32,19 @@ export default function CartPage() {
       <div className="grid lg:grid-cols-3 gap-8">
         <div className="lg:col-span-2 space-y-4">
           {items.map(({ product, quantity }) => {
-            const image = PlaceHolderImages.find((img) => img.id === product.imageIds[0]);
+            const imageUrl = product.imageUrls?.[0] || 'https://placehold.co/128x128/EEE/31343C?text=No+Image';
             const price = product.discountedPrice ?? product.price;
             return (
               <Card key={product.id} className="overflow-hidden">
                 <CardContent className="p-4 flex gap-4">
                   <div className="relative h-24 w-24 sm:h-32 sm:w-32 flex-shrink-0 overflow-hidden rounded-md border">
-                    {image && (
                       <Image
-                        src={image.imageUrl}
+                        src={imageUrl}
                         alt={product.name}
                         width={128}
                         height={128}
                         className="h-full w-full object-cover"
-                        data-ai-hint={image.imageHint}
                       />
-                    )}
                   </div>
                   <div className="flex flex-1 flex-col justify-between">
                     <div>

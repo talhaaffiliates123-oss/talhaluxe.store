@@ -28,6 +28,11 @@ import {
     CardTitle,
     CardDescription,
   } from '@/components/ui/card';
+import { useState } from 'react';
+import { uploadImages } from '@/lib/storage';
+import { getStorage } from 'firebase/storage';
+import { Progress } from '../ui/progress';
+import Image from 'next/image';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -37,7 +42,7 @@ const productSchema = z.object({
   discountedPrice: z.coerce.number().optional(),
   category: z.string().min(1, 'Category is required'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
-  imageIds: z.string().min(1, 'Image IDs are required (comma-separated)'),
+  imageUrls: z.array(z.string()).optional().default([]), // Keep existing URLs
   isNewArrival: z.boolean().default(false),
   isBestSeller: z.boolean().default(false),
   onSale: z.boolean().default(false),
@@ -54,6 +59,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const [files, setFiles] = useState<File[]>([]);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const {
     register,
@@ -68,10 +75,12 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       discountedPrice: initialData?.discountedPrice,
       stock: initialData?.stock ?? 0,
       rating: initialData?.rating ?? 0,
-      imageIds: initialData?.imageIds.join(', ') ?? '',
+      imageUrls: initialData?.imageUrls ?? [],
       category: initialData?.category ?? '',
     },
   });
+  
+  const isEditMode = !!initialData;
 
   const onSubmit = async (data: ProductFormData) => {
     if (!firestore) {
@@ -79,14 +88,31 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         return;
     }
 
+    let uploadedImageUrls: string[] = initialData?.imageUrls || [];
+
+    if (files.length > 0) {
+        setUploadProgress(0);
+        const storage = getStorage();
+        try {
+            uploadedImageUrls = await uploadImages(storage, files, (progress) => {
+                setUploadProgress(progress);
+            });
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Image Upload Failed', description: 'Could not upload images.'});
+            setUploadProgress(null);
+            return;
+        }
+        setUploadProgress(null);
+    }
+    
     const productData: Omit<Product, 'id' | 'reviews'> = {
         ...data,
-        imageIds: data.imageIds.split(',').map(s => s.trim()).filter(Boolean),
+        imageUrls: uploadedImageUrls,
         reviews: initialData?.reviews ?? [],
     }
 
     try {
-        if (initialData) {
+        if (isEditMode) {
             await updateProduct(firestore, initialData.id, productData);
             toast({ title: 'Success', description: 'Product updated successfully.' });
         } else {
@@ -125,12 +151,19 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     {errors.description && <p className="text-destructive text-sm mt-1">{errors.description.message}</p>}
                 </div>
                  <div>
-                    <Label htmlFor="imageIds">Image IDs (comma-separated)</Label>
-                    <Input id="imageIds" {...register('imageIds')} placeholder="e.g. watch-1, watch-2" />
+                    <Label htmlFor="images">Product Images</Label>
+                    <Input id="images" type="file" multiple onChange={(e) => setFiles(Array.from(e.target.files || []))} />
                     <p className="text-muted-foreground text-sm mt-1">
-                        Image IDs come from the `placeholder-images.json` file.
+                        Select one or more images to upload. In edit mode, new images will replace existing ones.
                     </p>
-                    {errors.imageIds && <p className="text-destructive text-sm mt-1">{errors.imageIds.message}</p>}
+                    {uploadProgress !== null && <Progress value={uploadProgress} className="mt-2" />}
+                    {isEditMode && initialData.imageUrls.length > 0 && (
+                        <div className="mt-4 grid grid-cols-4 gap-2">
+                            {initialData.imageUrls.map(url => (
+                                <Image key={url} src={url} alt="Existing product image" width={100} height={100} className="rounded-md object-cover"/>
+                            ))}
+                        </div>
+                    )}
                 </div>
             </CardContent>
         </Card>
@@ -223,7 +256,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             </CardContent>
         </Card>
         
-        <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
+        <Button type="submit" size="lg" disabled={isSubmitting || uploadProgress !== null} className="w-full">
           {isSubmitting ? 'Saving...' : (initialData ? 'Save Changes' : 'Add Product')}
         </Button>
       </div>

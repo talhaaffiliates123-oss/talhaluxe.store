@@ -34,7 +34,6 @@ import {
   } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
-import { PlaceHolderImages } from '@/lib/placeholder-images';
 import { useToast } from '@/hooks/use-toast';
 
 export default function AdminProductsPage() {
@@ -124,20 +123,17 @@ export default function AdminProductsPage() {
                         </TableCell>
                     </TableRow>
                 ) : products.map((product) => {
-                    const image = PlaceHolderImages.find(img => img.id === product.imageIds[0]);
+                    const imageUrl = product.imageUrls?.[0] || 'https://placehold.co/64x64/EEE/31343C?text=No+Image';
                     return (
                         <TableRow key={product.id}>
                             <TableCell className="hidden sm:table-cell">
-                            {image ? (
                                 <Image
                                     alt={product.name}
                                     className="aspect-square rounded-md object-cover"
                                     height="64"
-                                    src={image.imageUrl}
+                                    src={imageUrl}
                                     width="64"
-                                    data-ai-hint={image.imageHint}
                                 />
-                            ) : <div className='aspect-square w-16 bg-muted rounded-md'/>}
                             </TableCell>
                             <TableCell className="font-medium">{product.name}</TableCell>
                             <TableCell>

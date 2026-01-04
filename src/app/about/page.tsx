@@ -1,9 +1,8 @@
-import { PlaceHolderImages } from '@/lib/placeholder-images';
-import { Award, Gem, Target } from 'lucide-react';
+import { Gem, Target, Award } from 'lucide-react';
 import Image from 'next/image';
 
 export default function AboutPage() {
-  const aboutImage = PlaceHolderImages.find((img) => img.id === 'about-us-image');
+  const aboutImageUrl = "https://images.unsplash.com/photo-1683115096447-5d01c11d3ead?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjcmFmdHNtYW4lMjB3b3Jrc2hvcHxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
 
   return (
     <div className="bg-background">
@@ -16,18 +15,16 @@ export default function AboutPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-12 items-center">
-          {aboutImage && (
             <div className="rounded-lg overflow-hidden">
               <Image
-                src={aboutImage.imageUrl}
-                alt={aboutImage.description}
+                src={aboutImageUrl}
+                alt="A workshop view of a craftsman making jewelry."
                 width={1200}
                 height={800}
                 className="object-cover"
-                data-ai-hint={aboutImage.imageHint}
+                data-ai-hint="craftsman workshop"
               />
             </div>
-          )}
           <div className="space-y-6">
             <h2 className="text-3xl font-bold font-headline">Our Story</h2>
             <p className="text-muted-foreground">
