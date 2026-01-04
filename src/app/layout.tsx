@@ -6,6 +6,7 @@ import { Footer } from '@/components/layout/footer';
 import { Toaster } from '@/components/ui/toaster';
 import { CartProvider } from '@/context/cart-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
+import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 
 const montserrat = Montserrat({
   subsets: ['latin'],
@@ -27,14 +28,16 @@ export default function RootLayout({
     <html lang="en" className={`${montserrat.variable} antialiased`}>
       <body>
         <FirebaseClientProvider>
-          <CartProvider>
-            <div className="flex min-h-screen flex-col">
-              <Header />
-              <main className="flex-grow">{children}</main>
-              <Footer />
-            </div>
-            <Toaster />
-          </CartProvider>
+          <FirebaseErrorListener>
+            <CartProvider>
+              <div className="flex min-h-screen flex-col">
+                <Header />
+                <main className="flex-grow">{children}</main>
+                <Footer />
+              </div>
+              <Toaster />
+            </CartProvider>
+          </FirebaseErrorListener>
         </FirebaseClientProvider>
       </body>
     </html>
