@@ -10,10 +10,32 @@ import { Separator } from '@/components/ui/separator';
 import { CreditCard, Truck } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useToast } from '@/hooks/use-toast';
 
 export default function CheckoutPage() {
-  const { items, totalPrice } = useCart();
+  const { items, totalPrice, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('card');
+  const router = useRouter();
+  const { toast } = useToast();
+
+  const handlePlaceOrder = () => {
+    // In a real app, this would process the payment.
+    // For now, we'll just simulate a successful order.
+    console.log('Order placed!');
+    
+    // Show a success message
+    toast({
+      title: 'Order Placed!',
+      description: 'Thank you for your purchase. Your order is being processed.',
+    });
+
+    // Clear the cart
+    clearCart();
+
+    // Redirect to the homepage
+    router.push('/');
+  };
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -162,7 +184,12 @@ export default function CheckoutPage() {
                   <span>${totalPrice.toFixed(2)}</span>
                 </div>
               </div>
-              <Button size="lg" className="w-full mt-6 bg-accent text-accent-foreground hover:bg-accent/90">
+              <Button 
+                size="lg" 
+                className="w-full mt-6 bg-accent text-accent-foreground hover:bg-accent/90"
+                onClick={handlePlaceOrder}
+                disabled={items.length === 0}
+              >
                 Place Order
               </Button>
             </CardContent>
