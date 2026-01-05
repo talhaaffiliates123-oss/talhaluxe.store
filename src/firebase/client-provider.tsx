@@ -11,7 +11,7 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const { app, auth, firestore, storage } = initializeFirebase();
     setFirebase({ app, auth, firestore, storage });
-  }, []);
+  }, []); // Empty dependency array ensures this runs only once on mount
 
   if (!firebase) {
     // Render a skeleton layout or a loading spinner while Firebase is initializing
@@ -36,5 +36,3 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
     </FirebaseProvider>
   );
 }
-
-    
