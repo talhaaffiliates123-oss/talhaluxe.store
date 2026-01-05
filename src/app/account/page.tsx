@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -60,14 +61,28 @@ export default function AccountPage() {
 
   const ordersQuery = useMemo(() => {
     if (!firestore || !user) return null;
+    // The composite query (where + orderBy different field) requires a manual index in Firestore.
+    // To avoid this for the user, we can query by userId and sort on the client.
     return query(
       collection(firestore, 'orders'),
-      where('userId', '==', user.uid),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', user.uid)
     );
   }, [firestore, user]);
 
-  const { data: orders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
+  const { data: rawOrders, loading: ordersLoading } = useCollection<Order>(ordersQuery);
+  
+  const orders = useMemo(() => {
+    if (!rawOrders) return [];
+    // Sort orders by creation date, descending.
+    return [...rawOrders].sort((a, b) => {
+        const dateA = a.createdAt?.toDate() ?? 0;
+        const dateB = b.createdAt?.toDate() ?? 0;
+        if (dateA > dateB) return -1;
+        if (dateA < dateB) return 1;
+        return 0;
+    });
+  }, [rawOrders]);
+
 
   const handleProfileUpdate = async () => {
     if (!userProfileRef) return;
