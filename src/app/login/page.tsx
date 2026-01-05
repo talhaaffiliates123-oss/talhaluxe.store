@@ -66,8 +66,9 @@ export default function LoginPage() {
     setGoogleLoading(true);
     try {
         await signInWithGoogle(auth);
+        // The useEffect hook will now handle the redirect on user state change.
     } catch(error) {
-      toast({ variant: 'destructive', title: 'Login Failed', description: 'Could not start sign in with Google.' });
+      toast({ variant: 'destructive', title: 'Login Failed', description: 'Could not sign in with Google.' });
     } finally {
       setGoogleLoading(false);
     }
