@@ -1,7 +1,12 @@
 'use client';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
 import { getFirestore, Firestore } from 'firebase/firestore';
-import { getAuth, Auth } from 'firebase/auth';
+import {
+  getAuth,
+  Auth,
+  initializeAuth,
+  indexedDBLocalPersistence,
+} from 'firebase/auth';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
 import { useCollection } from './firestore/use-collection';
@@ -28,7 +33,10 @@ function initializeFirebase() {
     if (!getApps().length) {
       try {
         app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
+        // This is the crucial change: initialize auth with robust persistence
+        auth = initializeAuth(app, {
+          persistence: indexedDBLocalPersistence,
+        });
         firestore = getFirestore(app);
         storage = getStorage(app);
       } catch (e) {
@@ -36,7 +44,12 @@ function initializeFirebase() {
       }
     } else {
       app = getApp();
-      auth = getAuth(app);
+      // Ensure auth is initialized correctly on subsequent loads
+      if (!auth) {
+        auth = initializeAuth(app, {
+            persistence: indexedDBLocalPersistence,
+        });
+      }
       firestore = getFirestore(app);
       storage = getStorage(app);
     }
@@ -57,5 +70,3 @@ export {
   useAuth,
   useStorage,
 };
-
-    

@@ -86,6 +86,11 @@ export default function LoginPage() {
           toast({ variant: "destructive", title: "Login Failed", description: error.message || "Could not complete sign in with Google." });
           setIsProcessingRedirect(false);
         });
+    } else if (!auth || !firestore) {
+        // If firebase isn't ready yet, don't consider redirect processing finished.
+        setIsProcessingRedirect(true);
+    } else {
+        setIsProcessingRedirect(false);
     }
   }, [auth, firestore, toast, isProcessingRedirect]);
 
