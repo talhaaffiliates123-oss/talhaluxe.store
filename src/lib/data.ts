@@ -1,4 +1,5 @@
 
+
 import type { Product, Category, Testimonial } from './types';
 
 export const categories: Category[] = [
@@ -42,6 +43,21 @@ export const products: Omit<Product, 'id'>[] = [
     reviews: [],
     isNewArrival: false,
     isBestSeller: true,
+    onSale: false,
+  },
+  {
+    name: 'Arabian Black Aura Watch',
+    shortDescription: 'A mysterious and alluring timepiece.',
+    description: 'Embrace the mystique of the desert night with the Arabian Black Aura watch. This stunning timepiece features a matte black finish, a deep black dial with subtle golden accents reminiscent of distant stars, and a comfortable black silicone strap. It\'s a watch that doesn\'t just tell time, but tells a story of elegance and mystery.',
+    price: 28000,
+    discountedPrice: null,
+    category: 'watches',
+    imageUrls: ['https://i.ibb.co/L5pL8k3/brown-leather-chronograph-watch-with-black-face.jpg', 'https://i.ibb.co/yNNSN54/a-close-up-of-a-watch-on-a-persons-wrist.jpg'],
+    stock: 20,
+    rating: 4.7,
+    reviews: [],
+    isNewArrival: true,
+    isBestSeller: false,
     onSale: false,
   },
   {
