@@ -10,14 +10,10 @@ import {
 
 const provider = new GoogleAuthProvider();
 
-export const signInWithGoogle = async (auth: Auth, redirectUrl?: string) => {
+export const signInWithGoogle = async (auth: Auth) => {
+  // This initiates the redirect flow.
+  // Firebase handles the temporary state and brings the user back.
   try {
-    if (redirectUrl) {
-      // If a specific redirect URL is provided, you might need to handle it
-      // carefully, but for this flow, Firebase handles it via its own mechanism
-      // post-sign-in. The important part is initiating the redirect from the
-      // correct user action.
-    }
     await signInWithRedirect(auth, provider);
   } catch (error: any) {
     console.error('Error starting Google sign-in redirect:', error.message);
@@ -26,11 +22,15 @@ export const signInWithGoogle = async (auth: Auth, redirectUrl?: string) => {
 };
 
 export const handleGoogleRedirectResult = async (auth: Auth) => {
+    // This should be called on the page the user is redirected back to.
+    // It resolves with the user credential or null if there was no redirect.
     try {
         const result = await getRedirectResult(auth);
         return result?.user ?? null;
     } catch (error: any) {
         console.error('Error handling Google redirect result:', error.message);
+        // This can happen for various reasons, e.g., user closes the popup,
+        // network error, etc. We re-throw so the calling UI can handle it.
         throw error;
     }
 }
