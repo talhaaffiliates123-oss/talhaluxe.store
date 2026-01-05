@@ -30,7 +30,7 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-
+  
   // This is the source of truth for redirection.
   // It waits for the application's auth state to be confirmed.
   useEffect(() => {
@@ -71,9 +71,7 @@ export default function LoginPage() {
   };
 
   // While checking for redirect result or if user is loading, show a spinner.
-  // The redirect result is now handled globally in firebase/index.ts,
-  // but we still need a loading state for the initial user check.
-  if (userLoading) {
+  if (userLoading || user) {
      return (
       <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
         <Card className="w-full max-w-md text-center">
@@ -91,12 +89,6 @@ export default function LoginPage() {
     );
   }
   
-  // If we are done loading and a user exists, don't render the form.
-  // The redirect effect will handle navigation.
-  if (user) {
-    return null;
-  }
-
   const isLoading = emailLoading || googleLoading;
 
   return (
