@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -21,11 +22,8 @@ export function useUser() {
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        // User is signed in.
         setUser(user);
         
-        // This is where we handle creating the user profile in Firestore
-        // if it's a new user from a redirect.
         if (firestore) {
           const userDocRef = doc(firestore, 'users', user.uid);
           const userDoc = await getDoc(userDocRef);
@@ -48,7 +46,6 @@ export function useUser() {
           }
         }
       } else {
-        // User is signed out.
         setUser(null);
       }
       setLoading(false);

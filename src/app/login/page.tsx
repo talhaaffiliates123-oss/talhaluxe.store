@@ -65,8 +65,6 @@ export default function LoginPage() {
     }
     setGoogleLoading(true);
     try {
-        // This will redirect the user away from the app.
-        // The user will be redirected back here, and the useEffect above will handle the rest.
         await signInWithGoogle(auth);
     } catch(error) {
       toast({ variant: 'destructive', title: 'Login Failed', description: 'Could not start sign in with Google.' });
