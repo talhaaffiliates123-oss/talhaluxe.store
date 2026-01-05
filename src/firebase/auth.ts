@@ -2,10 +2,9 @@
 
 import {
   GoogleAuthProvider,
-  signInWithPopup,
+  signInWithRedirect,
+  getRedirectResult,
   signOut as firebaseSignOut,
-  setPersistence,
-  browserLocalPersistence,
   type Auth,
 } from 'firebase/auth';
 
@@ -13,15 +12,24 @@ const provider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async (auth: Auth) => {
   try {
-    await setPersistence(auth, browserLocalPersistence);
-    const result = await signInWithPopup(auth, provider);
-    return result.user;
+    // We are now using signInWithRedirect which is more reliable than signInWithPopup
+    await signInWithRedirect(auth, provider);
+    // The rest of the logic will be handled on the page that receives the redirect
   } catch (error: any) {
-    // Don't toast here, let the UI components handle user feedback
-    console.error('Error signing in with Google:', error.message);
+    console.error('Error starting Google sign-in redirect:', error.message);
     throw error;
   }
 };
+
+export const handleGoogleRedirectResult = async (auth: Auth) => {
+    try {
+        const result = await getRedirectResult(auth);
+        return result?.user ?? null;
+    } catch (error: any) {
+        console.error('Error handling Google redirect result:', error.message);
+        throw error;
+    }
+}
 
 export const signOut = async (auth: Auth) => {
   try {
