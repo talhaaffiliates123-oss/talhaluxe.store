@@ -19,7 +19,6 @@ import {
   CarouselNext,
   CarouselPrevious,
 } from "@/components/ui/carousel";
-import ProductRecommendations from '@/components/product-recommendations';
 
 
 export default function ProductDetailPage() {
@@ -170,10 +169,6 @@ export default function ProductDetailPage() {
         </div>
       </div>
       
-      <div className="mt-16 md:mt-24">
-        <h2 className="text-2xl font-bold tracking-tight mb-8">You Might Also Like</h2>
-        <ProductRecommendations currentProductId={product.id} />
-      </div>
     </div>
   );
 }

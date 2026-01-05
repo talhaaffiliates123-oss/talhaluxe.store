@@ -51,7 +51,7 @@ export const products: Omit<Product, 'id'>[] = [
     price: 1300,
     discountedPrice: null,
     category: 'watches',
-    imageUrls: [],
+    imageUrls: ["https://storage.googleapis.com/studio-4597970746-e4842.appspot.com/Screenshot_20260104_175904_Daraz.jpg"],
     stock: 20,
     rating: 4.7,
     reviews: [],
