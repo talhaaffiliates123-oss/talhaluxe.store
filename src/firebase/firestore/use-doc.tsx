@@ -40,7 +40,7 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
     );
 
     return () => unsubscribe();
-  }, [ref?.path]);
+  }, [JSON.stringify(ref)]);
 
   return { data, loading, error };
 }

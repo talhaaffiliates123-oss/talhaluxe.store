@@ -40,7 +40,7 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
     );
 
     return () => unsubscribe();
-  }, [query?.path]);
+  }, [JSON.stringify(query)]);
 
   return { data, loading, error };
 }
