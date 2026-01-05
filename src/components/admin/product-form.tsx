@@ -147,6 +147,35 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 </div>
             </CardContent>
         </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Product Images</CardTitle>
+                <CardDescription>Add URLs for the product images. The first image will be the main display image.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-4">
+                    {fields.map((field, index) => (
+                    <div key={field.id} className="flex items-center gap-2">
+                        <Input
+                        {...register(`imageUrls.${index}`)}
+                        placeholder="https://example.com/image.png"
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                        <X className="h-4 w-4 text-destructive" />
+                        </Button>
+                    </div>
+                    ))}
+                    <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => append("")}
+                    >
+                    Add Image URL
+                    </Button>
+                     {errors.imageUrls && <p className="text-destructive text-sm mt-1">{errors.imageUrls.message}</p>}
+                </div>
+            </CardContent>
+        </Card>
       </div>
 
       <div className="space-y-6">

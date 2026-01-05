@@ -2,6 +2,7 @@
 
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import Image from 'next/image';
 import { Heart, Minus, Plus, Star, Truck } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useCart } from '@/hooks/use-cart';
@@ -11,6 +12,15 @@ import { useFirestore } from '@/firebase';
 import { getProduct } from '@/lib/products';
 import { Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from "@/components/ui/carousel";
+import ProductRecommendations from '@/components/product-recommendations';
+
 
 export default function ProductDetailPage() {
   const { id } = useParams();
@@ -70,11 +80,33 @@ export default function ProductDetailPage() {
     router.push('/checkout');
   };
 
+  const imageUrls = product.imageUrls?.length > 0 ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
+
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
       <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+        <div>
+          <Carousel className="w-full">
+            <CarouselContent>
+              {imageUrls.map((url, index) => (
+                <CarouselItem key={index}>
+                    <div className="aspect-square relative w-full overflow-hidden rounded-lg">
+                        <Image src={url} alt={`${product.name} image ${index + 1}`} fill className="object-cover" />
+                    </div>
+                </CarouselItem>
+              ))}
+            </CarouselContent>
+            {imageUrls.length > 1 && (
+                <>
+                    <CarouselPrevious />
+                    <CarouselNext />
+                </>
+            )}
+          </Carousel>
+        </div>
+
         {/* Product Details */}
-        <div className="space-y-6 md:col-span-2">
+        <div className="space-y-6">
           <div>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight font-headline">{product.name}</h1>
             <div className="mt-2 flex items-center gap-4">
@@ -138,6 +170,10 @@ export default function ProductDetailPage() {
         </div>
       </div>
       
+      <div className="mt-16 md:mt-24">
+        <h2 className="text-2xl font-bold tracking-tight mb-8">You Might Also Like</h2>
+        <ProductRecommendations currentProductId={product.id} />
+      </div>
     </div>
   );
 }
