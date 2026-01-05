@@ -20,6 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import stripePromise from '@/lib/stripe';
 import { StripeElementsOptions } from '@stripe/stripe-js';
+import Link from 'next/link';
 
 function CheckoutForm() {
   const { items, totalPrice, clearCart } = useCart();
