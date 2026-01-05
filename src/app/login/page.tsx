@@ -22,7 +22,6 @@ import { useToast } from '@/hooks/use-toast';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import { Skeleton } from '@/components/ui/skeleton';
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -33,16 +32,21 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [emailLoading, setEmailLoading] = useState(false);
+  const [googleLoading, setGoogleLoading] = useState(false);
+  
+  // This state will be true while we process a potential redirect from Google.
   const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
+  // Effect 1: Handle the redirect result from Google on page load.
   useEffect(() => {
-    // This effect runs on page load to handle the redirect result from Google.
-    if (auth && firestore) {
+    // Only run this check once on initial load.
+    if (isProcessingRedirect && auth && firestore) {
       handleGoogleRedirectResult(auth)
         .then((redirectUser) => {
           if (redirectUser) {
-            // If we have a user from a redirect, create their profile
+            // A user was returned from the redirect. Create their profile.
+            setGoogleLoading(true); // Show loading state while we save to DB.
             const userDocRef = doc(firestore, 'users', redirectUser.uid);
             const userData = {
               name: redirectUser.displayName,
@@ -50,24 +54,28 @@ export default function LoginPage() {
               createdAt: serverTimestamp(),
             };
 
-            // Use setDoc with merge:true to create or update
-            return setDoc(userDocRef, userData, { merge: true })
+            // Create or update the user document in Firestore.
+            setDoc(userDocRef, userData, { merge: true })
               .then(() => {
                 toast({
                   title: 'Signed in successfully!',
                   description: `Welcome, ${redirectUser.displayName}!`,
                 });
-                router.replace('/'); // This will now happen after Firestore is done
+                // IMPORTANT: We do NOT redirect here.
+                // We let the auth state propagation handle it in the next effect.
               })
               .catch((serverError) => {
-                // Firestore error
                 const permissionError = new FirestorePermissionError({
                   path: userDocRef.path,
                   operation: 'create',
                   requestResourceData: userData,
                 });
                 errorEmitter.emit('permission-error', permissionError);
-                setIsProcessingRedirect(false); // Stop processing
+                toast({ variant: "destructive", title: "Login Failed", description: "Could not save your user profile." });
+              })
+              .finally(() => {
+                setGoogleLoading(false);
+                setIsProcessingRedirect(false);
               });
           } else {
             // No user from redirect, so we're not in a redirect flow.
@@ -75,24 +83,23 @@ export default function LoginPage() {
           }
         })
         .catch((error) => {
-          // Auth error
-          console.error("Login failed during redirect check", error);
-          toast({
-            variant: "destructive",
-            title: "Login Failed",
-            description: error.message || "Could not complete sign in.",
-          });
-          setIsProcessingRedirect(false); // Stop processing
+          toast({ variant: "destructive", title: "Login Failed", description: error.message || "Could not complete sign in with Google." });
+          setIsProcessingRedirect(false);
         });
     }
-  }, [auth, firestore, router, toast]);
+  }, [auth, firestore, toast, isProcessingRedirect]);
 
+
+  // Effect 2: This is the source of truth for redirection.
+  // It waits for the application's auth state to be confirmed.
   useEffect(() => {
-    // If a user is already logged in (and not from a redirect), send them away.
+    // If user is loaded and IS logged in, and we are NOT in the middle
+    // of a redirect operation, then it's time to go to the homepage.
     if (!userLoading && user && !isProcessingRedirect) {
       router.replace('/');
     }
   }, [user, userLoading, isProcessingRedirect, router]);
+  
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -100,19 +107,14 @@ export default function LoginPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Firebase is not available.' });
       return;
     }
-    setLoading(true);
+    setEmailLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.replace('/');
+      // We don't redirect here. The effect above will handle it when `user` state changes.
     } catch (error: any) {
-      console.error('Login failed', error);
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: error.message || 'An unexpected error occurred.',
-      });
+      toast({ variant: 'destructive', title: 'Login Failed', description: error.message || 'An unexpected error occurred.' });
     } finally {
-      setLoading(false);
+      setEmailLoading(false);
     }
   };
 
@@ -121,21 +123,17 @@ export default function LoginPage() {
       toast({ variant: 'destructive', title: 'Login Failed', description: 'Authentication service is not available.'});
       return;
     }
-    setLoading(true);
+    setGoogleLoading(true);
+    // This will redirect the user away from the app.
     await signInWithGoogle(auth).catch(error => {
-      console.error('Login failed', error);
-      toast({
-        variant: 'destructive',
-        title: 'Login Failed',
-        description: 'Could not start sign in with Google.',
-      });
-      setLoading(false);
+      toast({ variant: 'destructive', title: 'Login Failed', description: 'Could not start sign in with Google.' });
+      setGoogleLoading(false);
     });
   };
 
-  // Show a loading screen while checking for redirect, or if user is loading
-  if (isProcessingRedirect || userLoading) {
-    return (
+  // While checking for redirect result or if user is loading, show a spinner.
+  if (userLoading || isProcessingRedirect) {
+     return (
       <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
         <Card className="w-full max-w-md text-center">
           <CardHeader>
@@ -151,11 +149,14 @@ export default function LoginPage() {
       </div>
     );
   }
-
-  // If we're done processing and there's a user, don't render the form (will be redirected)
+  
+  // If we are done loading and a user exists, don't render the form.
+  // The redirect effect will handle navigation.
   if (user) {
     return null;
   }
+
+  const isLoading = emailLoading || googleLoading;
 
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
@@ -171,10 +172,13 @@ export default function LoginPage() {
             variant="outline"
             className="w-full"
             onClick={handleGoogleSignIn}
-            disabled={!auth || loading}
+            disabled={isLoading}
           >
-            <FcGoogle className="mr-2 h-5 w-5" />
-            Sign In with Google
+            {googleLoading ? (
+                 <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div> Signing In...</>
+            ) : (
+                <><FcGoogle className="mr-2 h-5 w-5" /> Sign In with Google</>
+            )}
           </Button>
           <div className="relative">
             <div className="absolute inset-0 flex items-center">
@@ -196,6 +200,7 @@ export default function LoginPage() {
                 required
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -214,10 +219,11 @@ export default function LoginPage() {
                 required
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={isLoading}
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Logging In...' : 'Log In'}
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {emailLoading ? 'Logging In...' : 'Log In'}
             </Button>
           </form>
         </CardContent>
