@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -19,6 +20,8 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
 import { useToast } from '@/hooks/use-toast';
+import { Skeleton } from '@/components/ui/skeleton';
+
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -30,11 +33,9 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  
-  // This is the source of truth for redirection.
-  // It waits for the application's auth state to be confirmed.
+
+  // If user is already logged in, redirect them away from the login page.
   useEffect(() => {
-    // If user is loaded and IS logged in, go to the homepage.
     if (!userLoading && user) {
       router.replace('/');
     }
@@ -49,10 +50,9 @@ export default function LoginPage() {
     setEmailLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      // We don't redirect here. The effect above will handle it when `user` state changes.
+      // The useEffect above will handle the redirect once the user state is updated.
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Login Failed', description: error.message || 'An unexpected error occurred.' });
-    } finally {
       setEmailLoading(false);
     }
   };
@@ -64,25 +64,24 @@ export default function LoginPage() {
     }
     setGoogleLoading(true);
     // This will redirect the user away from the app.
+    // The user will be redirected back here, and the useEffect above will handle the rest.
     await signInWithGoogle(auth).catch(error => {
       toast({ variant: 'destructive', title: 'Login Failed', description: 'Could not start sign in with Google.' });
       setGoogleLoading(false);
     });
   };
 
-  // While checking for redirect result or if user is loading, show a spinner.
+  // While checking auth state, or if user is logged in (and about to be redirected), show a loading screen.
   if (userLoading || user) {
      return (
       <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
-        <Card className="w-full max-w-md text-center">
+        <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle className="text-2xl font-headline">Signing In...</CardTitle>
-            <CardDescription>Please wait while we check your login status.</CardDescription>
+            <CardTitle className="text-2xl font-headline">Please Wait</CardTitle>
+            <CardDescription>We are checking your login status...</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="flex justify-center items-center">
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </div>
+          <CardContent className="flex justify-center items-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
           </CardContent>
         </Card>
       </div>

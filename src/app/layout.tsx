@@ -1,3 +1,6 @@
+
+'use client';
+
 import type { Metadata } from 'next';
 import { Montserrat } from 'next/font/google';
 import './globals.css';
@@ -13,11 +16,13 @@ const montserrat = Montserrat({
   variable: '--font-montserrat',
 });
 
-export const metadata: Metadata = {
-  title: 'Talha Luxe - Premium Fashion',
-  description:
-    'Discover premium fashion at Talha Luxe. Shop the latest trends in watches, bags, jewelry, and more.',
-};
+// Metadata can't be exported from a client component.
+// We can keep it here, but it won't be actively used in this client-side layout.
+// export const metadata: Metadata = {
+//   title: 'Talha Luxe - Premium Fashion',
+//   description:
+//     'Discover premium fashion at Talha Luxe. Shop the latest trends in watches, bags, jewelry, and more.',
+// };
 
 export default function RootLayout({
   children,
@@ -26,6 +31,13 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${montserrat.variable} antialiased`}>
+      <head>
+         <title>Talha Luxe - Premium Fashion</title>
+          <meta
+            name="description"
+            content="Discover premium fashion at Talha Luxe. Shop the latest trends in watches, bags, jewelry, and more."
+          />
+      </head>
       <body>
         <FirebaseClientProvider>
           <FirebaseErrorListener>
