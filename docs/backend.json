@@ -118,19 +118,27 @@
     }
   },
   "auth": {
-    "providers": ["password"]
+    "providers": [
+      "password"
+    ]
   },
   "firestore": {
     "/products/{productId}": {
-      "schema": { "$ref": "#/entities/Product" },
+      "schema": {
+        "$ref": "#/entities/Product"
+      },
       "description": "Stores all products available in the store."
     },
     "/orders/{orderId}": {
-      "schema": { "$ref": "#/entities/Order" },
+      "schema": {
+        "$ref": "#/entities/Order"
+      },
       "description": "Stores individual order details."
     },
     "/users/{userId}": {
-      "schema": { "$ref": "#/entities/UserProfile" },
+      "schema": {
+        "$ref": "#/entities/UserProfile"
+      },
       "description": "Stores public user profile information."
     }
   }
