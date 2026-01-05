@@ -36,7 +36,7 @@ function RedirectHandler({auth, onResult}: {auth: any, onResult: () => void}) {
                 if (result) {
                    onResult(); // This will just set isVerifying to false
                    toast({ title: 'Login Successful', description: 'Welcome back!'});
-                   router.replace('/');
+                   // DO NOT REDIRECT HERE. Let the main component handle it.
                 } else {
                     // This can happen if the page is loaded without a redirect in progress.
                     onResult(); // Go back to the normal login form
