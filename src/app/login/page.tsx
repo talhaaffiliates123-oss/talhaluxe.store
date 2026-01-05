@@ -54,7 +54,7 @@ function GoogleRedirectHandler() {
                         title: 'Signed in successfully!',
                         description: `Welcome, ${user.displayName}!`,
                     });
-                    router.push('/');
+                    router.replace('/');
                 })
                 .catch(async (serverError) => {
                     const permissionError = new FirestorePermissionError({
@@ -135,7 +135,7 @@ export default function LoginPage() {
     setLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
-      router.push('/');
+      router.replace('/');
     } catch (error: any) {
       console.error('Login failed', error);
       toast({
@@ -157,7 +157,7 @@ export default function LoginPage() {
     // Add the redirect parameter to the current URL
     const redirectUrl = new URL(window.location.href);
     redirectUrl.searchParams.set('mode', 'redirect');
-    await signInWithGoogle(auth, redirectUrl.href).catch(error => {
+    await signInWithGoogle(auth).catch(error => {
        console.error('Login failed', error);
       toast({
         variant: 'destructive',
