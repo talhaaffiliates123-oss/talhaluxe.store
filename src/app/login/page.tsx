@@ -12,69 +12,119 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useFirestore } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import { handleGoogleRedirectResult, signInWithGoogle } from '@/firebase/auth';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
 import { useToast } from '@/hooks/use-toast';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
+function GoogleRedirectHandler() {
+    const auth = useAuth();
+    const firestore = useFirestore();
+    const router = useRouter();
+    const { toast } = useToast();
+    const [message, setMessage] = useState('Verifying your sign-in...');
+
+    useEffect(() => {
+        if (!auth || !firestore) {
+            setMessage('Error: Firebase services not available.');
+            return;
+        };
+
+        handleGoogleRedirectResult(auth).then(user => {
+            if (user) {
+                // This means the user has just signed in via redirect
+                setMessage('Welcome! Setting up your profile...');
+                const userDocRef = doc(firestore, 'users', user.uid);
+                const userData = {
+                    name: user.displayName,
+                    email: user.email,
+                    createdAt: serverTimestamp(),
+                };
+                
+                // Use setDoc with merge:true to create or update the user profile
+                setDoc(userDocRef, userData, { merge: true })
+                .then(() => {
+                    toast({
+                        title: 'Signed in successfully!',
+                        description: `Welcome, ${user.displayName}!`,
+                    });
+                    router.push('/');
+                })
+                .catch(async (serverError) => {
+                    const permissionError = new FirestorePermissionError({
+                        path: userDocRef.path,
+                        operation: 'create',
+                        requestResourceData: userData,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                    setMessage('Error: Could not save your profile. Please try again.');
+                });
+            } else {
+                // This can happen if the page is reloaded or visited directly
+                // without a pending redirect.
+                router.push('/login');
+            }
+        }).catch(error => {
+            console.error("Login failed during redirect check", error);
+            toast({
+                variant: "destructive",
+                title: "Login Failed",
+                description: error.message || "Could not complete sign in.",
+            });
+             router.push('/login');
+        });
+
+    }, [auth, firestore, router, toast]);
+
+    return (
+        <Card className="w-full max-w-md text-center">
+            <CardHeader>
+                <CardTitle className="text-2xl font-headline">Signing In...</CardTitle>
+                <CardDescription>Please wait while we check your login status.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="flex justify-center items-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                </div>
+                <p className="text-muted-foreground">{message}</p>
+            </CardContent>
+        </Card>
+    )
+}
+
+
 export default function LoginPage() {
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
+  const { user, loading: userLoading } = useUser();
+  const searchParams = useSearchParams();
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
-  const [authLoading, setAuthLoading] = useState(true); // To handle redirect state
 
+  // If a user is already logged in, redirect them.
   useEffect(() => {
-    if (!auth || !firestore) return;
+    if (!userLoading && user) {
+        router.replace('/');
+    }
+  }, [user, userLoading, router]);
 
-    handleGoogleRedirectResult(auth).then(user => {
-      if (user) {
-         // This means the user has just signed in via redirect
-        const userDocRef = doc(firestore, 'users', user.uid);
-        const userData = {
-            name: user.displayName,
-            email: user.email,
-            createdAt: serverTimestamp(),
-        };
-        // Use setDoc with merge:true to create or update the user profile
-        setDoc(userDocRef, userData, { merge: true })
-        .then(() => {
-            router.push('/');
-        })
-        .catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'create',
-                requestResourceData: userData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            setAuthLoading(false); // Stop loading even if firestore fails
-        });
-      } else {
-        // No user from redirect, so we can show the login form
-        setAuthLoading(false);
-      }
-    }).catch(error => {
-      console.error("Login failed during redirect check", error);
-      toast({
-        variant: "destructive",
-        title: "Login Failed",
-        description: error.message || "Could not complete sign in.",
-      });
-      setAuthLoading(false);
-    });
-
-  }, [auth, firestore, router, toast]);
+  // Check if this is a redirect from Google Sign-In
+  if (searchParams.get('mode') === 'redirect') {
+    return (
+        <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
+            <GoogleRedirectHandler />
+        </div>
+    );
+  }
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -103,25 +153,28 @@ export default function LoginPage() {
       console.error('Auth service is not available.');
       return;
     }
-    setLoading(true); // Set loading state to provide feedback
-    await signInWithGoogle(auth).catch(error => {
+    setLoading(true);
+    // Add the redirect parameter to the current URL
+    const redirectUrl = new URL(window.location.href);
+    redirectUrl.searchParams.set('mode', 'redirect');
+    await signInWithGoogle(auth, redirectUrl.href).catch(error => {
        console.error('Login failed', error);
       toast({
         variant: 'destructive',
         title: 'Login Failed',
         description: 'Could not sign in with Google.',
       });
-      setLoading(false); // Reset loading state on error
+      setLoading(false);
     })
   };
 
-  if (authLoading) {
+  if (userLoading || user) {
     return (
         <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
             <Card className="w-full max-w-md text-center">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-headline">Checking Authentication...</CardTitle>
-                    <CardDescription>Please wait while we check your login status.</CardDescription>
+                    <CardTitle className="text-2xl font-headline">Loading...</CardTitle>
+                    <CardDescription>Please wait.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <div className="flex justify-center items-center">

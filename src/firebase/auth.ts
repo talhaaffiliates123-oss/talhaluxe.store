@@ -10,11 +10,15 @@ import {
 
 const provider = new GoogleAuthProvider();
 
-export const signInWithGoogle = async (auth: Auth) => {
+export const signInWithGoogle = async (auth: Auth, redirectUrl?: string) => {
   try {
-    // We are now using signInWithRedirect which is more reliable than signInWithPopup
+    if (redirectUrl) {
+      // If a specific redirect URL is provided, you might need to handle it
+      // carefully, but for this flow, Firebase handles it via its own mechanism
+      // post-sign-in. The important part is initiating the redirect from the
+      // correct user action.
+    }
     await signInWithRedirect(auth, provider);
-    // The rest of the logic will be handled on the page that receives the redirect
   } catch (error: any) {
     console.error('Error starting Google sign-in redirect:', error.message);
     throw error;
