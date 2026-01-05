@@ -18,7 +18,7 @@ import { Label } from '@/components/ui/label';
 import { categories } from '@/lib/data';
 import type { Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useStorage } from '@/firebase';
 import { addProduct, updateProduct } from '@/lib/products';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -30,7 +30,9 @@ import {
   } from '@/components/ui/card';
 import { useState } from 'react';
 import Image from 'next/image';
-import { X } from 'lucide-react';
+import { Loader, Upload, X } from 'lucide-react';
+import { uploadImage } from '@/lib/storage';
+import { v4 as uuidv4 } from 'uuid';
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -57,9 +59,12 @@ interface ProductFormProps {
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const [newImageUrl, setNewImageUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
 
   const {
     register,
@@ -99,6 +104,27 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         })
     }
   };
+
+  const handleImageUpload = async () => {
+    if (!imageFile || !storage) {
+        toast({ variant: 'destructive', title: 'Upload failed', description: 'Please select a file to upload.'});
+        return;
+    }
+    
+    setIsUploading(true);
+    try {
+        const uniqueId = uuidv4();
+        const filePath = `products/${uniqueId}-${imageFile.name}`;
+        const imageUrl = await uploadImage(storage, imageFile, filePath);
+        append(imageUrl);
+        setImageFile(null);
+        toast({ title: 'Success', description: 'Image uploaded successfully.' });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Upload failed', description: 'Could not upload image.'});
+    } finally {
+        setIsUploading(false);
+    }
+  }
 
 
   const onSubmit = async (data: ProductFormData) => {
@@ -159,18 +185,33 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     {errors.description && <p className="text-destructive text-sm mt-1">{errors.description.message}</p>}
                 </div>
                  <div>
-                    <Label htmlFor="image-url">Product Image URLs</Label>
-                     <div className="flex gap-2 items-start">
-                        <div className="flex-grow">
-                            <Input 
-                            id="image-url" 
-                            placeholder="https://example.com/image.jpg"
-                            value={newImageUrl}
-                            onChange={(e) => setNewImageUrl(e.target.value)}
-                            />
-                        </div>
+                    <Label htmlFor="image-url">Product Images</Label>
+                    {/* Image URL Input */}
+                    <div className="flex gap-2 items-start">
+                        <Input 
+                        id="image-url-input" 
+                        placeholder="Paste an image URL"
+                        value={newImageUrl}
+                        onChange={(e) => setNewImageUrl(e.target.value)}
+                        />
                         <Button type="button" variant="outline" onClick={handleAddUrl}>Add URL</Button>
                     </div>
+
+                    {/* Image File Upload */}
+                    <div className="mt-2 flex gap-2 items-start">
+                        <Input 
+                            id="image-file-input"
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
+                            className="flex-grow"
+                        />
+                         <Button type="button" variant="outline" onClick={handleImageUpload} disabled={!imageFile || isUploading}>
+                            {isUploading ? <Loader className="animate-spin" /> : <Upload />}
+                            <span className="ml-2">Upload</span>
+                        </Button>
+                    </div>
+
                     {errors.imageUrls && <p className="text-destructive text-sm mt-1">{errors.imageUrls.message}</p>}
                     
                     {fields.length > 0 && (
@@ -287,12 +328,10 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             </CardContent>
         </Card>
         
-        <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
+        <Button type="submit" size="lg" disabled={isSubmitting || isUploading} className="w-full">
           {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Product')}
         </Button>
       </div>
     </form>
   );
 }
-
-    
