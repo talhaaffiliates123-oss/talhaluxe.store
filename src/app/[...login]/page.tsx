@@ -13,11 +13,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useUser } from '@/firebase';
-import { signInWithGoogle, handleRedirectResult } from '@/firebase/auth';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FcGoogle } from 'react-icons/fc';
 import { useToast } from '@/hooks/use-toast';
 
 export default function LoginPage() {
@@ -29,47 +27,12 @@ export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  
-  // This state will show a loading screen while we process the redirect.
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
-  // This effect handles both the initial redirect check and user state changes.
   useEffect(() => {
-    // Don't do anything until Firebase auth is initialized.
-    if (!auth) {
-      setIsProcessingRedirect(false);
-      return;
-    }
-
-    // If a user is already logged in, redirect them.
-    if (user) {
+    if (!userLoading && user) {
       router.replace('/');
-      return;
     }
-
-    // If we're not logged in, try to process a redirect result.
-    handleRedirectResult(auth)
-      .then((result) => {
-        if (result) {
-          // A sign-in was successful. The `useUser` hook will see the new user.
-          // The component will re-render, and the check `if (user)` above
-          // will then handle the redirect.
-          toast({ title: 'Login Successful', description: 'Welcome back!' });
-        }
-      })
-      .catch((error) => {
-        toast({
-          variant: 'destructive',
-          title: 'Login Failed',
-          description: error.message || 'Could not process Google sign-in.',
-        });
-      })
-      .finally(() => {
-        // We're done checking, so we can now show the login form.
-        setIsProcessingRedirect(false);
-      });
-      
-  }, [auth, user, router, toast]);
+  }, [user, userLoading, router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -80,6 +43,7 @@ export default function LoginPage() {
     setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
+      toast({ title: 'Login Successful', description: 'Welcome back!' });
       // The useEffect above will handle the redirect once the user state is updated.
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Login Failed', description: error.message || 'An unexpected error occurred.' });
@@ -88,25 +52,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    if (!auth) {
-      toast({ variant: 'destructive', title: 'Login Failed', description: 'Authentication service is not available.'});
-      return;
-    }
-    setIsLoading(true);
-    // This function now just starts the redirect.
-    // The result is handled by the useEffect when the user comes back.
-    try {
-        await signInWithGoogle(auth);
-    } catch(error) {
-      toast({ variant: 'destructive', title: 'Login Failed', description: 'Could not sign in with Google.' });
-      setIsLoading(false);
-    }
-  };
-
-  // While checking for redirect result OR while waiting for the user state to load, show a spinner.
-  // This also covers the brief moment when the user is logged in but before the redirect happens.
-  if (isProcessingRedirect || userLoading) {
+  if (userLoading || user) {
     return (
         <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
            <Card className="w-full max-w-md">
@@ -132,28 +78,6 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleSignIn}
-            disabled={isLoading}
-          >
-            {isLoading ? (
-                 <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div> Signing In...</>
-            ) : (
-                <><FcGoogle className="mr-2 h-5 w-5" /> Sign In with Google</>
-            )}
-          </Button>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
           <form onSubmit={handleEmailLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>

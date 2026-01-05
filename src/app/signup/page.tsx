@@ -13,12 +13,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useFirestore } from '@/firebase';
-import { signInWithGoogle, signOut } from '@/firebase/auth';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FcGoogle } from 'react-icons/fc';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -91,43 +89,6 @@ export default function SignupPage() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    if (!auth || !firestore) {
-      console.error('Auth service is not available.');
-      return;
-    }
-    try {
-      const user = await signInWithGoogle(auth);
-      if (user) {
-        // Create user profile in Firestore for Google Sign-In as well
-        const userDocRef = doc(firestore, 'users', user.uid);
-        const userData = {
-            name: user.displayName,
-            email: user.email,
-            createdAt: serverTimestamp(),
-        };
-        // Use setDoc with merge:true to avoid overwriting existing data if user signed up before
-        setDoc(userDocRef, userData, { merge: true })
-        .catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-                path: userDocRef.path,
-                operation: 'create',
-                requestResourceData: userData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-        });
-      }
-      router.push('/');
-    } catch (error) {
-      console.error('Sign up failed', error);
-      toast({
-        variant: 'destructive',
-        title: 'Sign Up Failed',
-        description: 'Could not sign up with Google.',
-      });
-    }
-  };
-
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
       <Card className="w-full max-w-md">
@@ -140,25 +101,6 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleGoogleSignIn}
-            disabled={!auth || loading}
-          >
-            <FcGoogle className="mr-2 h-5 w-5" />
-            Sign Up with Google
-          </Button>
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">
-                Or continue with
-              </span>
-            </div>
-          </div>
           <form onSubmit={handleEmailSignUp} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
