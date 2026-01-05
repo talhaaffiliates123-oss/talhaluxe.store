@@ -27,7 +27,6 @@ import {
     CardFooter,
   } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import Image from 'next/image';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
 import { useEffect, useState, useCallback } from 'react';
@@ -151,9 +150,6 @@ export default function ProductsTable() {
           <Table>
               <TableHeader>
               <TableRow>
-                  <TableHead className="hidden w-[100px] sm:table-cell">
-                  <span className="sr-only">Image</span>
-                  </TableHead>
                   <TableHead>Name</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead>Price</TableHead>
@@ -167,7 +163,6 @@ export default function ProductsTable() {
               {loading && products.length === 0 ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
-                        <TableCell className="hidden sm:table-cell"><Skeleton className="h-16 w-16" /></TableCell>
                         <TableCell><Skeleton className="h-6 w-48" /></TableCell>
                         <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                         <TableCell><Skeleton className="h-6 w-16" /></TableCell>
@@ -177,24 +172,14 @@ export default function ProductsTable() {
                   ))
               ) : products.length === 0 ? (
                   <TableRow>
-                      <TableCell colSpan={6} className="text-center py-10">
+                      <TableCell colSpan={5} className="text-center py-10">
                           <p>No products found.</p>
                           <p className="text-muted-foreground text-sm">Try seeding the database from the main admin page.</p>
                       </TableCell>
                   </TableRow>
               ) : products.map((product) => {
-                  const imageUrl = product.imageUrls?.[0] || 'https://placehold.co/64x64/EEE/31343C?text=No+Image';
                   return (
                       <TableRow key={product.id}>
-                          <TableCell className="hidden sm:table-cell">
-                              <Image
-                                  alt={product.name}
-                                  className="aspect-square rounded-md object-cover"
-                                  height="64"
-                                  src={imageUrl}
-                                  width="64"
-                              />
-                          </TableCell>
                           <TableCell className="font-medium">{product.name}</TableCell>
                           <TableCell>
                               {product.stock > 0 ? <Badge variant="outline">In stock</Badge> : <Badge variant="destructive">Out of stock</Badge>}

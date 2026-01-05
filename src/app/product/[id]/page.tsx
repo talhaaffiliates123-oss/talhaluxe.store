@@ -1,7 +1,6 @@
 'use client';
 
 import { notFound, useParams, useRouter } from 'next/navigation';
-import Image from 'next/image';
 import { Button } from '@/components/ui/button';
 import { Heart, Minus, Plus, Star, Truck } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -23,16 +22,11 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
   
-  const [mainImage, setMainImage] = useState<string | null>(null);
-
   useEffect(() => {
     if (firestore && id) {
         getProduct(firestore, id as string).then(p => {
             if (p) {
                 setProduct(p);
-                if (p.imageUrls && p.imageUrls.length > 0) {
-                    setMainImage(p.imageUrls[0]);
-                }
             } else {
                 notFound();
             }
@@ -47,12 +41,6 @@ export default function ProductDetailPage() {
             <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
                 <div>
                     <Skeleton className="aspect-square w-full rounded-lg"/>
-                    <div className="mt-4 grid grid-cols-4 gap-4">
-                        <Skeleton className="aspect-square w-full rounded-md"/>
-                        <Skeleton className="aspect-square w-full rounded-md"/>
-                        <Skeleton className="aspect-square w-full rounded-md"/>
-                        <Skeleton className="aspect-square w-full rounded-md"/>
-                    </div>
                 </div>
                 <div className="space-y-6">
                     <Skeleton className="h-10 w-3/4" />
@@ -85,40 +73,8 @@ export default function ProductDetailPage() {
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
       <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
-        {/* Product Image Gallery */}
-        <div>
-          <div className="aspect-square w-full overflow-hidden rounded-lg border">
-            {mainImage && (
-                <Image
-                src={mainImage}
-                alt={product.name}
-                width={800}
-                height={800}
-                className="h-full w-full object-cover"
-                />
-            )}
-          </div>
-          <div className="mt-4 grid grid-cols-4 gap-4">
-            {product.imageUrls.map((imgUrl, index) => (
-              <button
-                key={index}
-                onClick={() => setMainImage(imgUrl)}
-                className={`aspect-square w-full overflow-hidden rounded-md border-2 ${mainImage === imgUrl ? 'border-accent' : 'border-transparent'}`}
-              >
-                <Image
-                  src={imgUrl}
-                  alt={`${product.name} thumbnail ${index + 1}`}
-                  width={200}
-                  height={200}
-                  className="h-full w-full object-cover"
-                />
-              </button>
-            ))}
-          </div>
-        </div>
-
         {/* Product Details */}
-        <div className="space-y-6">
+        <div className="space-y-6 md:col-span-2">
           <div>
             <h1 className="text-3xl lg:text-4xl font-bold tracking-tight font-headline">{product.name}</h1>
             <div className="mt-2 flex items-center gap-4">

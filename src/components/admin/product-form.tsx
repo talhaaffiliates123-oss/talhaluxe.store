@@ -29,7 +29,6 @@ import {
     CardDescription,
   } from '@/components/ui/card';
 import { useState } from 'react';
-import Image from 'next/image';
 import { Loader, Upload, X } from 'lucide-react';
 import { uploadImage } from '@/lib/storage';
 import { v4 as uuidv4 } from 'uuid';
@@ -61,10 +60,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const firestore = useFirestore();
   const storage = useStorage();
   const { toast } = useToast();
-  const [newImageUrl, setNewImageUrl] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
 
   const {
     register,
@@ -91,41 +87,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   });
 
   const isEditMode = !!initialData;
-
-  const handleAddUrl = () => {
-    if (newImageUrl && z.string().url().safeParse(newImageUrl).success) {
-      append(newImageUrl);
-      setNewImageUrl('');
-    } else {
-        toast({
-            variant: 'destructive',
-            title: 'Invalid URL',
-            description: 'Please enter a valid image URL.',
-        })
-    }
-  };
-
-  const handleImageUpload = async () => {
-    if (!imageFile || !storage) {
-        toast({ variant: 'destructive', title: 'Upload failed', description: 'Please select a file to upload.'});
-        return;
-    }
-    
-    setIsUploading(true);
-    try {
-        const uniqueId = uuidv4();
-        const filePath = `products/${uniqueId}-${imageFile.name}`;
-        const imageUrl = await uploadImage(storage, imageFile, filePath);
-        append(imageUrl);
-        setImageFile(null);
-        toast({ title: 'Success', description: 'Image uploaded successfully.' });
-    } catch (error) {
-        toast({ variant: 'destructive', title: 'Upload failed', description: 'Could not upload image.'});
-    } finally {
-        setIsUploading(false);
-    }
-  }
-
 
   const onSubmit = async (data: ProductFormData) => {
     if (!firestore) {
@@ -183,59 +144,6 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <Label htmlFor="description">Full Description</Label>
                     <Textarea id="description" {...register('description')} rows={5} />
                     {errors.description && <p className="text-destructive text-sm mt-1">{errors.description.message}</p>}
-                </div>
-                 <div>
-                    <Label htmlFor="image-url">Product Images</Label>
-                    {/* Image URL Input */}
-                    <div className="flex gap-2 items-start">
-                        <Input 
-                        id="image-url-input" 
-                        placeholder="Paste an image URL"
-                        value={newImageUrl}
-                        onChange={(e) => setNewImageUrl(e.target.value)}
-                        />
-                        <Button type="button" variant="outline" onClick={handleAddUrl}>Add URL</Button>
-                    </div>
-
-                    {/* Image File Upload */}
-                    <div className="mt-2 flex gap-2 items-start">
-                        <Input 
-                            id="image-file-input"
-                            type="file"
-                            accept="image/*"
-                            onChange={(e) => setImageFile(e.target.files ? e.target.files[0] : null)}
-                            className="flex-grow"
-                        />
-                         <Button type="button" variant="outline" onClick={handleImageUpload} disabled={!imageFile || isUploading}>
-                            {isUploading ? <Loader className="animate-spin" /> : <Upload />}
-                            <span className="ml-2">Upload</span>
-                        </Button>
-                    </div>
-
-                    {errors.imageUrls && <p className="text-destructive text-sm mt-1">{errors.imageUrls.message}</p>}
-                    
-                    {fields.length > 0 && (
-                        <div className="mt-4">
-                            <Label className="mb-2 block">Current Images</Label>
-                            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-2">
-                                {fields.map((field, index) => (
-                                   <div key={field.id} className="relative group">
-                                        <Image src={field.value || 'https://placehold.co/100x100/EEE/31343C?text=New'} alt={`Product image ${index + 1}`} width={100} height={100} className="rounded-md object-cover w-full aspect-square" onError={(e) => e.currentTarget.src = 'https://placehold.co/100x100/EEE/31343C?text=Invalid'}/>
-                                        <Button
-                                            type="button"
-                                            variant="destructive"
-                                            size="icon"
-                                            className="absolute top-1 right-1 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
-                                            onClick={() => remove(index)}
-                                            disabled={isSubmitting}
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
-                                   </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
                 </div>
             </CardContent>
         </Card>
@@ -328,7 +236,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             </CardContent>
         </Card>
         
-        <Button type="submit" size="lg" disabled={isSubmitting || isUploading} className="w-full">
+        <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
           {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Product')}
         </Button>
       </div>
