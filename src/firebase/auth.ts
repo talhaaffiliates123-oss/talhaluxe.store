@@ -21,9 +21,14 @@ export const signInWithGoogle = async (auth: Auth) => {
   }
 };
 
-export const handleGoogleRedirectResult = async (auth: Auth) => {
+export const handleGoogleRedirectResult = async (auth: Auth | null) => {
     // This should be called on the page the user is redirected back to.
     // It resolves with the user credential or null if there was no redirect.
+    if (!auth) {
+        // This is not an error, it just means Firebase isn't ready.
+        // The calling function should handle this by waiting.
+        return null;
+    }
     try {
         const result = await getRedirectResult(auth);
         return result?.user ?? null;
