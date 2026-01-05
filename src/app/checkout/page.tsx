@@ -11,105 +11,95 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth, useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser } from '@/firebase';
 import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import stripePromise from '@/lib/stripe';
 
-export default function CheckoutPage() {
+function CheckoutForm() {
   const { items, totalPrice, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('card');
   const router = useRouter();
   const { toast } = useToast();
-  const { user, loading: userLoading } = useUser();
+  const { user } = useUser();
   const firestore = useFirestore();
+  const stripe = useStripe();
+  const elements = useElements();
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  useEffect(() => {
-    // If user loading is finished and there is no user, redirect to login
-    if (!userLoading && !user) {
-      router.push('/login');
-    }
-  }, [user, userLoading, router]);
-
-  const handlePlaceOrder = async () => {
-    if (!user || !firestore) {
+  const handlePlaceOrder = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!user || !firestore || !stripe || !elements) {
       toast({
         variant: 'destructive',
         title: 'Error',
-        description: 'You must be logged in to place an order.',
+        description: 'Services not ready. Please try again in a moment.',
       });
       return;
     }
+    
+    setIsProcessing(true);
 
-    const orderData = {
-      userId: user.uid,
-      items: items.map(item => ({
-        productId: item.product.id,
-        name: item.product.name,
-        quantity: item.quantity,
-        price: item.product.discountedPrice ?? item.product.price,
-      })),
-      totalPrice,
-      paymentMethod,
-      status: 'Processing',
-      createdAt: serverTimestamp(),
-    };
+    if (paymentMethod === 'cod') {
+        // Handle Cash on Delivery
+        const orderData = {
+          userId: user.uid,
+          items: items.map(item => ({
+            productId: item.product.id,
+            name: item.product.name,
+            quantity: item.quantity,
+            price: item.product.discountedPrice ?? item.product.price,
+          })),
+          totalPrice,
+          paymentMethod,
+          status: 'Processing',
+          createdAt: serverTimestamp(),
+        };
 
-    try {
-      const docRef = collection(firestore, 'orders');
-      addDoc(docRef, orderData)
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: docRef.path,
-          operation: 'create',
-          requestResourceData: orderData,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-      });
-      
-      toast({
-        title: 'Order Placed!',
-        description: 'Thank you for your purchase. Your order is being processed.',
-      });
+        try {
+          const docRef = collection(firestore, 'orders');
+          await addDoc(docRef, orderData)
+          .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: docRef.path,
+              operation: 'create',
+              requestResourceData: orderData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
+            throw serverError; // re-throw to be caught by outer try-catch
+          });
+          
+          toast({
+            title: 'Order Placed!',
+            description: 'Thank you for your purchase. Your order is being processed.',
+          });
 
-      clearCart();
-      router.push('/account');
-
-    } catch (e: any) {
+          clearCart();
+          router.push('/account');
+        } catch (e: any) {
+            toast({
+                variant: "destructive",
+                title: "Uh oh! Something went wrong.",
+                description: e.message || "Could not place order.",
+            });
+            setIsProcessing(false);
+        }
+    } else {
+        // Handle Card payment
+        // We will add the logic to create a payment intent and confirm the payment here in a future step.
         toast({
-            variant: "destructive",
-            title: "Uh oh! Something went wrong.",
-            description: e.message || "Could not place order.",
+            title: "Card payment coming soon!",
+            description: "Card payments are not fully integrated yet. Please select Cash on Delivery.",
         });
+        setIsProcessing(false);
     }
   };
-  
-  if (userLoading || !user) {
-    return (
-        <div className="container mx-auto px-4 py-8">
-            <div className="text-center mb-8">
-                <Skeleton className="h-10 w-64 mx-auto" />
-            </div>
-            <div className="grid lg:grid-cols-2 gap-12">
-                <div className="space-y-4">
-                    <Skeleton className="h-64 w-full" />
-                    <Skeleton className="h-64 w-full" />
-                </div>
-                <div>
-                    <Skeleton className="h-96 w-full" />
-                </div>
-            </div>
-        </div>
-    )
-  }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold tracking-tight font-headline">Checkout</h1>
-      </div>
-      <div className="grid lg:grid-cols-2 gap-12">
+      <form onSubmit={handlePlaceOrder} className="grid lg:grid-cols-2 gap-12">
         <div className="order-2 lg:order-1">
           <Card>
             <CardHeader>
@@ -122,7 +112,7 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 gap-4">
                   <div>
                     <Label htmlFor="email">Email</Label>
-                    <Input id="email" type="email" placeholder="you@example.com" defaultValue={user?.email ?? ''}/>
+                    <Input id="email" type="email" placeholder="you@example.com" defaultValue={user?.email ?? ''} disabled/>
                   </div>
                 </div>
               </div>
@@ -133,31 +123,31 @@ export default function CheckoutPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="first-name">First Name</Label>
-                    <Input id="first-name" />
+                    <Input id="first-name" required/>
                   </div>
                   <div>
                     <Label htmlFor="last-name">Last Name</Label>
-                    <Input id="last-name" />
+                    <Input id="last-name" required/>
                   </div>
                   <div className="sm:col-span-2">
                     <Label htmlFor="address">Address</Label>
-                    <Input id="address" />
+                    <Input id="address" required/>
                   </div>
                   <div>
                     <Label htmlFor="city">City</Label>
-                    <Input id="city" />
+                    <Input id="city" required/>
                   </div>
                   <div>
                     <Label htmlFor="state">State / Province</Label>
-                    <Input id="state" />
+                    <Input id="state" required/>
                   </div>
                   <div>
                     <Label htmlFor="zip">ZIP / Postal Code</Label>
-                    <Input id="zip" />
+                    <Input id="zip" required/>
                   </div>
                   <div>
                     <Label htmlFor="country">Country</Label>
-                    <Input id="country" />
+                    <Input id="country" required/>
                   </div>
                 </div>
               </div>
@@ -178,22 +168,9 @@ export default function CheckoutPage() {
                     </Label>
                 </RadioGroup>
                 {paymentMethod === 'card' && (
-                  <div className="grid grid-cols-1 gap-4 pt-4 border-t mt-4">
-                    <div>
-                      <Label htmlFor="card-number">Card Number</Label>
-                      <Input id="card-number" placeholder="•••• •••• •••• ••••" />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <Label htmlFor="expiry-date">Expiry Date</Label>
-                        <Input id="expiry-date" placeholder="MM / YY" />
-                      </div>
-                      <div>
-                        <Label htmlFor="cvc">CVC</Label>
-                        <Input id="cvc" placeholder="•••" />
-                      </div>
-                    </div>
-                  </div>
+                   <div className="space-y-4 pt-4 border-t mt-4">
+                      <PaymentElement />
+                   </div>
                 )}
               </div>
             </CardContent>
@@ -251,15 +228,61 @@ export default function CheckoutPage() {
               <Button 
                 size="lg" 
                 className="w-full mt-6 bg-accent text-accent-foreground hover:bg-accent/90"
-                onClick={handlePlaceOrder}
-                disabled={items.length === 0 || !user}
+                type="submit"
+                disabled={items.length === 0 || !user || isProcessing || (paymentMethod === 'card' && (!stripe || !elements))}
               >
-                Place Order
+                {isProcessing ? 'Processing...' : 'Place Order'}
               </Button>
             </CardContent>
           </Card>
         </div>
+      </form>
+  );
+}
+
+
+export default function CheckoutPage() {
+  const { user, loading: userLoading } = useUser();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.replace('/login');
+    }
+  }, [user, userLoading, router]);
+
+  // We need a client secret to use the Stripe Elements.
+  // This will be created on the server in a future step.
+  // For now, we'll just use a placeholder.
+  const [clientSecret, setClientSecret] = useState('');
+
+  if (userLoading || !user) {
+    return (
+        <div className="container mx-auto px-4 py-8">
+            <div className="text-center mb-8">
+                <Skeleton className="h-10 w-64 mx-auto" />
+            </div>
+            <div className="grid lg:grid-cols-2 gap-12">
+                <div className="space-y-4">
+                    <Skeleton className="h-64 w-full" />
+                    <Skeleton className="h-64 w-full" />
+                </div>
+                <div>
+                    <Skeleton className="h-96 w-full" />
+                </div>
+            </div>
+        </div>
+    )
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8">
+      <div className="text-center mb-8">
+        <h1 className="text-4xl font-bold tracking-tight font-headline">Checkout</h1>
       </div>
+      <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+          <CheckoutForm />
+      </Elements>
     </div>
   );
 }
