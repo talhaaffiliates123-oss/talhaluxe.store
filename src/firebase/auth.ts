@@ -21,23 +21,11 @@ export const signInWithGoogle = async (auth: Auth) => {
   }
 };
 
-export const handleGoogleRedirectResult = async (auth: Auth | null) => {
+export const handleGoogleRedirectResult = (auth: Auth) => {
     // This should be called on the page the user is redirected back to.
     // It resolves with the user credential or null if there was no redirect.
-    if (!auth) {
-        // This is not an error, it just means Firebase isn't ready.
-        // The calling function should handle this by waiting.
-        return null;
-    }
-    try {
-        const result = await getRedirectResult(auth);
-        return result?.user ?? null;
-    } catch (error: any) {
-        console.error('Error handling Google redirect result:', error.message);
-        // This can happen for various reasons, e.g., user closes the popup,
-        // network error, etc. We re-throw so the calling UI can handle it.
-        throw error;
-    }
+    // We return the promise directly to be handled by the caller.
+    return getRedirectResult(auth);
 }
 
 export const signOut = async (auth: Auth) => {

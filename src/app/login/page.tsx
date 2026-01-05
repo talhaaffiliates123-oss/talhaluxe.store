@@ -12,20 +12,16 @@ import {
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { useAuth, useFirestore, useUser } from '@/firebase';
-import { handleGoogleRedirectResult, signInWithGoogle } from '@/firebase/auth';
+import { useAuth, useUser } from '@/firebase';
+import { signInWithGoogle } from '@/firebase/auth';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
 import { useToast } from '@/hooks/use-toast';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
 
 export default function LoginPage() {
   const auth = useAuth();
-  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { user, loading: userLoading } = useUser();
@@ -34,72 +30,15 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [emailLoading, setEmailLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  
-  // This state will be true while we process a potential redirect from Google.
-  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
-  // Effect 1: Handle the redirect result from Google on page load.
-  useEffect(() => {
-    // Only run this check if firebase is ready and we haven't processed the redirect yet.
-    if (auth && firestore && isProcessingRedirect) {
-      handleGoogleRedirectResult(auth)
-        .then((redirectUser) => {
-          if (redirectUser) {
-            // A user was returned from the redirect. Create their profile.
-            setGoogleLoading(true); // Show loading state while we save to DB.
-            const userDocRef = doc(firestore, 'users', redirectUser.uid);
-            const userData = {
-              name: redirectUser.displayName,
-              email: redirectUser.email,
-              createdAt: serverTimestamp(),
-            };
-
-            // Create or update the user document in Firestore.
-            setDoc(userDocRef, userData, { merge: true })
-              .then(() => {
-                toast({
-                  title: 'Signed in successfully!',
-                  description: `Welcome, ${redirectUser.displayName}!`,
-                });
-                // IMPORTANT: We do NOT redirect here.
-                // We let the auth state propagation handle it in the next effect.
-              })
-              .catch((serverError) => {
-                const permissionError = new FirestorePermissionError({
-                  path: userDocRef.path,
-                  operation: 'create',
-                  requestResourceData: userData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                toast({ variant: "destructive", title: "Login Failed", description: "Could not save your user profile." });
-              })
-              .finally(() => {
-                setGoogleLoading(false);
-                setIsProcessingRedirect(false);
-              });
-          } else {
-            // No user from redirect, so we're not in a redirect flow.
-            setIsProcessingRedirect(false);
-          }
-        })
-        .catch((error) => {
-          toast({ variant: "destructive", title: "Login Failed", description: error.message || "Could not complete sign in with Google." });
-          setIsProcessingRedirect(false);
-        });
-    }
-  }, [auth, firestore, toast, isProcessingRedirect]);
-
-
-  // Effect 2: This is the source of truth for redirection.
+  // This is the source of truth for redirection.
   // It waits for the application's auth state to be confirmed.
   useEffect(() => {
-    // If user is loaded and IS logged in, and we are NOT in the middle
-    // of a redirect operation, then it's time to go to the homepage.
-    if (!userLoading && user && !isProcessingRedirect) {
+    // If user is loaded and IS logged in, go to the homepage.
+    if (!userLoading && user) {
       router.replace('/');
     }
-  }, [user, userLoading, isProcessingRedirect, router]);
-  
+  }, [user, userLoading, router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,7 +71,9 @@ export default function LoginPage() {
   };
 
   // While checking for redirect result or if user is loading, show a spinner.
-  if (userLoading || isProcessingRedirect) {
+  // The redirect result is now handled globally in firebase/index.ts,
+  // but we still need a loading state for the initial user check.
+  if (userLoading) {
      return (
       <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
         <Card className="w-full max-w-md text-center">
