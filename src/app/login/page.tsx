@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithGoogle, handleRedirectResult } from '@/firebase/auth';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, getRedirectResult } from 'firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
@@ -31,11 +31,15 @@ function RedirectHandler({auth, onResult}: {auth: any, onResult: () => void}) {
         const checkRedirect = async () => {
             if (!auth) return;
             try {
-                const user = await handleRedirectResult(auth);
-                // If the user object is not null, the sign-in was successful.
-                if (user) {
-                   onResult();
+                const result = await handleRedirectResult(auth);
+                // If the result object is not null, the sign-in was successful.
+                if (result) {
+                   onResult(); // This will just set isVerifying to false
+                   toast({ title: 'Login Successful', description: 'Welcome back!'});
                    router.replace('/');
+                } else {
+                    // This can happen if the page is loaded without a redirect in progress.
+                    onResult(); // Go back to the normal login form
                 }
             } catch (error: any) {
                 toast({ variant: 'destructive', title: 'Login Failed', description: error.message || 'Could not process Google sign-in.'});
@@ -75,15 +79,36 @@ export default function LoginPage() {
   const [googleLoading, setGoogleLoading] = useState(false);
   
   // This state will track if we are in the middle of a Google redirect flow.
-  const [isVerifying, setIsVerifying] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(true); // Default to true
 
+  // Check on initial load if a redirect is happening
+  useEffect(() => {
+    if (auth) {
+        getRedirectResult(auth)
+            .then((result) => {
+                if (!result) {
+                    // No redirect happened, show the login page normally
+                    setIsVerifying(false);
+                }
+                // If there IS a result, `isVerifying` will remain true,
+                // and the RedirectHandler will take care of it.
+            })
+            .catch(() => {
+                // An error occurred, show the login page
+                setIsVerifying(false);
+            });
+    } else {
+        // Auth not ready yet, wait
+        setIsVerifying(true);
+    }
+  }, [auth]);
 
   // If user is already logged in, redirect them away from the login page.
   useEffect(() => {
-    if (!userLoading && user) {
+    if (!userLoading && user && !isVerifying) {
       router.replace('/');
     }
-  }, [user, userLoading, router]);
+  }, [user, userLoading, router, isVerifying]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,25 +144,10 @@ export default function LoginPage() {
     }
   };
 
-  if (isVerifying) {
-      return <RedirectHandler auth={auth} onResult={() => setIsVerifying(false)}/>;
-  }
-
-  // While checking auth state, or if user is logged in (and about to be redirected), show a loading screen.
-  if (userLoading || user) {
-     return (
-      <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
-        <Card className="w-full max-w-md">
-          <CardHeader>
-            <CardTitle className="text-2xl font-headline">Please Wait</CardTitle>
-            <CardDescription>We are checking your login status...</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center items-center py-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-          </CardContent>
-        </Card>
-      </div>
-    );
+  if (isVerifying || userLoading || (!isVerifying && user)) {
+    // Show verifying/loading screen if a redirect is in progress, if we are checking the user,
+    // or if the user is logged in and about to be redirected.
+    return <RedirectHandler auth={auth} onResult={() => setIsVerifying(false)}/>;
   }
   
   const isLoading = emailLoading || googleLoading;
@@ -202,7 +212,7 @@ export default function LoginPage() {
                 type="password"
                 required
                 value={password}
-                onChange={(e) => setPassword(e.targe.value)}
+                onChange={(e) => setPassword(e.target.value)}
                 disabled={isLoading}
               />
             </div>

@@ -2,7 +2,6 @@
 
 import {
   GoogleAuthProvider,
-  signInWithPopup,
   signInWithRedirect,
   signOut as firebaseSignOut,
   getRedirectResult,
@@ -25,7 +24,7 @@ export const signInWithGoogle = async (auth: Auth) => {
 export const handleRedirectResult = async (auth: Auth) => {
     try {
         const result = await getRedirectResult(auth);
-        return result?.user ?? null;
+        return result;
     } catch (error: any) {
         console.error('Error getting redirect result:', error.message);
         throw error;
