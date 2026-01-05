@@ -1,3 +1,4 @@
+
 'use client';
 import { useCart } from '@/hooks/use-cart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +22,7 @@ import stripePromise from '@/lib/stripe';
 
 function CheckoutForm() {
   const { items, totalPrice, clearCart } = useCart();
-  const [paymentMethod, setPaymentMethod] = useState('card');
+  const [paymentMethod, setPaymentMethod] = useState('cod'); // Default to COD
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
@@ -32,7 +33,7 @@ function CheckoutForm() {
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !firestore || !stripe || !elements) {
+    if (!user || !firestore ) {
       toast({
         variant: 'destructive',
         title: 'Error',
@@ -61,7 +62,7 @@ function CheckoutForm() {
 
         try {
           const docRef = collection(firestore, 'orders');
-          await addDoc(docRef, orderData)
+          addDoc(docRef, orderData)
           .catch(async (serverError) => {
             const permissionError = new FirestorePermissionError({
               path: docRef.path,
@@ -89,6 +90,16 @@ function CheckoutForm() {
         }
     } else {
         // Handle Card payment
+        if (!stripe || !elements) {
+            toast({
+                variant: 'destructive',
+                title: 'Error',
+                description: 'Stripe is not ready. Please try again in a moment.',
+            });
+            setIsProcessing(false);
+            return;
+        }
+
         // We will add the logic to create a payment intent and confirm the payment here in a future step.
         toast({
             title: "Card payment coming soon!",
@@ -155,7 +166,7 @@ function CheckoutForm() {
               {/* Payment Method */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Payment Method</h3>
-                <RadioGroup defaultValue="card" className="space-y-2" onValueChange={setPaymentMethod}>
+                <RadioGroup defaultValue="cod" className="space-y-2" onValueChange={setPaymentMethod}>
                     <Label htmlFor="card" className="flex items-center gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent cursor-pointer">
                         <RadioGroupItem value="card" id="card" />
                         <CreditCard className="w-5 h-5"/>
@@ -245,16 +256,25 @@ export default function CheckoutPage() {
   const { user, loading: userLoading } = useUser();
   const router = useRouter();
 
+  // We need a client secret to use the Stripe Elements.
+  // This will be created on the server in a future step.
+  const [clientSecret, setClientSecret] = useState<string | null>(null);
+
   useEffect(() => {
     if (!userLoading && !user) {
       router.replace('/login');
     }
   }, [user, userLoading, router]);
 
-  // We need a client secret to use the Stripe Elements.
-  // This will be created on the server in a future step.
-  // For now, we'll just use a placeholder.
-  const [clientSecret, setClientSecret] = useState('');
+  // In a real app, you would fetch the client secret from your server
+  // inside a useEffect hook.
+  // For now, we will simulate this, but leave it null so it doesn't crash.
+  useEffect(() => {
+    // Example:
+    // fetch('/api/create-payment-intent', { method: 'POST', body: JSON.stringify({ items }) })
+    //   .then(res => res.json())
+    //   .then(data => setClientSecret(data.clientSecret))
+  }, []);
 
   if (userLoading || !user) {
     return (
@@ -280,9 +300,20 @@ export default function CheckoutPage() {
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold tracking-tight font-headline">Checkout</h1>
       </div>
-      <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-          <CheckoutForm />
-      </Elements>
+      {/* Only render the Elements provider if we have a client secret */}
+      {clientSecret ? (
+          <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
+              <CheckoutForm />
+          </Elements>
+      ) : (
+          // Render the form directly for COD or if clientSecret is not yet available
+          // We wrap it in the provider but without options to avoid the crash
+           <Elements stripe={stripePromise}>
+              <CheckoutForm />
+           </Elements>
+      )}
     </div>
   );
 }
+
+    
