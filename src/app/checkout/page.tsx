@@ -20,7 +20,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import stripePromise from '@/lib/stripe';
 
-function CheckoutForm() {
+function CheckoutForm({ clientSecret }: { clientSecret: string | null }) {
   const { items, totalPrice, clearCart } = useCart();
   const [paymentMethod, setPaymentMethod] = useState('cod'); // Default to COD
   const router = useRouter();
@@ -178,9 +178,14 @@ function CheckoutForm() {
                         <span className="font-medium">Cash on Delivery</span>
                     </Label>
                 </RadioGroup>
-                {paymentMethod === 'card' && (
+                {paymentMethod === 'card' && clientSecret && (
                    <div className="space-y-4 pt-4 border-t mt-4">
                       <PaymentElement />
+                   </div>
+                )}
+                 {paymentMethod === 'card' && !clientSecret && (
+                   <div className="space-y-4 pt-4 border-t mt-4 text-sm text-muted-foreground">
+                      <p>Card payment processing is not yet available. Please select another payment method.</p>
                    </div>
                 )}
               </div>
@@ -294,26 +299,17 @@ export default function CheckoutPage() {
         </div>
     )
   }
+  
+  const options = clientSecret ? { clientSecret, appearance: { theme: 'stripe' } } : undefined;
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold tracking-tight font-headline">Checkout</h1>
       </div>
-      {/* Only render the Elements provider if we have a client secret */}
-      {clientSecret ? (
-          <Elements stripe={stripePromise} options={{ clientSecret, appearance: { theme: 'stripe' } }}>
-              <CheckoutForm />
-          </Elements>
-      ) : (
-          // Render the form directly for COD or if clientSecret is not yet available
-          // We wrap it in the provider but without options to avoid the crash
-           <Elements stripe={stripePromise}>
-              <CheckoutForm />
-           </Elements>
-      )}
+      <Elements stripe={stripePromise} options={options}>
+          <CheckoutForm clientSecret={clientSecret} />
+      </Elements>
     </div>
   );
 }
-
-    
