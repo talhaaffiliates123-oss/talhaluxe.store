@@ -269,7 +269,6 @@ export default function CheckoutPage() {
   }, [user, userLoading, router]);
 
   useEffect(() => {
-    // Only create a payment intent if there's something in the cart
     if (totalPrice > 0) {
         setLoadingSecret(true);
         fetch('/api/create-payment-intent', { 
@@ -294,8 +293,9 @@ export default function CheckoutPage() {
     }
   }, [totalPrice]);
 
-  if (userLoading || !user || (loadingSecret && totalPrice > 0) || items.length === 0) {
-    // Show loading skeleton if user is loading, secret is loading, or cart is empty
+  const showLoadingSkeleton = userLoading || (loadingSecret && totalPrice > 0) || items.length === 0;
+
+  if (showLoadingSkeleton) {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="text-center mb-8">
@@ -330,16 +330,22 @@ export default function CheckoutPage() {
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold tracking-tight font-headline">Checkout</h1>
       </div>
-      {options ? (
+      {/* Only render Elements and the form if we have a clientSecret (for card payments) or if the total is 0 (for free items/COD) */}
+      {(options || totalPrice === 0) ? (
          <Elements stripe={stripePromise} options={options}>
             <CheckoutForm />
          </Elements>
       ) : (
-        // This fallback handles the case where total is 0, so no clientSecret is needed.
-        // It allows COD "purchases" of free items, which is a valid edge case.
-        <Elements stripe={stripePromise}>
-            <CheckoutForm />
-        </Elements>
+        // This state indicates we are trying to pay by card but the secret is not ready yet.
+        <div className="grid lg:grid-cols-2 gap-12">
+            <div className="space-y-4">
+                <Skeleton className="h-64 w-full" />
+                <Skeleton className="h-64 w-full" />
+            </div>
+            <div>
+                <Skeleton className="h-96 w-full" />
+            </div>
+        </div>
       )}
     </div>
   );
