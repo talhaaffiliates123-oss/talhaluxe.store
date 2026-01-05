@@ -15,57 +15,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useUser } from '@/firebase';
 import { signInWithGoogle, handleRedirectResult } from '@/firebase/auth';
-import { signInWithEmailAndPassword, getRedirectResult } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FcGoogle } from 'react-icons/fc';
 import { useToast } from '@/hooks/use-toast';
-import { Skeleton } from '@/components/ui/skeleton';
-
-
-function RedirectHandler({auth, onResult}: {auth: any, onResult: () => void}) {
-    const { toast } = useToast();
-    const router = useRouter();
-
-    useEffect(() => {
-        const checkRedirect = async () => {
-            if (!auth) return;
-            try {
-                const result = await handleRedirectResult(auth);
-                // If the result object is not null, the sign-in was successful.
-                if (result) {
-                   onResult(); // This will just set isVerifying to false
-                   toast({ title: 'Login Successful', description: 'Welcome back!'});
-                   // DO NOT REDIRECT HERE. Let the main component handle it.
-                } else {
-                    // This can happen if the page is loaded without a redirect in progress.
-                    onResult(); // Go back to the normal login form
-                }
-            } catch (error: any) {
-                toast({ variant: 'destructive', title: 'Login Failed', description: error.message || 'Could not process Google sign-in.'});
-                onResult(); // Stop showing the verifying message
-            }
-        };
-
-        checkRedirect();
-    }, [auth, toast, router, onResult]);
-
-
-    return (
-         <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
-            <Card className="w-full max-w-md">
-            <CardHeader>
-                <CardTitle className="text-2xl font-headline">Verifying...</CardTitle>
-                <CardDescription>Please wait while we complete your sign-in.</CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-            </CardContent>
-            </Card>
-        </div>
-    );
-}
-
 
 export default function LoginPage() {
   const auth = useAuth();
@@ -75,40 +29,49 @@ export default function LoginPage() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [emailLoading, setEmailLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   
-  // This state will track if we are in the middle of a Google redirect flow.
-  const [isVerifying, setIsVerifying] = useState(true); // Default to true
+  // This state will show a loading screen while we process the redirect.
+  const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
-  // Check on initial load if a redirect is happening
   useEffect(() => {
-    if (auth) {
-        getRedirectResult(auth)
-            .then((result) => {
-                if (!result) {
-                    // No redirect happened, show the login page normally
-                    setIsVerifying(false);
-                }
-                // If there IS a result, `isVerifying` will remain true,
-                // and the RedirectHandler will take care of it.
-            })
-            .catch(() => {
-                // An error occurred, show the login page
-                setIsVerifying(false);
-            });
-    } else {
-        // Auth not ready yet, wait
-        setIsVerifying(true);
+    if (!auth) {
+      // Auth service isn't ready yet.
+      return;
     }
-  }, [auth]);
+
+    const processRedirect = async () => {
+      try {
+        const result = await handleRedirectResult(auth);
+        if (result) {
+          // Sign-in was successful. The `useUser` hook will now
+          // get the new user state and trigger a re-render.
+          toast({ title: 'Login Successful', description: 'Welcome back!' });
+          // We don't redirect here to avoid race conditions.
+          // The main component logic will handle the redirect after user state is updated.
+        }
+      } catch (error: any) {
+        toast({
+          variant: 'destructive',
+          title: 'Login Failed',
+          description: error.message || 'Could not process Google sign-in.',
+        });
+      } finally {
+        // Whether it succeeded, failed, or there was no redirect, we can now show the login form.
+        setIsProcessingRedirect(false);
+      }
+    };
+
+    processRedirect();
+
+  }, [auth, toast]);
 
   // If user is already logged in, redirect them away from the login page.
   useEffect(() => {
-    if (!userLoading && user && !isVerifying) {
+    if (!userLoading && user) {
       router.replace('/');
     }
-  }, [user, userLoading, router, isVerifying]);
+  }, [user, userLoading, router]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -116,14 +79,14 @@ export default function LoginPage() {
       toast({ variant: 'destructive', title: 'Error', description: 'Firebase is not available.' });
       return;
     }
-    setEmailLoading(true);
+    setIsLoading(true);
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // The useEffect above will handle the redirect once the user state is updated.
-    } catch (error: any) {
+    } catch (error: any) => {
       toast({ variant: 'destructive', title: 'Login Failed', description: error.message || 'An unexpected error occurred.' });
     } finally {
-        setEmailLoading(false);
+        setIsLoading(false);
     }
   };
 
@@ -132,26 +95,35 @@ export default function LoginPage() {
       toast({ variant: 'destructive', title: 'Login Failed', description: 'Authentication service is not available.'});
       return;
     }
-    setGoogleLoading(true);
-    setIsVerifying(true); // Show the "Verifying" screen
+    setIsLoading(true);
+    // This function now just starts the redirect.
+    // The result is handled by the useEffect when the user comes back.
     try {
         await signInWithGoogle(auth);
-        // The redirect will happen. The RedirectHandler will take over when the user returns.
     } catch(error) {
       toast({ variant: 'destructive', title: 'Login Failed', description: 'Could not sign in with Google.' });
-      setGoogleLoading(false);
-      setIsVerifying(false);
+      setIsLoading(false);
     }
   };
 
-  if (isVerifying || userLoading || (!isVerifying && user)) {
-    // Show verifying/loading screen if a redirect is in progress, if we are checking the user,
-    // or if the user is logged in and about to be redirected.
-    return <RedirectHandler auth={auth} onResult={() => setIsVerifying(false)}/>;
+  // While checking for redirect result OR while waiting for the user state to load, show a spinner.
+  // Also, if the user is already logged in, we show this while redirecting them away.
+  if (isProcessingRedirect || userLoading || user) {
+    return (
+        <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
+           <Card className="w-full max-w-md">
+           <CardHeader>
+               <CardTitle className="text-2xl font-headline">Verifying...</CardTitle>
+               <CardDescription>Please wait while we check your credentials.</CardDescription>
+           </CardHeader>
+           <CardContent className="flex justify-center items-center py-8">
+               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+           </CardContent>
+           </Card>
+       </div>
+   );
   }
   
-  const isLoading = emailLoading || googleLoading;
-
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
       <Card className="w-full max-w-md">
@@ -168,7 +140,7 @@ export default function LoginPage() {
             onClick={handleGoogleSignIn}
             disabled={isLoading}
           >
-            {googleLoading ? (
+            {isLoading ? (
                  <><div className="animate-spin rounded-full h-4 w-4 border-b-2 border-current mr-2"></div> Signing In...</>
             ) : (
                 <><FcGoogle className="mr-2 h-5 w-5" /> Sign In with Google</>
@@ -217,7 +189,7 @@ export default function LoginPage() {
               />
             </div>
             <Button type="submit" className="w-full" disabled={isLoading}>
-              {emailLoading ? 'Logging In...' : 'Log In'}
+              {isLoading ? 'Logging In...' : 'Log In'}
             </Button>
           </form>
         </CardContent>
