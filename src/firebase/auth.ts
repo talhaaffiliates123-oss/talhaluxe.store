@@ -13,11 +13,6 @@ const provider = new GoogleAuthProvider();
 
 export const signInWithGoogle = async (auth: Auth) => {
   try {
-    // Explicitly setting the auth domain for the provider
-    provider.setCustomParameters({
-      authDomain: auth.config.authDomain
-    });
-    
     await setPersistence(auth, browserLocalPersistence);
     const result = await signInWithPopup(auth, provider);
     return result.user;
