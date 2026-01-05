@@ -19,10 +19,11 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import stripePromise from '@/lib/stripe';
+import { StripeElementsOptions } from '@stripe/stripe-js';
 
-function CheckoutForm({ clientSecret }: { clientSecret: string | null }) {
+function CheckoutForm() {
   const { items, totalPrice, clearCart } = useCart();
-  const [paymentMethod, setPaymentMethod] = useState('cod'); // Default to COD
+  const [paymentMethod, setPaymentMethod] = useState('cod');
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useUser();
@@ -44,67 +45,68 @@ function CheckoutForm({ clientSecret }: { clientSecret: string | null }) {
     
     setIsProcessing(true);
 
-    if (paymentMethod === 'cod') {
-        // Handle Cash on Delivery
+    try {
         const orderData = {
-          userId: user.uid,
-          items: items.map(item => ({
-            productId: item.product.id,
-            name: item.product.name,
-            quantity: item.quantity,
-            price: item.product.discountedPrice ?? item.product.price,
-          })),
-          totalPrice,
-          paymentMethod,
-          status: 'Processing',
-          createdAt: serverTimestamp(),
+            userId: user.uid,
+            items: items.map(item => ({
+              productId: item.product.id,
+              name: item.product.name,
+              quantity: item.quantity,
+              price: item.product.discountedPrice ?? item.product.price,
+            })),
+            totalPrice,
+            paymentMethod,
+            status: 'Processing',
+            createdAt: serverTimestamp(),
         };
 
-        try {
-          const docRef = collection(firestore, 'orders');
-          addDoc(docRef, orderData)
-          .catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-              path: docRef.path,
-              operation: 'create',
-              requestResourceData: orderData,
+        if (paymentMethod === 'card') {
+            if (!stripe || !elements) {
+                toast({ variant: 'destructive', title: 'Error', description: 'Stripe is not ready.' });
+                setIsProcessing(false);
+                return;
+            }
+
+            const { error: stripeError } = await stripe.confirmPayment({
+                elements,
+                redirect: 'if_required',
             });
-            errorEmitter.emit('permission-error', permissionError);
-            throw serverError; // re-throw to be caught by outer try-catch
-          });
-          
-          toast({
+
+            if (stripeError) {
+                toast({ variant: 'destructive', title: 'Payment Failed', description: stripeError.message });
+                setIsProcessing(false);
+                return;
+            }
+        }
+
+        // Save order to Firestore for both COD and successful card payments
+        const docRef = collection(firestore, 'orders');
+        await addDoc(docRef, orderData)
+            .catch(async (serverError) => {
+                const permissionError = new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'create',
+                    requestResourceData: orderData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                throw serverError;
+            });
+        
+        toast({
             title: 'Order Placed!',
             description: 'Thank you for your purchase. Your order is being processed.',
-          });
-
-          clearCart();
-          router.push('/account');
-        } catch (e: any) {
-            toast({
-                variant: "destructive",
-                title: "Uh oh! Something went wrong.",
-                description: e.message || "Could not place order.",
-            });
-            setIsProcessing(false);
-        }
-    } else {
-        // Handle Card payment
-        if (!stripe || !elements) {
-            toast({
-                variant: 'destructive',
-                title: 'Error',
-                description: 'Stripe is not ready. Please try again in a moment.',
-            });
-            setIsProcessing(false);
-            return;
-        }
-
-        // We will add the logic to create a payment intent and confirm the payment here in a future step.
-        toast({
-            title: "Card payment coming soon!",
-            description: "Card payments are not fully integrated yet. Please select Cash on Delivery.",
         });
+
+        clearCart();
+        router.push('/account');
+
+    } catch (e: any) {
+        toast({
+            variant: "destructive",
+            title: "Uh oh! Something went wrong.",
+            description: e.message || "Could not place order.",
+        });
+    } finally {
         setIsProcessing(false);
     }
   };
@@ -178,14 +180,9 @@ function CheckoutForm({ clientSecret }: { clientSecret: string | null }) {
                         <span className="font-medium">Cash on Delivery</span>
                     </Label>
                 </RadioGroup>
-                {paymentMethod === 'card' && clientSecret && (
+                {paymentMethod === 'card' && (
                    <div className="space-y-4 pt-4 border-t mt-4">
                       <PaymentElement />
-                   </div>
-                )}
-                 {paymentMethod === 'card' && !clientSecret && (
-                   <div className="space-y-4 pt-4 border-t mt-4 text-sm text-muted-foreground">
-                      <p>Card payment processing is not yet available. Please select another payment method.</p>
                    </div>
                 )}
               </div>
@@ -259,11 +256,11 @@ function CheckoutForm({ clientSecret }: { clientSecret: string | null }) {
 
 export default function CheckoutPage() {
   const { user, loading: userLoading } = useUser();
+  const { totalPrice } = useCart();
   const router = useRouter();
 
-  // We need a client secret to use the Stripe Elements.
-  // This will be created on the server in a future step.
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [loadingSecret, setLoadingSecret] = useState(true);
 
   useEffect(() => {
     if (!userLoading && !user) {
@@ -271,17 +268,32 @@ export default function CheckoutPage() {
     }
   }, [user, userLoading, router]);
 
-  // In a real app, you would fetch the client secret from your server
-  // inside a useEffect hook.
-  // For now, we will simulate this, but leave it null so it doesn't crash.
   useEffect(() => {
-    // Example:
-    // fetch('/api/create-payment-intent', { method: 'POST', body: JSON.stringify({ items }) })
-    //   .then(res => res.json())
-    //   .then(data => setClientSecret(data.clientSecret))
-  }, []);
+    if (totalPrice > 0) {
+        setLoadingSecret(true);
+        fetch('/api/create-payment-intent', { 
+            method: 'POST', 
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ amount: totalPrice }) 
+        })
+        .then(res => res.json())
+        .then(data => {
+            if(data.clientSecret) {
+                setClientSecret(data.clientSecret)
+            } else {
+                console.error("Failed to get client secret:", data.error);
+            }
+        })
+        .catch(error => console.error("Error fetching client secret:", error))
+        .finally(() => setLoadingSecret(false));
+    } else {
+        setLoadingSecret(false);
+    }
+  }, [totalPrice]);
 
-  if (userLoading || !user) {
+  if (userLoading || !user || (loadingSecret && totalPrice > 0)) {
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="text-center mb-8">
@@ -300,16 +312,22 @@ export default function CheckoutPage() {
     )
   }
   
-  const options = clientSecret ? { clientSecret, appearance: { theme: 'stripe' } } : undefined;
+  const options: StripeElementsOptions | undefined = clientSecret ? { clientSecret, appearance: { theme: 'stripe' } } : undefined;
 
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold tracking-tight font-headline">Checkout</h1>
       </div>
-      <Elements stripe={stripePromise} options={options}>
-          <CheckoutForm clientSecret={clientSecret} />
-      </Elements>
+      {options ? (
+         <Elements stripe={stripePromise} options={options}>
+            <CheckoutForm />
+         </Elements>
+      ) : (
+        // Render form without elements if no client secret (e.g. for CoD only)
+        // This is a fallback, in practice the loading screen will show.
+        <CheckoutForm />
+      )}
     </div>
   );
 }
