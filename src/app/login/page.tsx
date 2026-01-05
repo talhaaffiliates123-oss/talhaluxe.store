@@ -53,7 +53,8 @@ export default function LoginPage() {
       // The useEffect above will handle the redirect once the user state is updated.
     } catch (error: any) {
       toast({ variant: 'destructive', title: 'Login Failed', description: error.message || 'An unexpected error occurred.' });
-      setEmailLoading(false);
+    } finally {
+        setEmailLoading(false);
     }
   };
 
@@ -63,12 +64,15 @@ export default function LoginPage() {
       return;
     }
     setGoogleLoading(true);
-    // This will redirect the user away from the app.
-    // The user will be redirected back here, and the useEffect above will handle the rest.
-    await signInWithGoogle(auth).catch(error => {
+    try {
+        // This will redirect the user away from the app.
+        // The user will be redirected back here, and the useEffect above will handle the rest.
+        await signInWithGoogle(auth);
+    } catch(error) {
       toast({ variant: 'destructive', title: 'Login Failed', description: 'Could not start sign in with Google.' });
+    } finally {
       setGoogleLoading(false);
-    });
+    }
   };
 
   // While checking auth state, or if user is logged in (and about to be redirected), show a loading screen.
