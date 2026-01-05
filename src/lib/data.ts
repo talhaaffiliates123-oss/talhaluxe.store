@@ -51,7 +51,7 @@ export const products: Omit<Product, 'id'>[] = [
     price: 1300,
     discountedPrice: null,
     category: 'watches',
-    imageUrls: ['https://storage.googleapis.com/stedi-dev-public-model-outputs/arabian-black-aura-watch.jpg'],
+    imageUrls: [],
     stock: 20,
     rating: 4.7,
     reviews: [],
