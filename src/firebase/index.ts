@@ -1,11 +1,9 @@
 'use client';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getFirestore, Firestore, doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { getFirestore, Firestore } from 'firebase/firestore';
 import {
   getAuth,
   Auth,
-  initializeAuth,
-  indexedDBLocalPersistence,
 } from 'firebase/auth';
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
@@ -33,10 +31,7 @@ function initializeFirebase() {
     if (!getApps().length) {
       try {
         app = initializeApp(firebaseConfig);
-        // Explicitly initialize auth with persistence
-        auth = initializeAuth(app, {
-          persistence: indexedDBLocalPersistence,
-        });
+        auth = getAuth(app);
         firestore = getFirestore(app);
         storage = getStorage(app);
       } catch (e) {
@@ -44,12 +39,7 @@ function initializeFirebase() {
       }
     } else {
       app = getApp();
-      // Ensure auth is initialized if it hasn't been already
-      if (!auth) {
-        auth = initializeAuth(app, {
-            persistence: indexedDBLocalPersistence,
-        });
-      }
+      auth = getAuth(app);
       firestore = getFirestore(app);
       storage = getStorage(app);
     }
