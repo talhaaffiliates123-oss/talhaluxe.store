@@ -40,8 +40,8 @@ export default function LoginPage() {
 
   // Effect 1: Handle the redirect result from Google on page load.
   useEffect(() => {
-    // Only run this check once on initial load.
-    if (isProcessingRedirect && auth && firestore) {
+    // Only run this check if firebase is ready and we haven't processed the redirect yet.
+    if (auth && firestore && isProcessingRedirect) {
       handleGoogleRedirectResult(auth)
         .then((redirectUser) => {
           if (redirectUser) {
@@ -86,11 +86,6 @@ export default function LoginPage() {
           toast({ variant: "destructive", title: "Login Failed", description: error.message || "Could not complete sign in with Google." });
           setIsProcessingRedirect(false);
         });
-    } else if (!auth || !firestore) {
-        // If firebase isn't ready yet, don't consider redirect processing finished.
-        setIsProcessingRedirect(true);
-    } else {
-        setIsProcessingRedirect(false);
     }
   }, [auth, firestore, toast, isProcessingRedirect]);
 
