@@ -34,44 +34,43 @@ export default function LoginPage() {
   // This state will show a loading screen while we process the redirect.
   const [isProcessingRedirect, setIsProcessingRedirect] = useState(true);
 
+  // This effect handles both the initial redirect check and user state changes.
   useEffect(() => {
+    // Don't do anything until Firebase auth is initialized.
     if (!auth) {
-      // Auth service isn't ready yet.
+      setIsProcessingRedirect(false);
       return;
     }
 
-    const processRedirect = async () => {
-      try {
-        const result = await handleRedirectResult(auth);
+    // If a user is already logged in, redirect them.
+    if (user) {
+      router.replace('/');
+      return;
+    }
+
+    // If we're not logged in, try to process a redirect result.
+    handleRedirectResult(auth)
+      .then((result) => {
         if (result) {
-          // Sign-in was successful. The `useUser` hook will now
-          // get the new user state and trigger a re-render.
+          // A sign-in was successful. The `useUser` hook will see the new user.
+          // The component will re-render, and the check `if (user)` above
+          // will then handle the redirect.
           toast({ title: 'Login Successful', description: 'Welcome back!' });
-          // We don't redirect here to avoid race conditions.
-          // The main component logic will handle the redirect after user state is updated.
         }
-      } catch (error: any) {
+      })
+      .catch((error) => {
         toast({
           variant: 'destructive',
           title: 'Login Failed',
           description: error.message || 'Could not process Google sign-in.',
         });
-      } finally {
-        // Whether it succeeded, failed, or there was no redirect, we can now show the login form.
+      })
+      .finally(() => {
+        // We're done checking, so we can now show the login form.
         setIsProcessingRedirect(false);
-      }
-    };
-
-    processRedirect();
-
-  }, [auth, toast]);
-
-  // If user is already logged in, redirect them away from the login page.
-  useEffect(() => {
-    if (!userLoading && user) {
-      router.replace('/');
-    }
-  }, [user, userLoading, router]);
+      });
+      
+  }, [auth, user, router, toast]);
 
   const handleEmailLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,7 +82,7 @@ export default function LoginPage() {
     try {
       await signInWithEmailAndPassword(auth, email, password);
       // The useEffect above will handle the redirect once the user state is updated.
-    } catch (error: any) => {
+    } catch (error: any) {
       toast({ variant: 'destructive', title: 'Login Failed', description: error.message || 'An unexpected error occurred.' });
     } finally {
         setIsLoading(false);
@@ -107,8 +106,8 @@ export default function LoginPage() {
   };
 
   // While checking for redirect result OR while waiting for the user state to load, show a spinner.
-  // Also, if the user is already logged in, we show this while redirecting them away.
-  if (isProcessingRedirect || userLoading || user) {
+  // This also covers the brief moment when the user is logged in but before the redirect happens.
+  if (isProcessingRedirect || userLoading) {
     return (
         <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
            <Card className="w-full max-w-md">
