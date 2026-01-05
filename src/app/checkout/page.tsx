@@ -79,7 +79,6 @@ function CheckoutForm() {
             }
         }
 
-        // Save order to Firestore for both COD and successful card payments
         const docRef = collection(firestore, 'orders');
         await addDoc(docRef, orderData)
             .catch(async (serverError) => {
@@ -182,7 +181,7 @@ function CheckoutForm() {
                 </RadioGroup>
                 {paymentMethod === 'card' && (
                    <div className="space-y-4 pt-4 border-t mt-4">
-                      <PaymentElement />
+                      {stripe && elements ? <PaymentElement /> : <p>Loading payment form...</p>}
                    </div>
                 )}
               </div>
@@ -256,7 +255,7 @@ function CheckoutForm() {
 
 export default function CheckoutPage() {
   const { user, loading: userLoading } = useUser();
-  const { totalPrice } = useCart();
+  const { items, totalPrice } = useCart();
   const router = useRouter();
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
@@ -269,6 +268,7 @@ export default function CheckoutPage() {
   }, [user, userLoading, router]);
 
   useEffect(() => {
+    // Only create a payment intent if there's something in the cart
     if (totalPrice > 0) {
         setLoadingSecret(true);
         fetch('/api/create-payment-intent', { 
@@ -293,21 +293,31 @@ export default function CheckoutPage() {
     }
   }, [totalPrice]);
 
-  if (userLoading || !user || (loadingSecret && totalPrice > 0)) {
+  if (userLoading || !user || (loadingSecret && totalPrice > 0) || items.length === 0) {
+    // Show loading skeleton if user is loading, secret is loading, or cart is empty
     return (
         <div className="container mx-auto px-4 py-8">
             <div className="text-center mb-8">
                 <Skeleton className="h-10 w-64 mx-auto" />
             </div>
-            <div className="grid lg:grid-cols-2 gap-12">
-                <div className="space-y-4">
-                    <Skeleton className="h-64 w-full" />
-                    <Skeleton className="h-64 w-full" />
+             {items.length === 0 && !userLoading ? (
+                <div className="text-center py-10">
+                    <p className="text-lg">Your cart is empty.</p>
+                    <Button asChild className="mt-4">
+                        <Link href="/shop">Go Shopping</Link>
+                    </Button>
                 </div>
-                <div>
-                    <Skeleton className="h-96 w-full" />
+             ) : (
+                <div className="grid lg:grid-cols-2 gap-12">
+                    <div className="space-y-4">
+                        <Skeleton className="h-64 w-full" />
+                        <Skeleton className="h-64 w-full" />
+                    </div>
+                    <div>
+                        <Skeleton className="h-96 w-full" />
+                    </div>
                 </div>
-            </div>
+            )}
         </div>
     )
   }
@@ -324,9 +334,11 @@ export default function CheckoutPage() {
             <CheckoutForm />
          </Elements>
       ) : (
-        // Render form without elements if no client secret (e.g. for CoD only)
-        // This is a fallback, in practice the loading screen will show.
-        <CheckoutForm />
+        // This fallback handles the case where total is 0, so no clientSecret is needed.
+        // It allows COD "purchases" of free items, which is a valid edge case.
+        <Elements stripe={stripePromise}>
+            <CheckoutForm />
+        </Elements>
       )}
     </div>
   );
