@@ -15,6 +15,17 @@ import {
     CardDescription,
   } from '@/components/ui/card';
 import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+  } from "@/components/ui/alert-dialog"
+import {
     Drawer,
     DrawerContent,
     DrawerDescription,
@@ -77,6 +88,7 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
   
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
 
   const fetchOrders = useCallback(async () => {
     if (!firestore) return;
@@ -136,8 +148,31 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
     }
   }
 
+  const handleConfirmCancel = () => {
+    if(orderToCancel) {
+        handleStatusChange(orderToCancel.id, 'Cancelled');
+        setOrderToCancel(null);
+    }
+  }
+
+  const cancellationEmailBody = orderToCancel ? `
+Subject: Regarding your Talha Luxe Order #${orderToCancel.id}
+
+Dear ${orderToCancel.shippingInfo.name},
+
+We are writing to inform you that your recent order #${orderToCancel.id} has been cancelled.
+
+If you have any questions or concerns, please do not hesitate to contact us by replying to this email or reaching out to Talhaluxe999@gmail.com.
+
+We apologize for any inconvenience this may cause.
+
+Sincerely,
+The Talha Luxe Team
+` : '';
+
 
   return (
+    <>
     <Card>
       <CardHeader>
           <CardTitle>All Orders</CardTitle>
@@ -234,7 +269,14 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
                                         <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Processing')}>Mark as Processing</DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Shipped')}>Mark as Shipped</DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Delivered')}>Mark as Delivered</DropdownMenuItem>
-                                        <DropdownMenuItem className="text-destructive" onClick={() => handleStatusChange(order.id, 'Cancelled')}>Cancel Order</DropdownMenuItem>
+                                        <AlertDialogTrigger asChild>
+                                            <DropdownMenuItem
+                                                className="text-destructive"
+                                                onSelect={(e) => { e.preventDefault(); setOrderToCancel(order); }}
+                                            >
+                                                Cancel Order
+                                            </DropdownMenuItem>
+                                        </AlertDialogTrigger>
                                     </DropdownMenuContent>
                                 </DropdownMenu>
                             </div>
@@ -246,5 +288,29 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
           </Table>
       </CardContent>
     </Card>
+
+    <AlertDialog open={!!orderToCancel} onOpenChange={(open) => !open && setOrderToCancel(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+            <AlertDialogTitle>Notify Customer of Cancellation</AlertDialogTitle>
+            <AlertDialogDescription>
+                This action will mark the order as 'Cancelled'. You should notify the customer. Copy the message below and send it to <span className='font-bold'>{orderToCancel?.shippingInfo.email}</span>.
+            </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="mt-4 p-4 bg-muted rounded-md text-sm whitespace-pre-wrap select-all">
+                {cancellationEmailBody}
+            </div>
+            <AlertDialogFooter>
+            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogAction
+                onClick={handleConfirmCancel}
+                className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+            >
+                Confirm Cancellation
+            </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
