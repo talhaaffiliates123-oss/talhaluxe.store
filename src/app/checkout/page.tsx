@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useCart } from '@/hooks/use-cart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -107,9 +108,9 @@ function CheckoutForm() {
         await setDoc(newOrderRef, orderData);
         
         // Create notification for the user
-        // The `createNotification` function will automatically handle creating the correct link.
         await createNotification(firestore, user.uid, {
-            message: `Your order #${newOrderRef.id.substring(0, 6)}... has been received!`,
+            message: `Your order #${newOrderRef.id} has been received!`,
+            link: '/account'
         });
         
         toast({
@@ -379,3 +380,5 @@ export default function CheckoutPage() {
     </div>
   );
 }
+
+    

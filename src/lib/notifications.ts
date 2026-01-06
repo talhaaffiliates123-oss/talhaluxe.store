@@ -1,11 +1,10 @@
+
 'use client';
 import {
   collection,
   addDoc,
   Firestore,
   serverTimestamp,
-  doc,
-  setDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -22,23 +21,18 @@ export function createNotification(
 ) {
   const notifCollection = collection(db, 'users', userId, 'notifications');
   
-  // Create a reference with a new ID first
-  const newNotifRef = doc(notifCollection);
-
   const notificationData = {
     ...data,
     userId: userId,
     read: false,
     createdAt: serverTimestamp(),
-    // Use the pre-generated ID for the link
-    link: data.link || `/notifications/${newNotifRef.id}`,
+    link: data.link || '/account', // Default to account page
   };
 
-  // Use setDoc with the new reference to ensure the ID matches
-  return setDoc(newNotifRef, notificationData).catch(
+  return addDoc(notifCollection, notificationData).catch(
     async (serverError) => {
       const permissionError = new FirestorePermissionError({
-        path: newNotifRef.path,
+        path: notifCollection.path,
         operation: 'create',
         requestResourceData: notificationData,
       });
@@ -47,3 +41,5 @@ export function createNotification(
     }
   );
 }
+
+    

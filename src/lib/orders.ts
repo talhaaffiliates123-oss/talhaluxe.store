@@ -1,4 +1,5 @@
 
+
 'use client';
 import {
     doc,
@@ -39,20 +40,19 @@ import { createNotification } from './notifications';
       });
 
     let message = '';
-    const shortOrderId = orderId.substring(0,6);
-
+    
     switch(status) {
         case 'Shipped':
-            message = `Your order #${shortOrderId}... has been shipped!`;
+            message = `Your order #${orderId} has been shipped!`;
             break;
         case 'Delivered':
-            message = `Your order #${shortOrderId}... has been delivered. We hope you enjoy your purchase!`;
+            message = `Your order #${orderId} has been delivered. We hope you enjoy your purchase!`;
             break;
         case 'Cancelled':
             if (cancelledBy === 'admin') {
-                message = `Your order #${shortOrderId}... has been cancelled by an admin. For more information, please contact us at Talhaluxe999@gmail.com.`;
+                message = `Your order #${orderId} has been cancelled by an admin. For more information, please contact us at Talhaluxe999@gmail.com.`;
             } else { // customer
-                message = `Your order cancellation for order #${shortOrderId}... has been accepted. If you didn't cancel this, please reorder. If you have any other questions, contact us at Talhaluxe999@gmail.com.`
+                message = `Your order cancellation for order #${orderId} has been accepted. If you didn't cancel this, please reorder. If you have any other questions, contact us at Talhaluxe999@gmail.com.`
             }
             break;
         default:
@@ -60,8 +60,9 @@ import { createNotification } from './notifications';
     }
     
     if (message) {
-        // The createNotification function now handles link creation internally
-        await createNotification(db, userId, { message });
+        await createNotification(db, userId, { message, link: '/account' });
     }
   }
   
+
+    

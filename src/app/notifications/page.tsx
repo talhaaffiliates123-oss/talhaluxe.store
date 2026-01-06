@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCollection, useFirestore, useUser } from '@/firebase';
@@ -85,7 +86,7 @@ export default function NotificationsPage() {
               {notifications.map((n, index) => (
                 <div key={n.id}>
                   <Link
-                    href={n.link || '#'}
+                    href={n.link || '/account'}
                     className="block p-4 hover:bg-muted"
                   >
                     <div className="flex items-start gap-4">
@@ -123,3 +124,5 @@ export default function NotificationsPage() {
     </div>
   );
 }
+
+    
