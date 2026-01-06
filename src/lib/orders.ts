@@ -52,7 +52,7 @@ import { createNotification } from './notifications';
             if (cancelledBy === 'admin') {
                 message = `Your order #${orderId} has been cancelled by an admin. For more information, please contact us at Talhaluxe999@gmail.com.`;
             } else { // customer
-                message = `Your order cancellation for order #${orderId} has been accepted. If you didn't cancel this, please reorder. If you have any other questions, contact us at Talhaluxe999@gmail.com.`
+                message = `Your order cancellation for order #${orderId} has been accepted. If you didn't cancel this, please reorder. If you have any other questions, contact us at Talhaluxe999@gmail.com.`;
             }
             break;
         default:
@@ -60,7 +60,7 @@ import { createNotification } from './notifications';
     }
     
     if (message) {
-        await createNotification(db, userId, { message, link: '/account' });
+        await createNotification(db, userId, { message, link: `/account` });
     }
   }
   

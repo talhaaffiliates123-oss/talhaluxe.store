@@ -10,7 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useCollection, useDoc, useFirestore, useUser } from '@/firebase';
-import { collection, query, where, orderBy, Timestamp, doc, updateDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, addDoc } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -40,11 +40,21 @@ import {
     DrawerTrigger,
   } from '@/components/ui/drawer';
 import { Separator } from '@/components/ui/separator';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
 
 type UserProfile = {
   name: string;
   email: string;
 };
+
+const cancellationReasonsList = [
+    { id: 'mistake', label: 'Ordered by mistake' },
+    { id: 'better_price', label: 'Found a better price elsewhere' },
+    { id: 'delivery_time', label: 'Estimated delivery time is too long' },
+    { id: 'changed_mind', label: 'Changed my mind' },
+    { id: 'other', label: 'Other (please specify below)' },
+];
 
 export default function AccountPage() {
   const { user } = useUser();
@@ -53,6 +63,9 @@ export default function AccountPage() {
 
   const [displayName, setDisplayName] = useState('');
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
+  const [cancellationReasons, setCancellationReasons] = useState<string[]>([]);
+  const [customReason, setCustomReason] = useState('');
+  const [isCancelling, setIsCancelling] = useState(false);
 
 
   const userProfileRef = useMemo(() => {
@@ -60,7 +73,7 @@ export default function AccountPage() {
     return doc(firestore, 'users', user.uid);
   }, [firestore, user]);
 
-  const { data: userProfile, loading: profileLoading, error: profileError } = useDoc<UserProfile>(userProfileRef);
+  const { data: userProfile, loading: profileLoading } = useDoc<UserProfile>(userProfileRef);
 
   useEffect(() => {
     if (userProfile) {
@@ -76,18 +89,19 @@ export default function AccountPage() {
     );
   }, [firestore, user]);
 
-  const { data: rawOrders, loading: ordersLoading, error: ordersError } = useCollection<Order>(ordersQuery);
+  const { data: rawOrders } = useCollection<Order>(ordersQuery);
   
-  const orders = useMemo(() => {
-    if (!rawOrders) return [];
+  const { orders, loading: ordersLoading } = useMemo(() => {
+    if (!rawOrders) return { orders: [], loading: true };
     // Sort orders by creation date, descending.
-    return [...rawOrders].sort((a, b) => {
+    const sorted = [...rawOrders].sort((a, b) => {
         const dateA = a.createdAt?.toDate() ?? 0;
         const dateB = b.createdAt?.toDate() ?? 0;
         if (dateA > dateB) return -1;
         if (dateA < dateB) return 1;
         return 0;
     });
+    return { orders: sorted, loading: false };
   }, [rawOrders]);
 
 
@@ -111,14 +125,36 @@ export default function AccountPage() {
   };
 
   const handleConfirmCancel = async () => {
-    if (!orderToCancel || !firestore) return;
+    if (!orderToCancel || !firestore || !user) return;
+    setIsCancelling(true);
+
     try {
+        // 1. Submit cancellation reason
+        const reasonsToSubmit = cancellationReasons.filter(r => r !== 'other');
+        const showCustomReason = cancellationReasons.includes('other');
+
+        const reasonData = {
+            orderId: orderToCancel.id,
+            userId: user.uid,
+            reasons: reasonsToSubmit,
+            customReason: showCustomReason ? customReason : '',
+            createdAt: new Date(),
+        };
+
+        const reasonsCollection = collection(firestore, 'cancellationReasons');
+        addDoc(reasonsCollection, reasonData).catch(err => {
+            console.error("Could not submit cancellation reason:", err);
+            // Non-critical, so we don't block the cancellation itself
+        });
+
+        // 2. Update order status
         await updateOrderStatus(firestore, orderToCancel.id, 'Cancelled', 'customer');
+
         toast({
             title: 'Order Cancelled',
             description: 'Your order has been successfully cancelled.',
         });
-        // We can't rely on a local state update as useCollection will handle it
+        
     } catch (error: any) {
         toast({
             variant: 'destructive',
@@ -126,8 +162,18 @@ export default function AccountPage() {
             description: error.message || 'Could not cancel the order.',
         });
     } finally {
+        // 3. Reset state
         setOrderToCancel(null);
+        setCancellationReasons([]);
+        setCustomReason('');
+        setIsCancelling(false);
     }
+  }
+
+  const handleReasonChange = (reasonId: string, checked: boolean) => {
+    setCancellationReasons(prev => 
+        checked ? [...prev, reasonId] : prev.filter(r => r !== reasonId)
+    );
   }
 
   return (
@@ -136,7 +182,7 @@ export default function AccountPage() {
         <h1 className="text-4xl font-bold tracking-tight font-headline">My Account</h1>
         <p className="mt-2 text-lg text-muted-foreground">Manage your account details and view your order history.</p>
       </div>
-      <AlertDialog>
+      <AlertDialog open={!!orderToCancel} onOpenChange={(isOpen) => !isOpen && setOrderToCancel(null)}>
         <Tabs defaultValue="orders" className="w-full">
             <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="orders">Orders</TabsTrigger>
@@ -308,18 +354,44 @@ export default function AccountPage() {
         </Tabs>
         <AlertDialogContent>
             <AlertDialogHeader>
-                <AlertDialogTitle>Are you sure you want to cancel?</AlertDialogTitle>
+                <AlertDialogTitle>Cancel Order #{orderToCancel?.id.substring(0,8)}</AlertDialogTitle>
                 <AlertDialogDescription>
-                    This action cannot be undone. This will permanently cancel your order.
+                    Please let us know why you are cancelling. This feedback helps us improve our service.
                 </AlertDialogDescription>
             </AlertDialogHeader>
+            <div className="py-4 space-y-4">
+                <div className="space-y-2">
+                    {cancellationReasonsList.map(reason => (
+                        <div key={reason.id} className="flex items-center space-x-2">
+                            <Checkbox 
+                                id={`reason-${reason.id}`} 
+                                onCheckedChange={(checked) => handleReasonChange(reason.id, !!checked)}
+                                checked={cancellationReasons.includes(reason.id)}
+                            />
+                            <Label htmlFor={`reason-${reason.id}`} className="font-normal">{reason.label}</Label>
+                        </div>
+                    ))}
+                </div>
+                {cancellationReasons.includes('other') && (
+                    <div className="space-y-2">
+                        <Label htmlFor="custom-reason">Please specify:</Label>
+                        <Textarea 
+                            id="custom-reason"
+                            value={customReason}
+                            onChange={(e) => setCustomReason(e.target.value)}
+                            placeholder="Tell us more..."
+                        />
+                    </div>
+                )}
+            </div>
             <AlertDialogFooter>
-                <AlertDialogCancel onClick={() => setOrderToCancel(null)}>Go Back</AlertDialogCancel>
+                <AlertDialogCancel>Go Back</AlertDialogCancel>
                 <AlertDialogAction
                     onClick={handleConfirmCancel}
+                    disabled={isCancelling || cancellationReasons.length === 0}
                     className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
                 >
-                    Confirm Cancellation
+                    {isCancelling ? 'Cancelling...' : 'Confirm Cancellation'}
                 </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>

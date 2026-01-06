@@ -73,3 +73,11 @@ export type Notification = {
     createdAt: any; // Firestore Timestamp
     link?: string;
 }
+
+export type CancellationReason = {
+    orderId: string;
+    userId: string;
+    reasons: string[];
+    customReason?: string;
+    createdAt: any; // Firestore Timestamp
+}
