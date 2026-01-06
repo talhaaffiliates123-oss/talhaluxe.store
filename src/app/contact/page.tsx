@@ -45,7 +45,7 @@ export default function ContactPage() {
                         </div>
                         <div>
                             <h4 className="font-semibold">Email</h4>
-                            <a href="mailto:support@talhaluxe.com" className="text-muted-foreground hover:text-primary">support@talhaluxe.com</a>
+                            <a href="mailto:Talhaluxe999@gmail.com" className="text-muted-foreground hover:text-primary">Talhaluxe999@gmail.com</a>
                         </div>
                     </div>
                      <div className="flex items-center gap-4">
@@ -54,7 +54,7 @@ export default function ContactPage() {
                         </div>
                         <div>
                             <h4 className="font-semibold">Phone</h4>
-                            <a href="tel:+1234567890" className="text-muted-foreground hover:text-primary">+1 (234) 567-890</a>
+                            <a href="tel:+923290586406" className="text-muted-foreground hover:text-primary">+92 329 0586406</a>
                         </div>
                     </div>
                      <div className="flex items-center gap-4">
