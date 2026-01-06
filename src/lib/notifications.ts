@@ -12,6 +12,7 @@ import { FirestorePermissionError } from '@/firebase/errors';
 
 type NotificationData = {
   message: string;
+  link?: string;
 };
 
 export function createNotification(
@@ -29,7 +30,8 @@ export function createNotification(
     userId: userId,
     read: false,
     createdAt: serverTimestamp(),
-    link: `/notifications/${newNotifRef.id}`, // Self-referencing link
+    // Use the pre-generated ID for the link
+    link: data.link || `/notifications/${newNotifRef.id}`,
   };
 
   // Use setDoc with the new reference to ensure the ID matches
