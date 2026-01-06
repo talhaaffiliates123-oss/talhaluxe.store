@@ -19,8 +19,10 @@ import { FirestorePermissionError } from '@/firebase/errors';
 import type { Order } from '@/lib/types';
 import {
     Drawer,
+    DrawerClose,
     DrawerContent,
     DrawerDescription,
+    DrawerFooter,
     DrawerHeader,
     DrawerTitle,
     DrawerTrigger,
@@ -186,6 +188,11 @@ export default function AccountPage() {
                                                 <div className="text-muted-foreground">Status: <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge></div>
                                             </div>
                                         </div>
+                                        <DrawerFooter className="pt-4">
+                                            <DrawerClose asChild>
+                                                <Button variant="outline">Close</Button>
+                                            </DrawerClose>
+                                        </DrawerFooter>
                                     </div>
                                 </DrawerContent>
                             </Drawer>
@@ -257,5 +264,3 @@ export default function AccountPage() {
     </div>
   );
 }
-
-    
