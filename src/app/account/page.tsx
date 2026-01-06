@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import type { Order } from '@/lib/types';
-import { updateOrderStatus } from '@/lib/orders';
+import { updateOrderStatus, clearUserOrderHistory } from '@/lib/orders';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -42,6 +42,7 @@ import {
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
+import { Trash } from 'lucide-react';
 
 type UserProfile = {
   name: string;
@@ -66,6 +67,8 @@ export default function AccountPage() {
   const [cancellationReasons, setCancellationReasons] = useState<string[]>([]);
   const [customReason, setCustomReason] = useState('');
   const [isCancelling, setIsCancelling] = useState(false);
+  const [isClearingHistory, setIsClearingHistory] = useState(false);
+  const [clearHistoryAlertOpen, setClearHistoryAlertOpen] = useState(false);
 
 
   const userProfileRef = useMemo(() => {
@@ -89,20 +92,23 @@ export default function AccountPage() {
     );
   }, [firestore, user]);
 
-  const { data: rawOrders } = useCollection<Order>(ordersQuery);
+  const { data: rawOrders, loading: ordersLoading, error } = useCollection<Order>(ordersQuery);
   
-  const { orders, loading: ordersLoading } = useMemo(() => {
-    if (!rawOrders) return { orders: [], loading: true };
+  const orders = useMemo(() => {
+    if (!rawOrders) return [];
     // Sort orders by creation date, descending.
-    const sorted = [...rawOrders].sort((a, b) => {
+    return [...rawOrders].sort((a, b) => {
         const dateA = a.createdAt?.toDate() ?? 0;
         const dateB = b.createdAt?.toDate() ?? 0;
         if (dateA > dateB) return -1;
         if (dateA < dateB) return 1;
         return 0;
     });
-    return { orders: sorted, loading: false };
   }, [rawOrders]);
+
+  const canClearHistory = useMemo(() => {
+    return orders.some(o => ['Shipped', 'Delivered', 'Cancelled'].includes(o.status));
+  }, [orders]);
 
 
   const handleProfileUpdate = async () => {
@@ -170,6 +176,28 @@ export default function AccountPage() {
     }
   }
 
+  const handleClearHistory = async () => {
+    if (!firestore || !user) return;
+    setIsClearingHistory(true);
+
+    try {
+        await clearUserOrderHistory(firestore, user.uid);
+        toast({
+            title: 'Order History Cleared',
+            description: 'Your completed and cancelled orders have been removed.',
+        });
+    } catch(e: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Clear History Failed',
+            description: e.message || 'Could not clear your order history.',
+        });
+    } finally {
+        setIsClearingHistory(false);
+        setClearHistoryAlertOpen(false);
+    }
+  }
+
   const handleReasonChange = (reasonId: string, checked: boolean) => {
     setCancellationReasons(prev => 
         checked ? [...prev, reasonId] : prev.filter(r => r !== reasonId)
@@ -192,9 +220,33 @@ export default function AccountPage() {
             
             <TabsContent value="orders" className="mt-6">
             <Card>
-                <CardHeader>
-                <CardTitle>Order History</CardTitle>
-                <CardDescription>View the status and details of your past orders.</CardDescription>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div>
+                        <CardTitle>Order History</CardTitle>
+                        <CardDescription>View the status and details of your past orders.</CardDescription>
+                    </div>
+                    <AlertDialog open={clearHistoryAlertOpen} onOpenChange={setClearHistoryAlertOpen}>
+                        <AlertDialogTrigger asChild>
+                            <Button variant="outline" disabled={!canClearHistory}>
+                                <Trash className="mr-2 h-4 w-4" />
+                                Clear History
+                            </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                            <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This will permanently delete all of your orders with the status of "Shipped", "Delivered", or "Cancelled". This action cannot be undone.
+                                </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleClearHistory} disabled={isClearingHistory} className="bg-destructive hover:bg-destructive/90 text-destructive-foreground">
+                                    {isClearingHistory ? 'Clearing...' : 'Yes, clear my history'}
+                                </AlertDialogAction>
+                            </AlertDialogFooter>
+                        </AlertDialogContent>
+                    </AlertDialog>
                 </CardHeader>
                 <CardContent>
                 {ordersLoading ? (

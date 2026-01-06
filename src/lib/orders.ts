@@ -94,4 +94,35 @@ import { createNotification } from './notifications';
         throw serverError;
     });
   }
+
+  export async function clearUserOrderHistory(db: Firestore, userId: string) {
+    const ordersCollection = collection(db, 'orders');
+    const q = query(ordersCollection, 
+        where('userId', '==', userId),
+        where('status', 'in', ['Shipped', 'Delivered', 'Cancelled'])
+    );
+
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+        return; // Nothing to delete
+    }
+
+    const batch = writeBatch(db);
+    querySnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+
+    await batch.commit().catch((serverError) => {
+        // Since this is a batch, we can't point to a single doc, so we use the collection path.
+        // This error will be less specific but still indicates a permissions problem with deleting orders.
+        const permissionError = new FirestorePermissionError({
+          path: ordersCollection.path,
+          operation: 'delete',
+          requestResourceData: { note: `Batch delete for user ${userId} orders failed.`},
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    });
+  }
     
