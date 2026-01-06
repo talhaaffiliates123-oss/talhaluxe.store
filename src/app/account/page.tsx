@@ -156,7 +156,7 @@ export default function AccountPage() {
                                             <DrawerTitle>Order Details</DrawerTitle>
                                             <DrawerDescription>Order ID: {order.id}</DrawerDescription>
                                         </DrawerHeader>
-                                        <div className="p-4 grid gap-6">
+                                        <div className="p-4 grid gap-6 select-text">
                                             <div className="grid gap-2">
                                                 <h4 className="font-medium">Items</h4>
                                                 {order.items.map((item, index) => (
