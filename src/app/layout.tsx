@@ -2,7 +2,7 @@
 'use client';
 
 import type { Metadata } from 'next';
-import { Montserrat } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import './globals.css';
 import { Header } from '@/components/layout/header';
 import { Footer } from '@/components/layout/footer';
@@ -11,9 +11,9 @@ import { CartProvider } from '@/context/cart-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 
-const montserrat = Montserrat({
+const inter = Inter({
   subsets: ['latin'],
-  variable: '--font-montserrat',
+  variable: '--font-inter',
 });
 
 // Metadata can't be exported from a client component.
@@ -30,7 +30,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} antialiased`}>
+    <html lang="en" className={`${inter.variable} font-body antialiased`}>
       <head>
          <title>Talha Luxe - Premium Fashion</title>
           <meta
