@@ -5,6 +5,7 @@ import {
   Firestore,
   serverTimestamp,
   doc,
+  setDoc,
 } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
@@ -31,11 +32,11 @@ export function createNotification(
     link: `/notifications/${newNotifRef.id}`, // Self-referencing link
   };
 
-  // Use setDoc with the new reference
-  return addDoc(notifCollection, notificationData).catch(
+  // Use setDoc with the new reference to ensure the ID matches
+  return setDoc(newNotifRef, notificationData).catch(
     async (serverError) => {
       const permissionError = new FirestorePermissionError({
-        path: notifCollection.path,
+        path: newNotifRef.path,
         operation: 'create',
         requestResourceData: notificationData,
       });

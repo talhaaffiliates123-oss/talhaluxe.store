@@ -13,7 +13,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore, useUser } from '@/firebase';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { addDoc, collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -99,11 +99,13 @@ function CheckoutForm() {
             }
         }
 
-        const docRef = collection(firestore, 'orders');
-        const newOrderRef = await addDoc(docRef, orderData)
+        const ordersCollection = collection(firestore, 'orders');
+        const newOrderRef = doc(ordersCollection); // Create a reference with a new ID
+
+        await setDoc(newOrderRef, orderData)
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
-                    path: docRef.path,
+                    path: newOrderRef.path,
                     operation: 'create',
                     requestResourceData: orderData,
                 });
