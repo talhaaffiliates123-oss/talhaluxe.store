@@ -4,14 +4,53 @@
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import type { Notification } from '@/lib/types';
 import { collection, orderBy, query, writeBatch, doc } from 'firebase/firestore';
-import { useMemo, useEffect } from 'react';
+import { useMemo, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCheck } from 'lucide-react';
+import { CheckCheck, Copy, Check } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+
+function NotificationMessage({ message }: { message: string }) {
+    const { toast } = useToast();
+    const [copied, setCopied] = useState(false);
+    
+    // Regex to find something that looks like an order ID after a '#'
+    const match = message.match(/#([a-zA-Z0-9]{6,})/);
+  
+    if (!match) {
+      return <p>{message}</p>;
+    }
+  
+    const orderId = match[1];
+    const parts = message.split(`#${orderId}`);
+    const beforeText = parts[0];
+    const afterText = parts[1];
+  
+    const handleCopy = () => {
+      navigator.clipboard.writeText(orderId);
+      setCopied(true);
+      toast({ title: "Copied!", description: `Order ID ${orderId.substring(0,8)}... copied to clipboard.`});
+      setTimeout(() => setCopied(false), 2000); // Reset after 2 seconds
+    };
+  
+    return (
+      <p>
+        {beforeText}
+        <span className="inline-flex items-center gap-2 mx-1">
+            <span className="font-mono bg-muted text-foreground px-2 py-0.5 rounded">#{orderId}</span>
+            <Button variant="ghost" size="icon" className="h-6 w-6" onClick={handleCopy}>
+                {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            </Button>
+        </span>
+        {afterText}
+      </p>
+    );
+  }
 
 export default function NotificationsPage() {
     const { user } = useUser();
@@ -92,11 +131,11 @@ export default function NotificationsPage() {
                     <div className="flex items-start gap-4">
                         <div className={`mt-1 h-2.5 w-2.5 rounded-full ${!n.read ? 'bg-accent' : 'bg-transparent'}`} aria-hidden="true" />
                         <div className="flex-1">
-                            <p className={`text-sm ${
+                            <div className={`text-sm ${
                                 n.read ? 'text-muted-foreground' : 'font-medium text-foreground'
                             }`}>
-                                {n.message}
-                            </p>
+                                <NotificationMessage message={n.message}/>
+                            </div>
                             <p className="text-xs text-muted-foreground mt-1">
                                 {n.createdAt
                                 ? formatDistanceToNow(n.createdAt.toDate(), {
@@ -124,5 +163,3 @@ export default function NotificationsPage() {
     </div>
   );
 }
-
-    
