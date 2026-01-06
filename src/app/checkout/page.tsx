@@ -119,7 +119,7 @@ function CheckoutForm() {
         
         // Create in-app notification for the user
         await createNotification(firestore, user.uid, {
-            message: `Your order #${newOrderRef.id} has been received!`,
+            message: `Your order #${newOrderRef.id.substring(0,8)} has been received!`,
             link: '/account'
         });
         
@@ -388,5 +388,3 @@ export default function CheckoutPage() {
     </div>
   );
 }
-
-    
