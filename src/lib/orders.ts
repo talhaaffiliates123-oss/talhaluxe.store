@@ -1,3 +1,4 @@
+'use client';
 import {
     doc,
     updateDoc,
@@ -41,19 +42,20 @@ import { createNotification } from './notifications';
     let message = '';
     switch(status) {
         case 'Shipped':
-            message = `Your order #${orderId.substring(0,6)} has been shipped!`;
+            message = `Your order #${orderId.substring(0,6)}... has been shipped!`;
             break;
         case 'Delivered':
-            message = `Your order #${orderId.substring(0,6)} has been delivered.`;
+            message = `Your order #${orderId.substring(0,6)}... has been delivered. We hope you enjoy your purchase!`;
             break;
         case 'Cancelled':
-            message = `Your order #${orderId.substring(0,6)} has been cancelled.`;
+            message = `Your order #${orderId.substring(0,6)}... has been cancelled. If you did not request this, please contact us at Talhaluxe999@gmail.com.`;
             break;
         default:
             // Don't send notification for 'Processing' or other internal states
             return;
     }
 
-    await createNotification(db, userId, { message, link: '/account' });
+    // The link will now be generated inside createNotification
+    await createNotification(db, userId, { message });
   }
   

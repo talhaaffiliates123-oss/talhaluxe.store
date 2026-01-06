@@ -114,7 +114,6 @@ function CheckoutForm() {
         // Create notification for the user
         await createNotification(firestore, user.uid, {
             message: `Your order #${newOrderRef.id.substring(0, 6)}... has been received!`,
-            link: '/account',
         });
         
         toast({
