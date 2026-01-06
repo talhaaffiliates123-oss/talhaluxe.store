@@ -2,14 +2,15 @@
 
 import { useCollection, useFirestore, useUser } from '@/firebase';
 import type { Notification } from '@/lib/types';
-import { collection, orderBy, query, limit, writeBatch, doc } from 'firebase/firestore';
+import { collection, orderBy, query, writeBatch, doc } from 'firebase/firestore';
 import { useMemo, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { CheckCheck, Bell } from 'lucide-react';
+import { CheckCheck } from 'lucide-react';
 import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 export default function NotificationsPage() {
     const { user } = useUser();
