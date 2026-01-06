@@ -37,7 +37,7 @@ export const OrderConfirmationEmail = ({ order }: OrderConfirmationEmailProps) =
             Order ID: {order.id}
           </Text>
           <Text style={paragraph}>
-            Order Date: {format(new Date(), 'PPP')}
+            Order Date: {format(new Date(order.createdAt), 'PPP')}
           </Text>
           
           <Hr style={hr} />
