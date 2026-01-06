@@ -23,6 +23,7 @@ import stripePromise from '@/lib/stripe';
 import { StripeElementsOptions } from '@stripe/stripe-js';
 import Link from 'next/link';
 import { createNotification } from '@/lib/notifications';
+import { Order } from '@/lib/types';
 
 function CheckoutForm() {
   const { items, totalPrice, clearCart } = useCart();
@@ -106,8 +107,17 @@ function CheckoutForm() {
         };
 
         await setDoc(newOrderRef, orderData);
+
+        const newOrder: Order = { ...orderData, id: newOrderRef.id, createdAt: new Date() };
         
-        // Create notification for the user
+        // Asynchronously send confirmation email
+        fetch('/api/send-order-confirmation', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(newOrder),
+        }).catch(err => console.error("Failed to send confirmation email:", err));
+        
+        // Create in-app notification for the user
         await createNotification(firestore, user.uid, {
             message: `Your order #${newOrderRef.id} has been received!`,
             link: '/account'
@@ -115,17 +125,15 @@ function CheckoutForm() {
         
         toast({
             title: 'Order Placed!',
-            description: 'Thank you for your purchase. Your order is being processed.',
+            description: 'Thank you for your purchase. A confirmation email has been sent.',
         });
 
         clearCart();
         router.push('/account');
 
     } catch (e: any) {
-        // If the order was created but notification failed, we don't want to show a generic error
-        // The permission error is more specific.
         if (e instanceof FirestorePermissionError) {
-            // Error is already emitted, just rethrow.
+            // Error is already emitted
         } else if (newOrderRef) {
              const permissionError = new FirestorePermissionError({
                 path: newOrderRef.path,
