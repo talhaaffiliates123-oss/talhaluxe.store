@@ -1,3 +1,4 @@
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -55,15 +56,6 @@ export default function ContactPage() {
                         <div>
                             <h4 className="font-semibold">Phone</h4>
                             <a href="tel:+923290586406" className="text-muted-foreground hover:text-primary">+92 329 0586406</a>
-                        </div>
-                    </div>
-                     <div className="flex items-center gap-4">
-                        <div className="p-3 bg-muted rounded-full">
-                            <Pin className="w-6 h-6 text-accent" />
-                        </div>
-                        <div>
-                            <h4 className="font-semibold">Address</h4>
-                            <p className="text-muted-foreground">123 Luxury Lane, Fashion City, USA</p>
                         </div>
                     </div>
                 </div>
