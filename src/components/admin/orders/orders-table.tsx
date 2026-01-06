@@ -13,7 +13,6 @@ import {
     CardHeader,
     CardTitle,
     CardDescription,
-    CardFooter,
   } from '@/components/ui/card';
 import {
     Drawer,
@@ -23,6 +22,14 @@ import {
     DrawerTitle,
     DrawerTrigger,
   } from '@/components/ui/drawer';
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+  } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
@@ -32,6 +39,8 @@ import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import type { Order } from '@/lib/types';
+import { updateOrderStatus } from '@/lib/orders';
+import { MoreHorizontal } from 'lucide-react';
 
 
 interface OrdersTableProps {
@@ -106,6 +115,27 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
     });
   }, [searchTerm, allOrders]);
 
+  const handleStatusChange = async (orderId: string, status: Order['status']) => {
+    if (!firestore) return;
+
+    try {
+        await updateOrderStatus(firestore, orderId, status);
+        toast({
+            title: "Order Updated",
+            description: `Order status changed to ${status}.`
+        });
+        // Refresh the list locally for immediate feedback
+        setAllOrders(prevOrders => prevOrders.map(o => o.id === orderId ? {...o, status} : o));
+    } catch (error) {
+        console.error("Error updating order status:", error);
+        toast({
+            variant: "destructive",
+            title: "Update Failed",
+            description: "Could not update order status.",
+        });
+    }
+  }
+
 
   return (
     <Card>
@@ -152,42 +182,62 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
                           </TableCell>
                           <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
                           <TableCell>
-                            <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
+                            <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
                           </TableCell>
                           <TableCell className="text-right">PKR {order.totalPrice.toFixed(2)}</TableCell>
-                          <TableCell>
-                            <Drawer>
-                                <DrawerTrigger asChild>
-                                    <Button variant="outline" size="sm">View Details</Button>
-                                </DrawerTrigger>
-                                <DrawerContent>
-                                    <div className="mx-auto w-full max-w-sm">
-                                    <DrawerHeader>
-                                        <DrawerTitle>Order Details</DrawerTitle>
-                                        <DrawerDescription>Order ID: <Highlight text={order.id} highlight={searchTerm} /></DrawerDescription>
-                                    </DrawerHeader>
-                                    <div className="p-4 space-y-4">
-                                        <div className="space-y-1">
-                                            <h4 className="font-medium">Shipping Address</h4>
-                                            <p className="text-sm text-muted-foreground">
-                                                {order.shippingInfo.name}<br />
-                                                {order.shippingInfo.address}<br />
-                                                {order.shippingInfo.city}, {order.shippingInfo.state} {order.shippingInfo.zip}<br />
-                                                {order.shippingInfo.country}
-                                            </p>
+                          <TableCell className="text-right">
+                            <div className="flex items-center justify-end gap-2">
+                                <Drawer>
+                                    <DrawerTrigger asChild>
+                                        <Button variant="outline" size="sm">View Details</Button>
+                                    </DrawerTrigger>
+                                    <DrawerContent>
+                                        <div className="mx-auto w-full max-w-sm">
+                                        <DrawerHeader>
+                                            <DrawerTitle>Order Details</DrawerTitle>
+                                            <DrawerDescription>Order ID: <Highlight text={order.id} highlight={searchTerm} /></DrawerDescription>
+                                        </DrawerHeader>
+                                        <div className="p-4 space-y-4">
+                                            <div className="space-y-1">
+                                                <h4 className="font-medium">Shipping Address</h4>
+                                                <p className="text-sm text-muted-foreground">
+                                                    {order.shippingInfo.name}<br />
+                                                    {order.shippingInfo.address}<br />
+                                                    {order.shippingInfo.city}, {order.shippingInfo.state} {order.shippingInfo.zip}<br />
+                                                    {order.shippingInfo.country}
+                                                </p>
+                                            </div>
+                                             <div className="space-y-1">
+                                                <h4 className="font-medium">Items</h4>
+                                                <ul className="text-sm text-muted-foreground list-disc pl-5">
+                                                    {order.items.map(item => (
+                                                        <li key={item.productId}>{item.name} (x{item.quantity})</li>
+                                                    ))}
+                                                </ul>
+                                            </div>
                                         </div>
-                                         <div className="space-y-1">
-                                            <h4 className="font-medium">Items</h4>
-                                            <ul className="text-sm text-muted-foreground list-disc pl-5">
-                                                {order.items.map(item => (
-                                                    <li key={item.productId}>{item.name} (x{item.quantity})</li>
-                                                ))}
-                                            </ul>
                                         </div>
-                                    </div>
-                                    </div>
-                                </DrawerContent>
-                            </Drawer>
+                                    </DrawerContent>
+                                </Drawer>
+
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                            <span className="sr-only">Open menu</span>
+                                            <MoreHorizontal className="h-4 w-4" />
+                                        </Button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end">
+                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(order.id)}>Copy order ID</DropdownMenuItem>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Processing')}>Mark as Processing</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Shipped')}>Mark as Shipped</DropdownMenuItem>
+                                        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Delivered')}>Mark as Delivered</DropdownMenuItem>
+                                        <DropdownMenuItem className="text-destructive" onClick={() => handleStatusChange(order.id, 'Cancelled')}>Cancel Order</DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            </div>
                           </TableCell>
                       </TableRow>
                   )
