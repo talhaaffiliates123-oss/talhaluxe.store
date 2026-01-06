@@ -26,57 +26,34 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
-import { DocumentData, DocumentSnapshot, collection, getDocs, limit, orderBy, query, startAfter, Timestamp } from 'firebase/firestore';
+import { collection, getDocs, orderBy, query } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
-import type { Order, ShippingInfo } from '@/lib/types';
+import type { Order } from '@/lib/types';
 
 
-const PAGE_SIZE = 10;
+interface OrdersTableProps {
+    searchTerm: string;
+}
 
-export default function OrdersTable() {
+export default function OrdersTable({ searchTerm }: OrdersTableProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [lastVisible, setLastVisible] = useState<DocumentSnapshot<DocumentData, DocumentData> | null>(null);
-  const [isLastPage, setIsLastPage] = useState(false);
-  const [totalOrders, setTotalOrders] = useState(0);
 
-  const fetchOrders = useCallback(async (direction: 'next' | 'initial' = 'initial') => {
+  const fetchOrders = useCallback(async () => {
     if (!firestore) return;
     setLoading(true);
 
     try {
-        const baseQuery = query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'));
-        let q;
-
-        if (direction === 'next' && lastVisible) {
-            q = query(baseQuery, startAfter(lastVisible), limit(PAGE_SIZE));
-        } else {
-            q = query(baseQuery, limit(PAGE_SIZE));
-        }
-        
+        const q = query(collection(firestore, 'orders'), orderBy('createdAt', 'desc'));
         const documentSnapshots = await getDocs(q);
-        const newOrders = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
-
-        if (!documentSnapshots.empty) {
-            if (direction === 'initial') {
-                setOrders(newOrders);
-            } else {
-                setOrders(prev => [...prev, ...newOrders]);
-            }
-            setLastVisible(documentSnapshots.docs[documentSnapshots.docs.length - 1]);
-        } else if (direction === 'initial') {
-            setOrders([]);
-        }
-
-        setIsLastPage(documentSnapshots.docs.length < PAGE_SIZE);
-
+        const fetchedOrders = documentSnapshots.docs.map(doc => ({ id: doc.id, ...doc.data() } as Order));
+        setAllOrders(fetchedOrders);
     } catch (error) {
         console.error("Error fetching orders:", error);
         toast({
@@ -87,39 +64,30 @@ export default function OrdersTable() {
     } finally {
         setLoading(false);
     }
-}, [firestore, lastVisible, toast]);
-
-    const fetchTotalCount = useCallback(async () => {
-         if(firestore) {
-            const coll = collection(firestore, 'orders');
-            const snap = await getDocs(coll);
-            setTotalOrders(snap.size);
-        }
-    }, [firestore]);
+}, [firestore, toast]);
   
   useEffect(() => {
-    fetchTotalCount();
-    fetchOrders('initial');
-  }, [fetchOrders, fetchTotalCount]);
+    fetchOrders();
+  }, [fetchOrders]);
 
+  const filteredOrders = useMemo(() => {
+    if (!searchTerm) {
+        return allOrders;
+    }
+    const lowercasedFilter = searchTerm.toLowerCase();
+    return allOrders.filter(order => {
+        const customerName = order.shippingInfo?.name?.toLowerCase() ?? '';
+        const orderId = order.id.toLowerCase();
+        return customerName.includes(lowercasedFilter) || orderId.includes(lowercasedFilter);
+    });
+  }, [searchTerm, allOrders]);
 
-  const handleNextPage = () => {
-    if (isLastPage) return;
-    setPage(p => p + 1);
-    fetchOrders('next');
-  }
-
-  const handlePrevPage = () => {
-    setPage(1);
-    setLastVisible(null);
-    fetchOrders('initial');
-  }
 
   return (
     <Card>
       <CardHeader>
           <CardTitle>All Orders</CardTitle>
-          <CardDescription>{!loading ? `Showing ${orders.length} of ${totalOrders} orders.` : 'Loading...'}</CardDescription>
+          <CardDescription>{!loading ? `Showing ${filteredOrders.length} of ${allOrders.length} total orders.` : 'Loading...'}</CardDescription>
       </CardHeader>
       <CardContent>
           <Table>
@@ -133,7 +101,7 @@ export default function OrdersTable() {
               </TableRow>
               </TableHeader>
               <TableBody>
-              {loading && orders.length === 0 ? (
+              {loading ? (
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                         <TableCell><Skeleton className="h-6 w-32" /></TableCell>
@@ -143,13 +111,13 @@ export default function OrdersTable() {
                         <TableCell><Skeleton className="h-8 w-24" /></TableCell>
                     </TableRow>
                   ))
-              ) : orders.length === 0 ? (
+              ) : filteredOrders.length === 0 ? (
                   <TableRow>
                       <TableCell colSpan={5} className="text-center py-10">
-                          <p>No orders found.</p>
+                          <p>{searchTerm ? 'No orders match your search.' : 'No orders found.'}</p>
                       </TableCell>
                   </TableRow>
-              ) : orders.map((order) => {
+              ) : filteredOrders.map((order) => {
                   return (
                       <TableRow key={order.id}>
                           <TableCell>
@@ -201,15 +169,6 @@ export default function OrdersTable() {
               </TableBody>
           </Table>
       </CardContent>
-      <CardFooter>
-        <div className="text-xs text-muted-foreground">
-          Page <strong>{page}</strong>
-        </div>
-        <div className="ml-auto space-x-2">
-            <Button variant="outline" size="sm" onClick={handlePrevPage} disabled={page === 1}>Previous</Button>
-            <Button variant="outline" size="sm" onClick={handleNextPage} disabled={isLastPage}>Next</Button>
-        </div>
-      </CardFooter>
     </Card>
   );
 }
