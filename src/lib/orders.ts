@@ -60,6 +60,7 @@ import { createNotification } from './notifications';
     }
     
     if (message) {
+        // The createNotification function now handles link creation internally
         await createNotification(db, userId, { message });
     }
   }

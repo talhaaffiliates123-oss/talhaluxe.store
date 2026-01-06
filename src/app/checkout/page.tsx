@@ -107,6 +107,7 @@ function CheckoutForm() {
         await setDoc(newOrderRef, orderData);
         
         // Create notification for the user
+        // The `createNotification` function will automatically handle creating the correct link.
         await createNotification(firestore, user.uid, {
             message: `Your order #${newOrderRef.id.substring(0, 6)}... has been received!`,
         });
