@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
 import OrderConfirmationEmail from '@/components/emails/order-confirmation-email';
-import { Order } from '@/lib/types';
+import type { Order } from '@/lib/types';
 
 const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
