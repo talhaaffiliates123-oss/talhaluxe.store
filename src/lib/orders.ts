@@ -6,6 +6,11 @@ import {
     updateDoc,
     Firestore,
     getDoc,
+    collection,
+    query,
+    where,
+    getDocs,
+    writeBatch,
   } from 'firebase/firestore';
   import type { Order } from './types';
   import { errorEmitter } from '@/firebase/error-emitter';
@@ -64,5 +69,29 @@ import { createNotification } from './notifications';
     }
   }
   
+  export async function clearCompletedOrders(db: Firestore) {
+    const ordersCollection = collection(db, 'orders');
+    const q = query(ordersCollection, where('status', 'in', ['Shipped', 'Delivered', 'Cancelled']));
 
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+        return; // Nothing to delete
+    }
+
+    const batch = writeBatch(db);
+    querySnapshot.forEach(doc => {
+        batch.delete(doc.ref);
+    });
+
+    await batch.commit().catch((serverError) => {
+        const permissionError = new FirestorePermissionError({
+          path: ordersCollection.path,
+          operation: 'delete',
+          requestResourceData: { note: 'Batch delete for completed orders failed.'},
+        });
+        errorEmitter.emit('permission-error', permissionError);
+        throw serverError;
+    });
+  }
     
