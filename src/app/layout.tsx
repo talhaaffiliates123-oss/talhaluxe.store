@@ -44,7 +44,7 @@ export default function RootLayout({
             <CartProvider>
               <div className="flex min-h-screen flex-col">
                 <Header />
-                <main className="flex-grow">{children}</main>
+                <main className="flex-grow bg-background">{children}</main>
                 <Footer />
               </div>
               <Toaster />
