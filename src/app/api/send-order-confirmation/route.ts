@@ -1,3 +1,4 @@
+
 'use server';
 import { NextRequest, NextResponse } from 'next/server';
 import { Resend } from 'resend';
@@ -23,7 +24,7 @@ export async function POST(req: NextRequest) {
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'Talha Luxe <noreply@talhaluxe.com>',
+      from: 'Talha Luxe <onboarding@resend.dev>',
       to: [order.shippingInfo.email],
       subject: `Your Talha Luxe Order Confirmation #${order.id.substring(0,8)}`,
       react: OrderConfirmationEmail({ order }),
