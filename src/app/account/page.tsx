@@ -17,6 +17,15 @@ import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import type { Order } from '@/lib/types';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+  } from '@/components/ui/drawer';
+import { Separator } from '@/components/ui/separator';
 
 type UserProfile = {
   name: string;
@@ -45,8 +54,6 @@ export default function AccountPage() {
 
   const ordersQuery = useMemo(() => {
     if (!firestore || !user) return null;
-    // The composite query (where + orderBy different field) requires a manual index in Firestore.
-    // To avoid this for the user, we query by userId and sort on the client.
     return query(
       collection(firestore, 'orders'),
       where('userId', '==', user.uid)
@@ -136,7 +143,53 @@ export default function AccountPage() {
                           <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
                         </TableCell>
                         <TableCell>PKR {order.totalPrice.toFixed(2)}</TableCell>
-                        <TableCell><Button variant="outline" size="sm">View Details</Button></TableCell>
+                        <TableCell>
+                            <Drawer>
+                                <DrawerTrigger asChild>
+                                    <Button variant="outline" size="sm">View Details</Button>
+                                </DrawerTrigger>
+                                <DrawerContent>
+                                    <div className="mx-auto w-full max-w-2xl p-4">
+                                        <DrawerHeader>
+                                            <DrawerTitle>Order Details</DrawerTitle>
+                                            <DrawerDescription>Order ID: {order.id}</DrawerDescription>
+                                        </DrawerHeader>
+                                        <div className="p-4 grid gap-6">
+                                            <div className="grid gap-2">
+                                                <h4 className="font-medium">Items</h4>
+                                                {order.items.map((item, index) => (
+                                                    <div key={index} className="flex justify-between items-center">
+                                                        <p className="text-muted-foreground">{item.name} (x{item.quantity})</p>
+                                                        <p>PKR {(item.price * item.quantity).toFixed(2)}</p>
+                                                    </div>
+                                                ))}
+                                                <Separator className="my-2"/>
+                                                <div className="flex justify-between font-semibold">
+                                                    <p>Total</p>
+                                                    <p>PKR {order.totalPrice.toFixed(2)}</p>
+                                                </div>
+                                            </div>
+                                            <Separator />
+                                            <div className="grid gap-2">
+                                                <h4 className="font-medium">Shipping Address</h4>
+                                                <div className="text-muted-foreground">
+                                                    <p>{order.shippingInfo.name}</p>
+                                                    <p>{order.shippingInfo.address}</p>
+                                                    <p>{order.shippingInfo.city}, {order.shippingInfo.state} {order.shippingInfo.zip}</p>
+                                                    <p>{order.shippingInfo.country}</p>
+                                                </div>
+                                            </div>
+                                            <Separator />
+                                            <div className="grid gap-2">
+                                                <h4 className="font-medium">Payment & Status</h4>
+                                                <p className="text-muted-foreground">Paid via {order.paymentMethod}</p>
+                                                <p className="text-muted-foreground">Status: <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge></p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </DrawerContent>
+                            </Drawer>
+                        </TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
