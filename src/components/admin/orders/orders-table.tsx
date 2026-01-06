@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Table,
@@ -131,7 +132,7 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
     if (!firestore) return;
 
     try {
-        await updateOrderStatus(firestore, orderId, status);
+        await updateOrderStatus(firestore, orderId, status, 'admin');
         toast({
             title: "Order Updated",
             description: `Order status changed to ${status}.`
@@ -160,7 +161,7 @@ Subject: Regarding your Talha Luxe Order #${orderToCancel.id}
 
 Dear ${orderToCancel.shippingInfo.name},
 
-We are writing to inform you that your recent order #${orderToCancel.id} has been cancelled.
+We are writing to inform you that your recent order #${orderToCancel.id} has been cancelled by an admin.
 
 If you have any questions or concerns, please do not hesitate to contact us by replying to this email or reaching out to Talhaluxe999@gmail.com.
 

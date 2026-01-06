@@ -14,7 +14,8 @@ import { createNotification } from './notifications';
   export async function updateOrderStatus(
     db: Firestore,
     orderId: string,
-    status: Order['status']
+    status: Order['status'],
+    cancelledBy: 'admin' | 'customer' = 'admin'
   ) {
     const docRef = doc(db, 'orders', orderId);
     
@@ -38,24 +39,28 @@ import { createNotification } from './notifications';
       });
 
     let message = '';
-    let link: string | undefined = undefined;
+    const shortOrderId = orderId.substring(0,6);
 
     switch(status) {
         case 'Shipped':
-            message = `Your order #${orderId.substring(0,6)}... has been shipped!`;
+            message = `Your order #${shortOrderId}... has been shipped!`;
             break;
         case 'Delivered':
-            message = `Your order #${orderId.substring(0,6)}... has been delivered. We hope you enjoy your purchase!`;
+            message = `Your order #${shortOrderId}... has been delivered. We hope you enjoy your purchase!`;
             break;
         case 'Cancelled':
-            message = `Your order #${orderId.substring(0,6)}... has been cancelled. If you have any questions or concerns, please do not hesitate to contact us at Talhaluxe999@gmail.com.`;
+            if (cancelledBy === 'admin') {
+                message = `Your order #${shortOrderId}... has been cancelled by an admin. For more information, please contact us at Talhaluxe999@gmail.com.`;
+            } else { // customer
+                message = `Your order cancellation for order #${shortOrderId}... has been accepted. If you didn't cancel this, please reorder. If you have any other questions, contact us at Talhaluxe999@gmail.com.`
+            }
             break;
         default:
-            return;
+            return; // Don't send notification for 'Processing'
     }
     
     if (message) {
-        await createNotification(db, userId, { message, link });
+        await createNotification(db, userId, { message });
     }
   }
   
