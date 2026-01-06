@@ -56,7 +56,31 @@ function CheckoutForm() {
     
     setIsProcessing(true);
 
+    let newOrderRef;
+
     try {
+        if (paymentMethod === 'card') {
+            if (!stripe || !elements) {
+                toast({ variant: 'destructive', title: 'Error', description: 'Stripe is not ready.' });
+                setIsProcessing(false);
+                return;
+            }
+
+            const { error: stripeError } = await stripe.confirmPayment({
+                elements,
+                redirect: 'if_required',
+            });
+
+            if (stripeError) {
+                toast({ variant: 'destructive', title: 'Payment Failed', description: stripeError.message });
+                setIsProcessing(false);
+                return;
+            }
+        }
+        
+        const ordersCollection = collection(firestore, 'orders');
+        newOrderRef = doc(ordersCollection); // Create a reference with a new ID
+
         const orderData = {
             userId: user.uid,
             shippingInfo: {
@@ -80,38 +104,7 @@ function CheckoutForm() {
             createdAt: serverTimestamp(),
         };
 
-        if (paymentMethod === 'card') {
-            if (!stripe || !elements) {
-                toast({ variant: 'destructive', title: 'Error', description: 'Stripe is not ready.' });
-                setIsProcessing(false);
-                return;
-            }
-
-            const { error: stripeError } = await stripe.confirmPayment({
-                elements,
-                redirect: 'if_required',
-            });
-
-            if (stripeError) {
-                toast({ variant: 'destructive', title: 'Payment Failed', description: stripeError.message });
-                setIsProcessing(false);
-                return;
-            }
-        }
-
-        const ordersCollection = collection(firestore, 'orders');
-        const newOrderRef = doc(ordersCollection); // Create a reference with a new ID
-
-        await setDoc(newOrderRef, orderData)
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: newOrderRef.path,
-                    operation: 'create',
-                    requestResourceData: orderData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-                throw serverError;
-            });
+        await setDoc(newOrderRef, orderData);
         
         // Create notification for the user
         await createNotification(firestore, user.uid, {
@@ -127,6 +120,19 @@ function CheckoutForm() {
         router.push('/account');
 
     } catch (e: any) {
+        // If the order was created but notification failed, we don't want to show a generic error
+        // The permission error is more specific.
+        if (e instanceof FirestorePermissionError) {
+            // Error is already emitted, just rethrow.
+        } else if (newOrderRef) {
+             const permissionError = new FirestorePermissionError({
+                path: newOrderRef.path,
+                operation: 'create',
+                requestResourceData: {}, // This part is hard to get in a catch block
+            });
+            errorEmitter.emit('permission-error', permissionError);
+        }
+        
         toast({
             variant: "destructive",
             title: "Uh oh! Something went wrong.",
