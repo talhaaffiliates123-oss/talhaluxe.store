@@ -182,8 +182,8 @@ export default function AccountPage() {
                                             <Separator />
                                             <div className="grid gap-2">
                                                 <h4 className="font-medium">Payment & Status</h4>
-                                                <p className="text-muted-foreground">Paid via {order.paymentMethod}</p>
-                                                <p className="text-muted-foreground">Status: <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge></p>
+                                                <div className="text-muted-foreground">Paid via {order.paymentMethod}</div>
+                                                <div className="text-muted-foreground">Status: <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge></div>
                                             </div>
                                         </div>
                                     </div>
@@ -257,3 +257,5 @@ export default function AccountPage() {
     </div>
   );
 }
+
+    
