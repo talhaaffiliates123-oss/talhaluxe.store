@@ -32,7 +32,7 @@ service cloud.firestore {
       allow create: if request.auth != null;
 
        match /notifications/{notificationId} {
-        allow read, write: if isOwner(userId);
+        allow read, write: if isOwner(userId) || isAdmin();
       }
     }
   }
