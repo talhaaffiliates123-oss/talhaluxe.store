@@ -15,6 +15,14 @@ import {
     CardDescription,
     CardFooter,
   } from '@/components/ui/card';
+import {
+    Drawer,
+    DrawerContent,
+    DrawerDescription,
+    DrawerHeader,
+    DrawerTitle,
+    DrawerTrigger,
+  } from '@/components/ui/drawer';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
@@ -23,26 +31,10 @@ import { Button } from '@/components/ui/button';
 import { DocumentData, DocumentSnapshot, collection, getDocs, limit, orderBy, query, startAfter, Timestamp } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
+import type { Order, ShippingInfo } from '@/lib/types';
+
 
 const PAGE_SIZE = 10;
-
-type OrderItem = {
-  productId: string;
-  name: string;
-  quantity: number;
-  price: number;
-};
-
-type Order = {
-  id: string;
-  userId: string;
-  items: OrderItem[];
-  totalPrice: number;
-  paymentMethod: string;
-  status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
-  createdAt: Timestamp;
-};
-
 
 export default function OrdersTable() {
   const firestore = useFirestore();
@@ -133,11 +125,11 @@ export default function OrdersTable() {
           <Table>
               <TableHeader>
               <TableRow>
-                  <TableHead>Order ID</TableHead>
-                  <TableHead>Customer (User ID)</TableHead>
+                  <TableHead>Customer</TableHead>
                   <TableHead>Date</TableHead>
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Total</TableHead>
+                  <TableHead>Actions</TableHead>
               </TableRow>
               </TableHeader>
               <TableBody>
@@ -145,10 +137,10 @@ export default function OrdersTable() {
                   Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
                         <TableCell><Skeleton className="h-6 w-32" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-48" /></TableCell>
                         <TableCell><Skeleton className="h-6 w-24" /></TableCell>
                         <TableCell><Skeleton className="h-6 w-20" /></TableCell>
                         <TableCell className="text-right"><Skeleton className="h-6 w-16" /></TableCell>
+                        <TableCell><Skeleton className="h-8 w-24" /></TableCell>
                     </TableRow>
                   ))
               ) : orders.length === 0 ? (
@@ -160,13 +152,49 @@ export default function OrdersTable() {
               ) : orders.map((order) => {
                   return (
                       <TableRow key={order.id}>
-                          <TableCell className="font-medium truncate max-w-[120px]">{order.id}</TableCell>
-                          <TableCell className="truncate max-w-[120px]">{order.userId}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{order.shippingInfo?.name ?? 'N/A'}</div>
+                            <div className="text-sm text-muted-foreground">{order.shippingInfo?.email ?? order.userId}</div>
+                          </TableCell>
                           <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
                           <TableCell>
                             <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
                           </TableCell>
                           <TableCell className="text-right">PKR {order.totalPrice.toFixed(2)}</TableCell>
+                          <TableCell>
+                            <Drawer>
+                                <DrawerTrigger asChild>
+                                    <Button variant="outline" size="sm">View Details</Button>
+                                </DrawerTrigger>
+                                <DrawerContent>
+                                    <div className="mx-auto w-full max-w-sm">
+                                    <DrawerHeader>
+                                        <DrawerTitle>Order Details</DrawerTitle>
+                                        <DrawerDescription>Order ID: {order.id}</DrawerDescription>
+                                    </DrawerHeader>
+                                    <div className="p-4 space-y-4">
+                                        <div className="space-y-1">
+                                            <h4 className="font-medium">Shipping Address</h4>
+                                            <p className="text-sm text-muted-foreground">
+                                                {order.shippingInfo.name}<br />
+                                                {order.shippingInfo.address}<br />
+                                                {order.shippingInfo.city}, {order.shippingInfo.state} {order.shippingInfo.zip}<br />
+                                                {order.shippingInfo.country}
+                                            </p>
+                                        </div>
+                                         <div className="space-y-1">
+                                            <h4 className="font-medium">Items</h4>
+                                            <ul className="text-sm text-muted-foreground list-disc pl-5">
+                                                {order.items.map(item => (
+                                                    <li key={item.productId}>{item.name} (x{item.quantity})</li>
+                                                ))}
+                                            </ul>
+                                        </div>
+                                    </div>
+                                    </div>
+                                </DrawerContent>
+                            </Drawer>
+                          </TableCell>
                       </TableRow>
                   )
               })}

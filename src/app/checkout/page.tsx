@@ -32,6 +32,15 @@ function CheckoutForm() {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // State for shipping form
+  const [fullName, setFullName] = useState('');
+  const [address, setAddress] = useState('');
+  const [city, setCity] = useState('');
+  const [state, setState] = useState('');
+  const [zip, setZip] = useState('');
+  const [country, setCountry] = useState('');
+
 
   const handlePlaceOrder = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,6 +58,15 @@ function CheckoutForm() {
     try {
         const orderData = {
             userId: user.uid,
+            shippingInfo: {
+                name: fullName,
+                email: user.email!,
+                address: address,
+                city: city,
+                state: state,
+                zip: zip,
+                country: country,
+            },
             items: items.map(item => ({
               productId: item.product.id,
               name: item.product.name,
@@ -134,33 +152,29 @@ function CheckoutForm() {
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold">Shipping Address</h3>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="first-name">First Name</Label>
-                    <Input id="first-name" required/>
-                  </div>
-                  <div>
-                    <Label htmlFor="last-name">Last Name</Label>
-                    <Input id="last-name" required/>
+                  <div className="sm:col-span-2">
+                    <Label htmlFor="full-name">Full Name</Label>
+                    <Input id="full-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
                   </div>
                   <div className="sm:col-span-2">
                     <Label htmlFor="address">Address</Label>
-                    <Input id="address" required/>
+                    <Input id="address" required value={address} onChange={(e) => setAddress(e.target.value)} />
                   </div>
                   <div>
                     <Label htmlFor="city">City</Label>
-                    <Input id="city" required/>
+                    <Input id="city" required value={city} onChange={(e) => setCity(e.target.value)} />
                   </div>
                   <div>
                     <Label htmlFor="state">State / Province</Label>
-                    <Input id="state" required/>
+                    <Input id="state" required value={state} onChange={(e) => setState(e.target.value)} />
                   </div>
                   <div>
                     <Label htmlFor="zip">ZIP / Postal Code</Label>
-                    <Input id="zip" required/>
+                    <Input id="zip" required value={zip} onChange={(e) => setZip(e.target.value)} />
                   </div>
                   <div>
                     <Label htmlFor="country">Country</Label>
-                    <Input id="country" required/>
+                    <Input id="country" required value={country} onChange={(e) => setCountry(e.target.value)} />
                   </div>
                 </div>
               </div>

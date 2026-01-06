@@ -16,23 +16,7 @@ import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-
-type OrderItem = {
-  productId: string;
-  name: string;
-  quantity: number;
-  price: number;
-};
-
-type Order = {
-  id: string;
-  userId: string;
-  items: OrderItem[];
-  totalPrice: number;
-  paymentMethod: string;
-  status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
-  createdAt: Timestamp;
-};
+import type { Order } from '@/lib/types';
 
 type UserProfile = {
   name: string;
@@ -62,7 +46,7 @@ export default function AccountPage() {
   const ordersQuery = useMemo(() => {
     if (!firestore || !user) return null;
     // The composite query (where + orderBy different field) requires a manual index in Firestore.
-    // To avoid this for the user, we can query by userId and sort on the client.
+    // To avoid this for the user, we query by userId and sort on the client.
     return query(
       collection(firestore, 'orders'),
       where('userId', '==', user.uid)

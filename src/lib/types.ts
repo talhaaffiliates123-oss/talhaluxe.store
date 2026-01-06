@@ -1,4 +1,15 @@
 
+
+export type ShippingInfo = {
+  name: string;
+  email: string;
+  address: string;
+  city: string;
+  state: string;
+  zip: string;
+  country: string;
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -16,6 +27,18 @@ export type Product = {
   onSale?: boolean;
 };
 
+export type Order = {
+  id: string;
+  userId: string;
+  items: CartItem[];
+  totalPrice: number;
+  shippingInfo: ShippingInfo;
+  paymentMethod: string;
+  status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  createdAt: any; // Firestore Timestamp
+};
+
+
 export type Category = {
   id: string;
   name: string;
@@ -30,7 +53,7 @@ export type Review = {
 };
 
 export type Testimonial = {
-  id: string;
+  id:string;
   name: string;
   location: string;
   quote: string;

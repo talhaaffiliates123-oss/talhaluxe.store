@@ -23,7 +23,7 @@
         "category": {
           "type": "string"
         },
-        "imageIds": {
+        "imageUrls": {
           "type": "array",
           "items": {
             "type": "string"
@@ -45,7 +45,7 @@
           "type": "boolean"
         }
       },
-      "required": ["name", "shortDescription", "description", "price", "category", "imageIds", "stock", "rating", "isNewArrival", "isBestSeller"]
+      "required": ["name", "shortDescription", "description", "price", "category", "imageUrls", "stock", "rating", "isNewArrival", "isBestSeller"]
     },
     "Order": {
       "title": "Order",
@@ -55,6 +55,34 @@
         "userId": {
           "type": "string",
           "description": "The ID of the user who placed the order."
+        },
+        "shippingInfo": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string"
+            },
+            "email": {
+              "type": "string",
+              "format": "email"
+            },
+            "address": {
+              "type": "string"
+            },
+            "city": {
+              "type": "string"
+            },
+            "state": {
+              "type": "string"
+            },
+            "zip": {
+              "type": "string"
+            },
+            "country": {
+              "type": "string"
+            }
+          },
+          "required": ["name", "email", "address", "city", "state", "zip", "country"]
         },
         "items": {
           "type": "array",
@@ -92,7 +120,7 @@
           "format": "date-time"
         }
       },
-      "required": ["userId", "items", "totalPrice", "status", "createdAt"]
+      "required": ["userId", "shippingInfo", "items", "totalPrice", "status", "createdAt"]
     },
     "UserProfile": {
       "title": "User Profile",
