@@ -4,9 +4,17 @@ import { Resend } from 'resend';
 import OrderConfirmationEmail from '@/components/emails/order-confirmation-email';
 import { Order } from '@/lib/types';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const resend = process.env.RESEND_API_KEY ? new Resend(process.env.RESEND_API_KEY) : null;
 
 export async function POST(req: NextRequest) {
+  if (!resend) {
+    console.error('RESEND_API_KEY is not set. Email sending is disabled.');
+    return NextResponse.json(
+      { error: 'Email service is not configured.' },
+      { status: 500 }
+    );
+  }
+  
   try {
     const order = await req.json() as Order;
 
