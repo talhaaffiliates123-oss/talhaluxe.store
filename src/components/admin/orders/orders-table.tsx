@@ -38,6 +38,30 @@ interface OrdersTableProps {
     searchTerm: string;
 }
 
+// A simple component to highlight text matches
+const Highlight = ({ text, highlight }: { text: string; highlight: string }) => {
+    if (!highlight.trim()) {
+      return <>{text}</>;
+    }
+    const regex = new RegExp(`(${highlight})`, 'gi');
+    const parts = text.split(regex);
+  
+    return (
+      <span>
+        {parts.filter(String).map((part, i) => {
+          return regex.test(part) ? (
+            <mark key={i} className="bg-accent/50 text-accent-foreground p-0 rounded">
+              {part}
+            </mark>
+          ) : (
+            <span key={i}>{part}</span>
+          );
+        })}
+      </span>
+    );
+};
+  
+
 export default function OrdersTable({ searchTerm }: OrdersTableProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
@@ -121,7 +145,9 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
                   return (
                       <TableRow key={order.id}>
                           <TableCell>
-                            <div className="font-medium">{order.shippingInfo?.name ?? 'N/A'}</div>
+                            <div className="font-medium">
+                                <Highlight text={order.shippingInfo?.name ?? 'N/A'} highlight={searchTerm} />
+                            </div>
                             <div className="text-sm text-muted-foreground">{order.shippingInfo?.email ?? order.userId}</div>
                           </TableCell>
                           <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
@@ -138,7 +164,7 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
                                     <div className="mx-auto w-full max-w-sm">
                                     <DrawerHeader>
                                         <DrawerTitle>Order Details</DrawerTitle>
-                                        <DrawerDescription>Order ID: {order.id}</DrawerDescription>
+                                        <DrawerDescription>Order ID: <Highlight text={order.id} highlight={searchTerm} /></DrawerDescription>
                                     </DrawerHeader>
                                     <div className="p-4 space-y-4">
                                         <div className="space-y-1">
