@@ -139,7 +139,7 @@ export default function AccountPage() {
                   <TableBody>
                     {orders.map(order => (
                       <TableRow key={order.id}>
-                        <TableCell className="font-medium truncate max-w-[100px]">{order.id}</TableCell>
+                        <TableCell className="font-medium">{order.id}</TableCell>
                         <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
                         <TableCell>
                           <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
@@ -151,41 +151,41 @@ export default function AccountPage() {
                                     <Button variant="outline" size="sm">View Details</Button>
                                 </DrawerTrigger>
                                 <DrawerContent>
-                                    <div className="mx-auto w-full max-w-2xl p-4">
+                                    <div className="mx-auto w-full max-w-2xl p-4 select-text">
                                         <DrawerHeader>
                                             <DrawerTitle>Order Details</DrawerTitle>
                                             <DrawerDescription>Order ID: {order.id}</DrawerDescription>
                                         </DrawerHeader>
-                                        <div className="p-4 grid gap-6 select-text">
+                                        <div className="p-4 grid gap-6">
                                             <div className="grid gap-2">
                                                 <h4 className="font-medium">Items</h4>
                                                 {order.items.map((item, index) => (
                                                     <div key={index} className="flex justify-between items-center">
-                                                        <p className="text-muted-foreground">{item.name} (x{item.quantity})</p>
-                                                        <p>PKR {(item.price * item.quantity).toFixed(2)}</p>
+                                                        <div className="text-muted-foreground">{item.name} (x{item.quantity})</div>
+                                                        <div>PKR {(item.price * item.quantity).toFixed(2)}</div>
                                                     </div>
                                                 ))}
                                                 <Separator className="my-2"/>
                                                 <div className="flex justify-between font-semibold">
-                                                    <p>Total</p>
-                                                    <p>PKR {order.totalPrice.toFixed(2)}</p>
+                                                    <div>Total</div>
+                                                    <div>PKR {order.totalPrice.toFixed(2)}</div>
                                                 </div>
                                             </div>
                                             <Separator />
                                             <div className="grid gap-2">
                                                 <h4 className="font-medium">Shipping Address</h4>
                                                 <div className="text-muted-foreground">
-                                                    <p>{order.shippingInfo.name}</p>
-                                                    <p>{order.shippingInfo.address}</p>
-                                                    <p>{order.shippingInfo.city}, {order.shippingInfo.state} {order.shippingInfo.zip}</p>
-                                                    <p>{order.shippingInfo.country}</p>
+                                                    <div>{order.shippingInfo.name}</div>
+                                                    <div>{order.shippingInfo.address}</div>
+                                                    <div>{order.shippingInfo.city}, {order.shippingInfo.state} {order.shippingInfo.zip}</div>
+                                                    <div>{order.shippingInfo.country}</div>
                                                 </div>
                                             </div>
                                             <Separator />
                                             <div className="grid gap-2">
                                                 <h4 className="font-medium">Payment & Status</h4>
                                                 <div className="text-muted-foreground">Paid via {order.paymentMethod}</div>
-                                                <div className="text-muted-foreground">Status: <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge></div>
+                                                <div className="flex items-center gap-2 text-muted-foreground">Status: <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge></div>
                                             </div>
                                         </div>
                                         <DrawerFooter className="pt-4">
