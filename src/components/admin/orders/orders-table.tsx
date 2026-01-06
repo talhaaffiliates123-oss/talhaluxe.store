@@ -179,6 +179,7 @@ The Talha Luxe Team
           <CardDescription>{!loading ? `Showing ${filteredOrders.length} of ${allOrders.length} total orders.` : 'Loading...'}</CardDescription>
       </CardHeader>
       <CardContent>
+        <AlertDialog>
           <Table>
               <TableHeader>
               <TableRow>
@@ -286,11 +287,7 @@ The Talha Luxe Team
               })}
               </TableBody>
           </Table>
-      </CardContent>
-    </Card>
-
-    <AlertDialog open={!!orderToCancel} onOpenChange={(open) => !open && setOrderToCancel(null)}>
-        <AlertDialogContent>
+          <AlertDialogContent>
             <AlertDialogHeader>
             <AlertDialogTitle>Notify Customer of Cancellation</AlertDialogTitle>
             <AlertDialogDescription>
@@ -301,7 +298,7 @@ The Talha Luxe Team
                 {cancellationEmailBody}
             </div>
             <AlertDialogFooter>
-            <AlertDialogCancel>Go Back</AlertDialogCancel>
+            <AlertDialogCancel onClick={() => setOrderToCancel(null)}>Go Back</AlertDialogCancel>
             <AlertDialogAction
                 onClick={handleConfirmCancel}
                 className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
@@ -310,7 +307,9 @@ The Talha Luxe Team
             </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
-    </AlertDialog>
+      </AlertDialog>
+      </CardContent>
+    </Card>
     </>
   );
 }
