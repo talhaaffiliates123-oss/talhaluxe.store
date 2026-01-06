@@ -21,6 +21,7 @@ import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-
 import stripePromise from '@/lib/stripe';
 import { StripeElementsOptions } from '@stripe/stripe-js';
 import Link from 'next/link';
+import { createNotification } from '@/lib/notifications';
 
 function CheckoutForm() {
   const { items, totalPrice, clearCart } = useCart();
@@ -99,7 +100,7 @@ function CheckoutForm() {
         }
 
         const docRef = collection(firestore, 'orders');
-        await addDoc(docRef, orderData)
+        const newOrderRef = await addDoc(docRef, orderData)
             .catch(async (serverError) => {
                 const permissionError = new FirestorePermissionError({
                     path: docRef.path,
@@ -109,6 +110,12 @@ function CheckoutForm() {
                 errorEmitter.emit('permission-error', permissionError);
                 throw serverError;
             });
+        
+        // Create notification for the user
+        await createNotification(firestore, user.uid, {
+            message: `Your order #${newOrderRef.id.substring(0, 6)}... has been received!`,
+            link: '/account',
+        });
         
         toast({
             title: 'Order Placed!',

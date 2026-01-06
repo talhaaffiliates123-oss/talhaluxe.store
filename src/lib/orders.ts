@@ -2,10 +2,12 @@ import {
     doc,
     updateDoc,
     Firestore,
+    getDoc,
   } from 'firebase/firestore';
   import type { Order } from './types';
   import { errorEmitter } from '@/firebase/error-emitter';
   import { FirestorePermissionError } from '@/firebase/errors';
+import { createNotification } from './notifications';
   
   export async function updateOrderStatus(
     db: Firestore,
@@ -13,9 +15,18 @@ import {
     status: Order['status']
   ) {
     const docRef = doc(db, 'orders', orderId);
+    
+    // 1. Get the original order to get the userId
+    const orderSnap = await getDoc(docRef);
+    if (!orderSnap.exists()) {
+        throw new Error("Order not found.");
+    }
+    const order = orderSnap.data() as Order;
+    const userId = order.userId;
+
+    // 2. Update the order status
     const orderData = { status };
-  
-    return updateDoc(docRef, orderData)
+    await updateDoc(docRef, orderData)
       .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: docRef.path,
@@ -23,7 +34,26 @@ import {
           requestResourceData: orderData,
         });
         errorEmitter.emit('permission-error', permissionError);
-        throw serverError; // Re-throw to be caught by the calling function
+        throw serverError;
       });
+
+    // 3. Create a notification for the user
+    let message = '';
+    switch(status) {
+        case 'Shipped':
+            message = `Your order #${orderId.substring(0,6)} has been shipped!`;
+            break;
+        case 'Delivered':
+            message = `Your order #${orderId.substring(0,6)} has been delivered.`;
+            break;
+        case 'Cancelled':
+            message = `Your order #${orderId.substring(0,6)} has been cancelled.`;
+            break;
+        default:
+            // Don't send notification for 'Processing' or other internal states
+            return;
+    }
+
+    await createNotification(db, userId, { message, link: '/account' });
   }
   

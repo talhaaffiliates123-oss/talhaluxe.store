@@ -143,6 +143,30 @@
         }
       },
       "required": ["name", "email", "createdAt"]
+    },
+    "Notification": {
+      "title": "Notification",
+      "description": "Represents a user notification.",
+      "type": "object",
+      "properties": {
+        "userId": {
+          "type": "string"
+        },
+        "message": {
+          "type": "string"
+        },
+        "read": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "link": {
+          "type": "string"
+        }
+      },
+      "required": ["userId", "message", "read", "createdAt"]
     }
   },
   "auth": {
@@ -168,6 +192,12 @@
         "$ref": "#/entities/UserProfile"
       },
       "description": "Stores public user profile information."
+    },
+    "/users/{userId}/notifications/{notificationId}": {
+      "schema": {
+        "$ref": "#/entities/Notification"
+      },
+      "description": "Stores notifications for a specific user."
     }
   }
 }

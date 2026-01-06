@@ -64,3 +64,12 @@ export type CartItem = {
   product: Product;
   quantity: number;
 };
+
+export type Notification = {
+    id: string;
+    userId: string;
+    message: string;
+    read: boolean;
+    createdAt: any; // Firestore Timestamp
+    link?: string;
+}
