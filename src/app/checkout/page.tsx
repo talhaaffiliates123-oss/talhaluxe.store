@@ -110,12 +110,21 @@ function CheckoutForm() {
 
         const newOrder: Order = { ...orderData, id: newOrderRef.id, createdAt: new Date() };
         
-        // Asynchronously send confirmation email
-        fetch('/api/send-order-confirmation', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(newOrder),
-        }).catch(err => console.error("Failed to send confirmation email:", err));
+        // Use the "Trigger Email" extension by creating a document in the 'mail' collection
+        const mailCollection = collection(firestore, 'mail');
+        addDoc(mailCollection, {
+            to: [orderData.shippingInfo.email],
+            message: {
+                subject: `Your Talha Luxe Order Confirmation #${newOrderRef.id.substring(0,8)}`,
+                html: `
+                    <h1>Thanks for your order!</h1>
+                    <p>Hi ${orderData.shippingInfo.name},</p>
+                    <p>We're getting your order ready to be shipped. We will notify you when it has been sent.</p>
+                    <p><strong>Order ID:</strong> ${newOrderRef.id}</p>
+                    <p><strong>Total:</strong> PKR ${orderData.totalPrice.toFixed(2)}</p>
+                `,
+            },
+        }).catch(err => console.error("Failed to trigger confirmation email:", err));
         
         // Create in-app notification for the user
         await createNotification(firestore, user.uid, {
