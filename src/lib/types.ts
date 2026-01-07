@@ -30,7 +30,7 @@ export type Product = {
 export type Order = {
   id: string;
   userId: string;
-  items: CartItem[];
+  items: CartItemData[];
   totalPrice: number;
   shippingInfo: ShippingInfo;
   paymentMethod: string;
@@ -64,6 +64,13 @@ export type CartItem = {
   product: Product;
   quantity: number;
 };
+
+export type CartItemData = {
+    productId: string;
+    name: string;
+    quantity: number;
+    price: number;
+}
 
 export type Notification = {
     id: string;

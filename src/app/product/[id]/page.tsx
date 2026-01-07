@@ -12,13 +12,7 @@ import { useFirestore } from '@/firebase';
 import { getProduct } from '@/lib/products';
 import { Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
+import { cn } from '@/lib/utils';
 
 
 export default function ProductDetailPage() {
@@ -30,6 +24,7 @@ export default function ProductDetailPage() {
   const firestore = useFirestore();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
   
   useEffect(() => {
     if (firestore && id) {
@@ -44,12 +39,30 @@ export default function ProductDetailPage() {
     }
   }, [firestore, id]);
 
+  const imageUrls = product?.imageUrls?.length > 0 ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
+
+  useEffect(() => {
+    if (imageUrls.length > 1) {
+      const timer = setInterval(() => {
+        setActiveImageIndex((prevIndex) => (prevIndex + 1) % imageUrls.length);
+      }, 10000); // Change image every 10 seconds
+
+      return () => clearInterval(timer);
+    }
+  }, [imageUrls.length]);
+
+
   if (loading || !product) {
     return (
         <div className="container mx-auto px-4 py-8 md:py-12">
             <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
                 <div>
                     <Skeleton className="aspect-square w-full rounded-lg"/>
+                     <div className="mt-4 grid grid-cols-5 gap-4">
+                        {Array.from({ length: 4 }).map((_, i) => (
+                            <Skeleton key={i} className="aspect-square w-full rounded-md" />
+                        ))}
+                    </div>
                 </div>
                 <div className="space-y-6">
                     <Skeleton className="h-10 w-3/4" />
@@ -79,29 +92,35 @@ export default function ProductDetailPage() {
     router.push('/checkout');
   };
 
-  const imageUrls = product.imageUrls?.length > 0 ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
-
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
       <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
         <div>
-          <Carousel className="w-full">
-            <CarouselContent>
-              {imageUrls.map((url, index) => (
-                <CarouselItem key={index}>
-                    <div className="aspect-square relative w-full overflow-hidden rounded-lg">
-                        <Image src={url} alt={`${product.name} image ${index + 1}`} fill className="object-cover" />
-                    </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
+           <div className="aspect-square relative w-full overflow-hidden rounded-lg border">
+              <Image 
+                src={imageUrls[activeImageIndex]} 
+                alt={`${product.name} image ${activeImageIndex + 1}`} 
+                fill 
+                className="object-cover transition-opacity duration-500"
+                key={activeImageIndex}
+              />
+            </div>
             {imageUrls.length > 1 && (
-                <>
-                    <CarouselPrevious />
-                    <CarouselNext />
-                </>
+                <div className="mt-4 grid grid-cols-5 gap-4">
+                    {imageUrls.map((url, index) => (
+                        <button 
+                            key={index}
+                            onClick={() => setActiveImageIndex(index)}
+                            className={cn(
+                                "aspect-square relative w-full overflow-hidden rounded-md focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
+                                activeImageIndex === index ? "ring-2 ring-primary ring-offset-2" : "opacity-75 hover:opacity-100"
+                            )}
+                        >
+                            <Image src={url} alt={`Thumbnail ${index + 1}`} fill className="object-cover" />
+                        </button>
+                    ))}
+                </div>
             )}
-          </Carousel>
         </div>
 
         {/* Product Details */}
@@ -114,7 +133,7 @@ export default function ProductDetailPage() {
                         <Star key={i} className={`w-5 h-5 ${i < Math.floor(product.rating) ? 'text-accent fill-accent' : 'text-gray-300'}`} />
                     ))}
                 </div>
-                <span className="text-sm text-muted-foreground">{product.rating} ({product.reviews.length} reviews)</span>
+                <span className="text-sm text-muted-foreground">{product.rating} ({product.reviews?.length ?? 0} reviews)</span>
             </div>
           </div>
           
