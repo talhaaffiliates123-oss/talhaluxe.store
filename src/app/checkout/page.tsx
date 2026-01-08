@@ -307,7 +307,8 @@ export default function CheckoutPage() {
   const router = useRouter();
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
-  const [loadingSecret, setLoadingSecret] = useState(true);
+  const [loadingSecret, setLoadingSecret] = useState(false);
+  const [paymentMethod, setPaymentMethod] = useState('cod');
 
   useEffect(() => {
     if (!userLoading && !user) {
@@ -316,7 +317,7 @@ export default function CheckoutPage() {
   }, [user, userLoading, router]);
 
   useEffect(() => {
-    if (totalPrice > 0) {
+    if (paymentMethod === 'card' && totalPrice > 0 && !clientSecret) {
         setLoadingSecret(true);
         fetch('/api/create-payment-intent', { 
             method: 'POST', 
@@ -335,12 +336,10 @@ export default function CheckoutPage() {
         })
         .catch(error => console.error("Error fetching client secret:", error))
         .finally(() => setLoadingSecret(false));
-    } else {
-        setLoadingSecret(false);
     }
-  }, [totalPrice]);
+  }, [totalPrice, paymentMethod, clientSecret]);
 
-  const showLoadingSkeleton = userLoading || (loadingSecret && totalPrice > 0) || items.length === 0;
+  const showLoadingSkeleton = userLoading || items.length === 0 && !userLoading;
 
   if (showLoadingSkeleton) {
     return (
@@ -372,16 +371,22 @@ export default function CheckoutPage() {
   
   const options: StripeElementsOptions | undefined = clientSecret ? { clientSecret, appearance: { theme: 'stripe' } } : undefined;
 
+  // This is a wrapper to pass setPaymentMethod down
+  const CheckoutFormWrapper = () => (
+    <CheckoutForm />
+  )
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="text-center mb-8">
         <h1 className="text-4xl font-bold tracking-tight font-headline">Checkout</h1>
       </div>
-      {/* Only render Elements and the form if we have a clientSecret (for card payments) or if the total is 0 (for free items/COD) */}
-      {(options || totalPrice === 0) ? (
+      {options && paymentMethod === 'card' ? (
          <Elements stripe={stripePromise} options={options}>
-            <CheckoutForm />
+            <CheckoutFormWrapper />
          </Elements>
+      ) : paymentMethod === 'cod' ? (
+         <CheckoutFormWrapper />
       ) : (
         // This state indicates we are trying to pay by card but the secret is not ready yet.
         <div className="grid lg:grid-cols-2 gap-12">
