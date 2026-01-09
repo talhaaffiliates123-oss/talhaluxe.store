@@ -15,7 +15,7 @@ import {
   import type { Order } from './types';
   import { errorEmitter } from '@/firebase/error-emitter';
   import { FirestorePermissionError } from '@/firebase/errors';
-import { createNotification } from './notifications';
+import { createNotification, sendCustomerCancellationNotification } from './notifications';
   
   export async function updateOrderStatus(
     db: Firestore,
@@ -48,16 +48,22 @@ import { createNotification } from './notifications';
     
     switch(status) {
         case 'Shipped':
-            message = `Your order #${orderId} has been shipped!`;
+            message = `Your order #${orderId.substring(0,8)} has been shipped!`;
             break;
         case 'Delivered':
-            message = `Your order #${orderId} has been delivered. We hope you enjoy your purchase!`;
+            message = `Your order #${orderId.substring(0,8)} has been delivered. We hope you enjoy your purchase!`;
             break;
         case 'Cancelled':
             if (cancelledBy === 'admin') {
-                message = `Your order #${orderId} has been cancelled by an admin. For more information, please contact us at Talhaluxe999@gmail.com.`;
+                // For admin cancellations, we send a direct email AND a system notification.
+                await sendCustomerCancellationNotification(db, {
+                    orderId: orderId,
+                    customerName: order.shippingInfo.name,
+                    customerEmail: order.shippingInfo.email,
+                });
+                message = `Your order #${orderId.substring(0,8)} has been cancelled. Please check your email for details.`;
             } else { // customer
-                message = `Your order cancellation for order #${orderId} has been accepted. If you didn't cancel this, please reorder. If you have any other questions, contact us at Talhaluxe999@gmail.com.`;
+                 message = `Your order cancellation for order #${orderId.substring(0,8)} has been received.`;
             }
             break;
         default:

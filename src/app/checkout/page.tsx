@@ -18,7 +18,7 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
-import { createNotification } from '@/lib/notifications';
+import { createNotification, sendAdminNewOrderNotification } from '@/lib/notifications';
 
 function CheckoutPageSkeleton() {
     return (
@@ -93,10 +93,18 @@ export default function CheckoutPage() {
 
             await setDoc(newOrderRef, orderData);
 
-            await createNotification(firestore, user.uid, {
-                message: `Your order #${newOrderRef.id.substring(0, 8)} has been received!`,
-                link: '/account'
-            });
+            await Promise.all([
+                createNotification(firestore, user.uid, {
+                    message: `Your order #${newOrderRef.id.substring(0, 8)} has been received!`,
+                    link: '/account'
+                }),
+                sendAdminNewOrderNotification(firestore, {
+                    orderId: newOrderRef.id,
+                    customerName: fullName,
+                    totalPrice: totalPrice,
+                })
+            ]);
+
 
             toast({ title: 'Order Placed!', description: 'Thank you for your purchase!' });
             clearCart();

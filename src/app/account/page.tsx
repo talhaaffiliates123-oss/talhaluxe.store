@@ -45,6 +45,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { sendAdminCancellationNotification } from '@/lib/notifications';
 
 type UserProfile = {
   name: string;
@@ -138,15 +139,15 @@ export default function AccountPage() {
     setIsCancelling(true);
 
     try {
-        // 1. Submit cancellation reason
         const reasonsToSubmit = cancellationReasons.filter(r => r !== 'other');
         const showCustomReason = cancellationReasons.includes('other');
+        const customReasonText = showCustomReason ? customReason : '';
 
         const reasonData = {
             orderId: orderToCancel.id,
             userId: user.uid,
             reasons: reasonsToSubmit,
-            customReason: showCustomReason ? customReason : '',
+            customReason: customReasonText,
             createdAt: new Date(),
         };
 
@@ -156,8 +157,16 @@ export default function AccountPage() {
             // Non-critical, so we don't block the cancellation itself
         });
 
-        // 2. Update order status
+        // Update order status
         await updateOrderStatus(firestore, orderToCancel.id, 'Cancelled', 'customer');
+        
+        // Notify admin
+        await sendAdminCancellationNotification(firestore, {
+            orderId: orderToCancel.id,
+            customerName: user.displayName || 'A customer',
+            reasons: reasonsToSubmit,
+            customReason: customReasonText,
+        });
 
         toast({
             title: 'Order Cancelled',
@@ -171,7 +180,7 @@ export default function AccountPage() {
             description: error.message || 'Could not cancel the order.',
         });
     } finally {
-        // 3. Reset state
+        // Reset state
         setOrderToCancel(null);
         setCancellationReasons([]);
         setCustomReason('');
