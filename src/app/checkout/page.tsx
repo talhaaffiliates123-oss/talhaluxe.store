@@ -50,7 +50,7 @@ export default function CheckoutPage() {
     const [city, setCity] = useState('');
     const [state, setState] = useState('');
     const [zip, setZip] = useState('');
-    const [country, setCountry] = useState('');
+    const [country, setCountry] = useState('Pakistan');
     
     useEffect(() => {
         if (!userLoading && !user) {
@@ -175,7 +175,7 @@ export default function CheckoutPage() {
                         </div>
                         <div>
                         <Label htmlFor="country">Country</Label>
-                        <Input id="country" required value={country} onChange={(e) => setCountry(e.target.value)} />
+                        <Input id="country" value={country} disabled />
                         </div>
                     </div>
                     </div>

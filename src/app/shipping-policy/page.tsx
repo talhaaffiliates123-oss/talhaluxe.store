@@ -41,7 +41,7 @@ export default function ShippingPolicyPage() {
           
           <h2 className="text-xl font-semibold text-foreground">International Shipping</h2>
           <p>
-            We currently do not ship outside of Pakistan.
+            We exclusively ship to addresses within Pakistan. We do not offer international shipping at this time.
           </p>
 
           <h2 className="text-xl font-semibold text-foreground">Questions</h2>
