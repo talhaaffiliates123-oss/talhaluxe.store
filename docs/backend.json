@@ -129,7 +129,7 @@
       "required": ["userId", "userName", "rating", "createdAt"]
     }
   },
-  "auth": { "providers": ["password", "emailLink"] },
+  "auth": { "providers": ["password", "emailLink", "google.com"] },
   "firestore": {
     "/products/{productId}": {
       "schema": { "$ref": "#/entities/Product" },

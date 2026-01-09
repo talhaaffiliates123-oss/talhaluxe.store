@@ -13,13 +13,43 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useFirestore } from '@/firebase';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { errorEmitter } from '@/firebase/error-emitter';
+import { Separator } from '@/components/ui/separator';
+
+function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 48 48"
+      width="24px"
+      height="24px"
+      {...props}
+    >
+      <path
+        fill="#FFC107"
+        d="M43.611,20.083H42V20H24v8h11.303c-1.649,4.657-6.08,8-11.303,8c-6.627,0-12-5.373-12-12s5.373-12,12-12c3.059,0,5.842,1.154,7.961,3.039l5.657-5.657C34.046,6.053,29.268,4,24,4C12.955,4,4,12.955,4,24s8.955,20,20,20s20-8.955,20-20C44,22.659,43.862,21.35,43.611,20.083z"
+      />
+      <path
+        fill="#FF3D00"
+        d="M6.306,14.691l6.06,4.71c-1.845,3.467-1.845,7.609,0,11.076l-6.06,4.71C3.454,32.043,2,28.138,2,24C2,19.862,3.454,15.957,6.306,14.691z"
+      />
+      <path
+        fill="#4CAF50"
+        d="M24,44c5.166,0,9.86-1.977,13.409-5.192l-6.19-5.238C29.211,35.091,26.715,36,24,36c-5.222,0-9.658-3.344-11.303-8H24v-8H2l-0.002,0.022C2.023,20.566,2,21.27,2,22c0,11.045,8.955,20,20,20z"
+      />
+      <path
+        fill="#1976D2"
+        d="M43.611,20.083H42V20H24v8h11.303c-0.792,2.237-2.231,4.166-4.087,5.571l6.19,5.238C39.99,35.536,44,30.169,44,24C44,22.659,43.862,21.35,43.611,20.083z"
+      />
+    </svg>
+  );
+}
 
 export default function SignupPage() {
   const auth = useAuth();
@@ -89,6 +119,24 @@ export default function SignupPage() {
     }
   };
 
+  const handleGoogleSignUp = async () => {
+    if (!auth) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Firebase is not available.' });
+        return;
+    }
+    setLoading(true);
+    try {
+        const provider = new GoogleAuthProvider();
+        await signInWithPopup(auth, provider);
+        toast({ title: 'Account Created!', description: 'Welcome to Talha Luxe!' });
+        router.push('/');
+    } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Sign Up Failed', description: error.message || 'An unexpected error occurred.' });
+    } finally {
+        setLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto flex min-h-[calc(100vh-8rem)] items-center justify-center px-4 py-16">
       <Card className="w-full max-w-md">
@@ -101,6 +149,20 @@ export default function SignupPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          <Button
+            variant="outline"
+            className="w-full"
+            onClick={handleGoogleSignUp}
+            disabled={loading}
+          >
+            <GoogleIcon className="mr-2 h-5 w-5" />
+            Sign up with Google
+          </Button>
+          <div className="flex items-center space-x-2">
+            <Separator className="flex-1" />
+            <span className="text-xs text-muted-foreground">OR</span>
+            <Separator className="flex-1" />
+          </div>
           <form onSubmit={handleEmailSignUp} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="name">Name</Label>
@@ -111,6 +173,7 @@ export default function SignupPage() {
                 required 
                 value={name}
                 onChange={(e) => setName(e.target.value)}
+                disabled={loading}
               />
             </div>
             <div className="space-y-2">
@@ -123,6 +186,7 @@ export default function SignupPage() {
                 autoComplete="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                disabled={loading}
               />
             </div>
             <div className="space-y-2">
@@ -133,6 +197,7 @@ export default function SignupPage() {
                 required 
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
+                disabled={loading}
               />
             </div>
             <Button type="submit" className="w-full bg-accent text-accent-foreground hover:bg-accent/90" disabled={loading}>
