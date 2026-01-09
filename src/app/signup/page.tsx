@@ -13,7 +13,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useAuth, useFirestore } from '@/firebase';
-import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, GoogleAuthProvider, signInWithPopup, getAdditionalUserInfo } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -120,16 +120,29 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignUp = async () => {
-    if (!auth) {
+    if (!auth || !firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'Firebase is not available.' });
         return;
     }
     setLoading(true);
     try {
         const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
+        const result = await signInWithPopup(auth, provider);
+        const additionalInfo = getAdditionalUserInfo(result);
+        
+        // If it's a new user, create their profile in Firestore
+        if (additionalInfo?.isNewUser) {
+            const userDocRef = doc(firestore, 'users', result.user.uid);
+            await setDoc(userDocRef, {
+                name: result.user.displayName,
+                email: result.user.email,
+                createdAt: serverTimestamp(),
+            });
+        }
+        
         toast({ title: 'Account Created!', description: 'Welcome to Talha Luxe!' });
         router.push('/');
+
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Sign Up Failed', description: error.message || 'An unexpected error occurred.' });
     } finally {

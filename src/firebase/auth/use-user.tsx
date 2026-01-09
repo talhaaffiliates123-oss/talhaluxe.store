@@ -24,11 +24,17 @@ export function useUser() {
       if (user) {
         setUser(user);
         
+        // The logic to create a user doc on first sign-in is now handled
+        // more explicitly within the sign-in flows (handleGoogleSignIn, etc.)
+        // to prevent race conditions and internal Firebase errors.
+        // We can keep a check here as a fallback, but the primary creation
+        // logic is now at the point of sign-up/sign-in.
         if (firestore) {
           const userDocRef = doc(firestore, 'users', user.uid);
           const userDoc = await getDoc(userDocRef);
 
           if (!userDoc.exists()) {
+             // This might run for email sign-ups or if the Google sign-in check fails.
              const userData = {
                 name: user.displayName,
                 email: user.email,

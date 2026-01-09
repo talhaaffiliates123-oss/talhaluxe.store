@@ -23,7 +23,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useFirestore, useUser } from '@/firebase';
 import {
   signInWithEmailAndPassword,
   sendSignInLinkToEmail,
@@ -31,7 +31,9 @@ import {
   signInWithEmailLink,
   GoogleAuthProvider,
   signInWithPopup,
+  getAdditionalUserInfo,
 } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -68,6 +70,7 @@ function GoogleIcon(props: React.SVGProps<SVGSVGElement>) {
 
 export default function LoginPage() {
   const auth = useAuth();
+  const firestore = useFirestore();
   const router = useRouter();
   const { toast } = useToast();
   const { user, loading: userLoading } = useUser();
@@ -131,15 +134,29 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!auth) {
+    if (!auth || !firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'Firebase is not available.' });
         return;
     }
     setIsLoading(true);
     try {
         const provider = new GoogleAuthProvider();
-        await signInWithPopup(auth, provider);
-        toast({ title: 'Login Successful', description: 'Welcome back!' });
+        const result = await signInWithPopup(auth, provider);
+        const additionalInfo = getAdditionalUserInfo(result);
+        
+        // If it's a new user, create their profile in Firestore
+        if (additionalInfo?.isNewUser) {
+            const userDocRef = doc(firestore, 'users', result.user.uid);
+            await setDoc(userDocRef, {
+                name: result.user.displayName,
+                email: result.user.email,
+                createdAt: serverTimestamp(),
+            });
+             toast({ title: 'Account Created!', description: 'Welcome to Talha Luxe!' });
+        } else {
+            toast({ title: 'Login Successful', description: 'Welcome back!' });
+        }
+
     } catch (error: any) {
         toast({ variant: 'destructive', title: 'Login Failed', description: error.message || 'An unexpected error occurred.' });
     } finally {
