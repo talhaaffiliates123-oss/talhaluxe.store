@@ -21,7 +21,7 @@ export type Product = {
   imageUrls: string[];
   stock: number;
   rating: number;
-  reviews: Review[];
+  reviewCount?: number;
   isNewArrival: boolean;
   isBestSeller: boolean;
   onSale?: boolean;
@@ -47,9 +47,11 @@ export type Category = {
 
 export type Review = {
   id: string;
-  author: string;
+  userId: string;
+  userName: string;
   rating: number;
-  text: string;
+  comment?: string;
+  createdAt: any; // Firestore Timestamp
 };
 
 export type Testimonial = {

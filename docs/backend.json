@@ -16,7 +16,8 @@
         "rating": { "type": "number" },
         "isNewArrival": { "type": "boolean" },
         "isBestSeller": { "type": "boolean" },
-        "onSale": { "type": "boolean" }
+        "onSale": { "type": "boolean" },
+        "reviewCount": { "type": "number", "description": "The total number of reviews." }
       },
       "required": [
         "name",
@@ -113,6 +114,19 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["orderId", "userId", "reasons", "createdAt"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "Represents a product review.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number", "description": "A number from 1 to 5." },
+        "comment": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["userId", "userName", "rating", "createdAt"]
     }
   },
   "auth": { "providers": ["password"] },
@@ -120,6 +134,10 @@
     "/products/{productId}": {
       "schema": { "$ref": "#/entities/Product" },
       "description": "Stores all products available in the store."
+    },
+    "/products/{productId}/reviews/{reviewId}": {
+        "schema": { "$ref": "#/entities/Review" },
+        "description": "Stores all reviews for a specific product."
     },
     "/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
