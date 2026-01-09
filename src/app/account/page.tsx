@@ -45,7 +45,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { sendAdminCancellationNotification } from '@/lib/notifications';
 
 type UserProfile = {
   name: string;
@@ -158,16 +157,8 @@ export default function AccountPage() {
         });
 
         // Update order status
-        await updateOrderStatus(firestore, orderToCancel.id, 'Cancelled', 'customer');
+        await updateOrderStatus(firestore, orderToCancel.id, 'Cancelled');
         
-        // Notify admin
-        await sendAdminCancellationNotification(firestore, {
-            orderId: orderToCancel.id,
-            customerName: user.displayName || 'A customer',
-            reasons: reasonsToSubmit,
-            customReason: customReasonText,
-        });
-
         toast({
             title: 'Order Cancelled',
             description: 'Your order has been successfully cancelled.',

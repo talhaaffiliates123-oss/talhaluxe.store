@@ -19,7 +19,6 @@ import {
 } from '@/components/ui/sheet';
 import { UserNav } from './user-nav';
 import { useCart } from '@/hooks/use-cart';
-import { Notifications } from './notifications';
 import { useUser } from '@/firebase';
 
 export function Header() {
@@ -98,7 +97,6 @@ export function Header() {
           <Button variant="ghost" size="icon" aria-label="Search">
             <Search className="h-5 w-5" />
           </Button>
-          {user && <Notifications />}
           <Button variant="ghost" size="icon" aria-label="Wishlist" asChild>
              <Link href="/wishlist">
                 <Heart className="h-5 w-5" />

@@ -42,9 +42,6 @@ service cloud.firestore {
         allow read, write: if isOwner(userId) || isAdmin();
       }
     }
-     match /mail/{mailId} {
-      allow create: if request.auth != null;
-    }
 
     match /cancellationReasons/{cancellationId} {
       allow read: if isAdmin();

@@ -15,23 +15,14 @@ import {
   import type { Order } from './types';
   import { errorEmitter } from '@/firebase/error-emitter';
   import { FirestorePermissionError } from '@/firebase/errors';
-import { createNotification, sendCustomerCancellationNotification } from './notifications';
   
   export async function updateOrderStatus(
     db: Firestore,
     orderId: string,
-    status: Order['status'],
-    cancelledBy: 'admin' | 'customer' = 'admin'
+    status: Order['status']
   ) {
     const docRef = doc(db, 'orders', orderId);
     
-    const orderSnap = await getDoc(docRef);
-    if (!orderSnap.exists()) {
-        throw new Error("Order not found.");
-    }
-    const order = orderSnap.data() as Order;
-    const userId = order.userId;
-
     const orderData = { status };
     await updateDoc(docRef, orderData)
       .catch(async (serverError) => {
@@ -43,36 +34,6 @@ import { createNotification, sendCustomerCancellationNotification } from './noti
         errorEmitter.emit('permission-error', permissionError);
         throw serverError;
       });
-
-    let message = '';
-    
-    switch(status) {
-        case 'Shipped':
-            message = `Your order #${orderId.substring(0,8)} has been shipped!`;
-            break;
-        case 'Delivered':
-            message = `Your order #${orderId.substring(0,8)} has been delivered. We hope you enjoy your purchase!`;
-            break;
-        case 'Cancelled':
-            if (cancelledBy === 'admin') {
-                // For admin cancellations, we send a direct email AND a system notification.
-                await sendCustomerCancellationNotification(db, {
-                    orderId: orderId,
-                    customerName: order.shippingInfo.name,
-                    customerEmail: order.shippingInfo.email,
-                });
-                message = `Your order #${orderId.substring(0,8)} has been cancelled. Please check your email for details.`;
-            } else { // customer
-                 message = `Your order cancellation for order #${orderId.substring(0,8)} has been received.`;
-            }
-            break;
-        default:
-            return; // Don't send notification for 'Processing'
-    }
-    
-    if (message) {
-        await createNotification(db, userId, { message, link: `/account` });
-    }
   }
   
   export async function clearCompletedOrders(db: Firestore) {
