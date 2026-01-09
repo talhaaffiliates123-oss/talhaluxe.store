@@ -37,7 +37,7 @@ export default function CartPage() {
             return (
               <Card key={product.id} className="overflow-hidden">
                 <CardContent className="p-4 flex gap-4">
-                  <div className="relative h-24 w-24 sm:h-32 sm:w-32 flex-shrink-0 overflow-hidden rounded-md border">
+                  <div className="relative h-24 w-24 flex-shrink-0 overflow-hidden rounded-md border">
                       <Image
                         src={imageUrl}
                         alt={product.name}
@@ -46,27 +46,32 @@ export default function CartPage() {
                         className="h-full w-full object-cover"
                       />
                   </div>
-                  <div className="flex flex-1 flex-col justify-between">
+                  <div className="flex flex-1 flex-col justify-between gap-2">
                     <div>
-                      <h3 className="font-semibold">
+                      <h3 className="font-semibold leading-tight">
                         <Link href={`/product/${product.id}`}>{product.name}</Link>
                       </h3>
-                      <p className="text-sm text-muted-foreground">{product.shortDescription}</p>
-                      <p className="mt-2 font-bold">PKR {price.toFixed(2)}</p>
+                      <p className="text-sm text-muted-foreground hidden sm:block">{product.shortDescription}</p>
+                      <p className="sm:hidden mt-1 font-bold">PKR {price.toFixed(2)}</p>
                     </div>
-                    <div className="flex items-center justify-between mt-2">
+                    <div className="flex items-center justify-between mt-auto">
                         <div className="flex items-center border rounded-md">
-                        <Button variant="ghost" size="icon" onClick={() => updateQuantity(product.id, quantity - 1)}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(product.id, quantity - 1)}>
                             <Minus className="h-4 w-4" />
                         </Button>
-                        <span className="w-12 text-center">{quantity}</span>
-                        <Button variant="ghost" size="icon" onClick={() => updateQuantity(product.id, quantity + 1)}>
+                        <span className="w-10 text-center text-sm">{quantity}</span>
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => updateQuantity(product.id, quantity + 1)}>
                             <Plus className="h-4 w-4" />
                         </Button>
                         </div>
+                         <div className="sm:hidden">
+                             <Button variant="ghost" size="icon" onClick={() => removeItem(product.id)}>
+                                <Trash2 className="h-5 w-5 text-muted-foreground hover:text-destructive" />
+                            </Button>
+                        </div>
                     </div>
                   </div>
-                  <div className="flex flex-col justify-between items-end">
+                  <div className="hidden sm:flex flex-col justify-between items-end">
                     <p className="font-bold text-lg">PKR {(price * quantity).toFixed(2)}</p>
                     <Button variant="ghost" size="icon" onClick={() => removeItem(product.id)}>
                         <Trash2 className="h-5 w-5 text-muted-foreground hover:text-destructive" />

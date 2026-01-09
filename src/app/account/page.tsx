@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
@@ -43,6 +44,7 @@ import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Trash } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 type UserProfile = {
   name: string;
@@ -61,6 +63,7 @@ export default function AccountPage() {
   const { user } = useUser();
   const firestore = useFirestore();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const [displayName, setDisplayName] = useState('');
   const [orderToCancel, setOrderToCancel] = useState<Order | null>(null);
@@ -204,6 +207,59 @@ export default function AccountPage() {
     );
   }
 
+  const OrderDetailsDrawer = ({ order }: { order: Order }) => (
+    <Drawer>
+        <DrawerTrigger asChild>
+            <Button variant="outline" size="sm">View Details</Button>
+        </DrawerTrigger>
+        <DrawerContent>
+            <div className="mx-auto w-full max-w-2xl p-4 select-text">
+                <DrawerHeader>
+                    <DrawerTitle>Order Details</DrawerTitle>
+                    <DrawerDescription>Order ID: {order.id}</DrawerDescription>
+                </DrawerHeader>
+                <div className="p-4 grid gap-6">
+                    <div className="grid gap-2">
+                        <h4 className="font-medium">Items</h4>
+                        {order.items.map((item, index) => (
+                            <div key={index} className="flex justify-between items-center">
+                                <div className="text-muted-foreground">{item.name} (x{item.quantity})</div>
+                                <div>PKR {(item.price * item.quantity).toFixed(2)}</div>
+                            </div>
+                        ))}
+                        <Separator className="my-2"/>
+                        <div className="flex justify-between font-semibold">
+                            <div>Total</div>
+                            <div>PKR {order.totalPrice.toFixed(2)}</div>
+                        </div>
+                    </div>
+                    <Separator />
+                    <div className="grid gap-2">
+                        <h4 className="font-medium">Shipping Address</h4>
+                        <div className="text-muted-foreground">
+                            <div>{order.shippingInfo.name}</div>
+                            <div>{order.shippingInfo.address}</div>
+                            <div>{order.shippingInfo.city}, {order.shippingInfo.state} {order.shippingInfo.zip}</div>
+                            <div>{order.shippingInfo.country}</div>
+                        </div>
+                    </div>
+                    <Separator />
+                    <div className="grid gap-2">
+                        <h4 className="font-medium">Payment & Status</h4>
+                        <div className="text-muted-foreground">Paid via {order.paymentMethod}</div>
+                        <div className="flex items-center gap-2 text-muted-foreground">Status: <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge></div>
+                    </div>
+                </div>
+                <DrawerFooter className="pt-4">
+                    <DrawerClose asChild>
+                        <Button variant="outline">Close</Button>
+                    </DrawerClose>
+                </DrawerFooter>
+            </div>
+        </DrawerContent>
+    </Drawer>
+  );
+
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="mb-8">
@@ -220,14 +276,14 @@ export default function AccountPage() {
             
             <TabsContent value="orders" className="mt-6">
             <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
+                <CardHeader className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
                         <CardTitle>Order History</CardTitle>
                         <CardDescription>View the status and details of your past orders.</CardDescription>
                     </div>
                     <AlertDialog open={clearHistoryAlertOpen} onOpenChange={setClearHistoryAlertOpen}>
                         <AlertDialogTrigger asChild>
-                            <Button variant="outline" disabled={!canClearHistory}>
+                            <Button variant="outline" disabled={!canClearHistory} className="w-full md:w-auto">
                                 <Trash className="mr-2 h-4 w-4" />
                                 Clear History
                             </Button>
@@ -257,92 +313,80 @@ export default function AccountPage() {
                     </div>
                 ) : !orders || orders.length === 0 ? (
                     <p className="text-center text-muted-foreground py-8">You haven't placed any orders yet.</p>
-                ) : (
-                    <Table>
-                    <TableHeader>
-                        <TableRow>
-                        <TableHead>Order ID</TableHead>
-                        <TableHead>Date</TableHead>
-                        <TableHead>Status</TableHead>
-                        <TableHead>Total</TableHead>
-                        <TableHead></TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
+                ) : isMobile ? (
+                    // Mobile Card View
+                    <div className="space-y-4">
                         {orders.map(order => (
-                        <TableRow key={order.id}>
-                            <TableCell className="font-medium">{order.id.substring(0,8)}...</TableCell>
-                            <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
-                            <TableCell>
-                            <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
-                            </TableCell>
-                            <TableCell>PKR {order.totalPrice.toFixed(2)}</TableCell>
-                            <TableCell className="text-right space-x-2">
-                                <Drawer>
-                                    <DrawerTrigger asChild>
-                                        <Button variant="outline" size="sm">View Details</Button>
-                                    </DrawerTrigger>
-                                    <DrawerContent>
-                                        <div className="mx-auto w-full max-w-2xl p-4 select-text">
-                                            <DrawerHeader>
-                                                <DrawerTitle>Order Details</DrawerTitle>
-                                                <DrawerDescription>Order ID: {order.id}</DrawerDescription>
-                                            </DrawerHeader>
-                                            <div className="p-4 grid gap-6">
-                                                <div className="grid gap-2">
-                                                    <h4 className="font-medium">Items</h4>
-                                                    {order.items.map((item, index) => (
-                                                        <div key={index} className="flex justify-between items-center">
-                                                            <div className="text-muted-foreground">{item.name} (x{item.quantity})</div>
-                                                            <div>PKR {(item.price * item.quantity).toFixed(2)}</div>
-                                                        </div>
-                                                    ))}
-                                                    <Separator className="my-2"/>
-                                                    <div className="flex justify-between font-semibold">
-                                                        <div>Total</div>
-                                                        <div>PKR {order.totalPrice.toFixed(2)}</div>
-                                                    </div>
-                                                </div>
-                                                <Separator />
-                                                <div className="grid gap-2">
-                                                    <h4 className="font-medium">Shipping Address</h4>
-                                                    <div className="text-muted-foreground">
-                                                        <div>{order.shippingInfo.name}</div>
-                                                        <div>{order.shippingInfo.address}</div>
-                                                        <div>{order.shippingInfo.city}, {order.shippingInfo.state} {order.shippingInfo.zip}</div>
-                                                        <div>{order.shippingInfo.country}</div>
-                                                    </div>
-                                                </div>
-                                                <Separator />
-                                                <div className="grid gap-2">
-                                                    <h4 className="font-medium">Payment & Status</h4>
-                                                    <div className="text-muted-foreground">Paid via {order.paymentMethod}</div>
-                                                    <div className="flex items-center gap-2 text-muted-foreground">Status: <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge></div>
-                                                </div>
-                                            </div>
-                                            <DrawerFooter className="pt-4">
-                                                <DrawerClose asChild>
-                                                    <Button variant="outline">Close</Button>
-                                                </DrawerClose>
-                                            </DrawerFooter>
+                            <Card key={order.id}>
+                                <CardContent className="p-4 space-y-3">
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <p className="font-semibold">Order #{order.id.substring(0,8)}...</p>
+                                            <p className="text-sm text-muted-foreground">{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</p>
                                         </div>
-                                    </DrawerContent>
-                                </Drawer>
-                                {order.status === 'Processing' && (
-                                     <AlertDialogTrigger asChild>
-                                        <Button
-                                            variant="destructive"
-                                            size="sm"
-                                            onClick={() => setOrderToCancel(order)}
-                                        >
-                                            Cancel Order
-                                        </Button>
-                                     </AlertDialogTrigger>
-                                )}
-                            </TableCell>
-                        </TableRow>
+                                        <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
+                                    </div>
+                                    <div className="flex justify-between items-center font-semibold">
+                                        <span>Total</span>
+                                        <span>PKR {order.totalPrice.toFixed(2)}</span>
+                                    </div>
+                                    <div className="flex items-center gap-2 pt-2">
+                                        <OrderDetailsDrawer order={order} />
+                                        {order.status === 'Processing' && (
+                                            <AlertDialogTrigger asChild>
+                                                <Button
+                                                    variant="destructive"
+                                                    size="sm"
+                                                    onClick={() => setOrderToCancel(order)}
+                                                    className="flex-1"
+                                                >
+                                                    Cancel Order
+                                                </Button>
+                                            </AlertDialogTrigger>
+                                        )}
+                                    </div>
+                                </CardContent>
+                            </Card>
                         ))}
-                    </TableBody>
+                    </div>
+                ) : (
+                    // Desktop Table View
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                            <TableHead>Order ID</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Total</TableHead>
+                            <TableHead className="text-right">Actions</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {orders.map(order => (
+                            <TableRow key={order.id}>
+                                <TableCell className="font-medium">{order.id.substring(0,8)}...</TableCell>
+                                <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
+                                <TableCell>
+                                <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
+                                </TableCell>
+                                <TableCell>PKR {order.totalPrice.toFixed(2)}</TableCell>
+                                <TableCell className="text-right space-x-2">
+                                    <OrderDetailsDrawer order={order} />
+                                    {order.status === 'Processing' && (
+                                        <AlertDialogTrigger asChild>
+                                            <Button
+                                                variant="destructive"
+                                                size="sm"
+                                                onClick={() => setOrderToCancel(order)}
+                                            >
+                                                Cancel Order
+                                            </Button>
+                                        </AlertDialogTrigger>
+                                    )}
+                                </TableCell>
+                            </TableRow>
+                            ))}
+                        </TableBody>
                     </Table>
                 )}
                 </CardContent>
