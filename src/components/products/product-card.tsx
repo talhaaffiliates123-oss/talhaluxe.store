@@ -23,6 +23,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent link navigation
+    e.preventDefault();
     addItem(product);
     toast({
       title: 'Added to cart',
@@ -82,7 +83,7 @@ export default function ProductCard({ product }: ProductCardProps) {
           <div className="flex items-center justify-between text-sm text-muted-foreground">
             <span>{product.category.charAt(0).toUpperCase() + product.category.slice(1)}</span>
             <div className="flex items-center gap-1">
-              <Star className="w-4 h-4 fill-accent text-accent" />
+              <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
               <span>{product.rating}</span>
             </div>
           </div>
@@ -102,7 +103,8 @@ export default function ProductCard({ product }: ProductCardProps) {
             )}
           </div>
           <Button
-            className="w-full mt-4 bg-primary hover:bg-primary/90"
+            className="w-full mt-4"
+            variant="secondary"
             onClick={handleAddToCart}
           >
             <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart

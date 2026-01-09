@@ -130,7 +130,7 @@ export default function ProductDetailPage() {
             <div className="mt-2 flex items-center gap-4">
                 <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-5 h-5 ${i < Math.floor(product.rating) ? 'text-accent fill-accent' : 'text-gray-300'}`} />
+                        <Star key={i} className={`w-5 h-5 ${i < Math.floor(product.rating) ? 'text-yellow-400 fill-yellow-400' : 'text-gray-300'}`} />
                     ))}
                 </div>
                 <span className="text-sm text-muted-foreground">{product.rating} ({product.reviews?.length ?? 0} reviews)</span>
@@ -175,11 +175,11 @@ export default function ProductDetailPage() {
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleAddToCart} disabled={product.stock === 0}>
-              Add to Cart
-            </Button>
-            <Button size="lg" variant="outline" className="flex-1" onClick={handleBuyNow} disabled={product.stock === 0}>
+            <Button size="lg" className="flex-1" onClick={handleBuyNow} disabled={product.stock === 0}>
               Buy Now
+            </Button>
+            <Button size="lg" variant="secondary" className="flex-1" onClick={handleAddToCart} disabled={product.stock === 0}>
+              Add to Cart
             </Button>
              <Button size="lg" variant="outline" className="px-4">
               <Heart className="h-5 w-5" />
