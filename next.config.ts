@@ -45,6 +45,11 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+  },
+  experimental: {
+    allowedDevOrigins: [
+      "https://6000-firebase-studio-1767543613923.cluster-edb2jv34dnhjisxuq5m7l37ccy.cloudworkstations.dev",
+    ]
   }
 };
 
