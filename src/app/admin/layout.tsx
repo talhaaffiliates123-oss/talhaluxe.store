@@ -14,8 +14,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isVerifying, setIsVerifying] = useState(true);
 
-  // This value is set in next.config.ts and the .env file
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL;
+  // Hardcode the admin email to ensure the check works without relying on environment variables.
+  const adminEmail = "talhaaffiliates123@gmail.com";
 
   useEffect(() => {
     if (!loading) {
