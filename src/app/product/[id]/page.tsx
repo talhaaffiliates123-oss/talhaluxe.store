@@ -201,15 +201,28 @@ export default function ProductDetailPage() {
     fetchAllData();
   }, [fetchAllData]);
 
+  const imageUrls = useMemo(() => {
+    if (product?.imageUrls && product.imageUrls.length > 0) {
+      return product.imageUrls;
+    }
+    if (product?.variants && product.variants.length > 0) {
+      const variantImages = product.variants.map(v => v.imageUrl).filter(Boolean) as string[];
+      if (variantImages.length > 0) {
+        return variantImages;
+      }
+    }
+    return ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
+  }, [product]);
+
   // Autoplay image slider effect
   useEffect(() => {
-    if (product && product.imageUrls && product.imageUrls.length > 1) {
+    if (imageUrls && imageUrls.length > 1) {
       const timer = setInterval(() => {
-          setActiveImageIndex((prevIndex) => (prevIndex + 1) % (product.imageUrls?.length || 1));
+          setActiveImageIndex((prevIndex) => (prevIndex + 1) % (imageUrls.length || 1));
       }, 10000);
       return () => clearInterval(timer);
     }
-  }, [product, selectedVariant]); // Reruns if selectedVariant changes
+  }, [imageUrls]);
 
   useEffect(() => {
     // If product has variants, but none are selected, and there's only one variant, select it by default.
@@ -226,7 +239,7 @@ export default function ProductDetailPage() {
     const variant = product?.variants?.find(v => v.id === variantId);
     if (variant) {
         setSelectedVariant(variant);
-        const imageIndex = product?.imageUrls.findIndex(url => url === variant.imageUrl);
+        const imageIndex = imageUrls.findIndex(url => url === variant.imageUrl);
         if (imageIndex !== -1) {
             setActiveImageIndex(imageIndex);
         }
@@ -266,16 +279,6 @@ export default function ProductDetailPage() {
   }
   
   const hasVariants = product.variants && product.variants.length > 0;
-
-  const imageUrls = useMemo(() => {
-    if (product.imageUrls?.length) {
-      return product.imageUrls;
-    }
-    if (hasVariants) {
-      return product.variants!.map(v => v.imageUrl).filter(Boolean) as string[];
-    }
-    return ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
-  }, [product, hasVariants]);
 
   const canPurchase = !hasVariants || !!selectedVariant;
   const currentStock = hasVariants ? (selectedVariant?.stock ?? 0) : product.stock;
