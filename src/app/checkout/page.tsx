@@ -83,6 +83,7 @@ export default function CheckoutPage() {
                     name: item.product.name,
                     quantity: item.quantity,
                     price: item.product.discountedPrice ?? item.product.price,
+                    variant: item.variant ? { id: item.variant.id, name: item.variant.name } : undefined,
                 })),
                 totalPrice,
                 paymentMethod,
