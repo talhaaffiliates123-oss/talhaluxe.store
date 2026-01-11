@@ -1,7 +1,8 @@
 import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Package2, Twitter, Instagram, Facebook } from 'lucide-react';
+import { Twitter, Instagram, Facebook } from 'lucide-react';
+import Image from 'next/image';
 
 export function Footer() {
   return (
@@ -10,10 +11,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <Link href="/" className="flex items-center space-x-2">
-              <Package2 className="h-6 w-6 text-accent" />
-              <span className="font-bold sm:inline-block font-headline">
-                Talha Luxe
-              </span>
+               <Image src="/logo.png" alt="Talha Luxe Logo" width={120} height={48} className="h-12 w-auto" />
             </Link>
             <p className="text-sm text-muted-foreground">
               Premium fashion for the discerning individual.

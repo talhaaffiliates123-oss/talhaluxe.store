@@ -5,7 +5,6 @@ import {
   Bell,
   Heart,
   Menu,
-  Package2,
   Search,
   ShoppingCart,
 } from 'lucide-react';
@@ -20,6 +19,7 @@ import {
 import { UserNav } from './user-nav';
 import { useCart } from '@/hooks/use-cart';
 import { useUser } from '@/firebase';
+import Image from 'next/image';
 
 export function Header() {
   const { items } = useCart();
@@ -39,10 +39,7 @@ export function Header() {
       <div className="container flex h-16 items-center">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Package2 className="h-6 w-6 text-accent" />
-            <span className="hidden font-bold sm:inline-block font-headline">
-              Talha Luxe
-            </span>
+            <Image src="/logo.png" alt="Talha Luxe Logo" width={100} height={40} className="h-10 w-auto" />
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
             {navLinks.map((link) => (
@@ -77,8 +74,7 @@ export function Header() {
                 href="/"
                 className="flex items-center gap-2 text-lg font-semibold"
               >
-                <Package2 className="h-6 w-6 text-accent" />
-                <span className="font-bold font-headline">Talha Luxe</span>
+                 <Image src="/logo.png" alt="Talha Luxe Logo" width={120} height={48} className="h-12 w-auto" />
               </Link>
               {navLinks.map((link) => (
                 <Link
