@@ -35,7 +35,6 @@ import { v4 as uuidv4 } from 'uuid';
 const variantSchema = z.object({
   id: z.string().default(() => uuidv4()),
   name: z.string().min(1, 'Variant name is required'),
-  color: z.string().optional(),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
 });
 
@@ -209,14 +208,10 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             </CardHeader>
             <CardContent className="space-y-4">
                 {variantsFields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-4 border rounded-lg">
+                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-lg">
                         <div className="md:col-span-2">
-                            <Label htmlFor={`variants.${index}.name`}>Variant Name (e.g., Black)</Label>
+                            <Label htmlFor={`variants.${index}.name`}>Variant Name (e.g., Black, Large)</Label>
                             <Input {...register(`variants.${index}.name`)} id={`variants.${index}.name`} />
-                        </div>
-                        <div>
-                            <Label htmlFor={`variants.${index}.color`}>Color (Hex)</Label>
-                            <Input {...register(`variants.${index}.color`)} id={`variants.${index}.color`} placeholder="#000000" />
                         </div>
                         <div className="flex items-end gap-2">
                             <div>
@@ -231,7 +226,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                          {errors.variants?.[index]?.stock && <p className="text-destructive text-sm mt-1 col-span-full">{errors.variants[index]?.stock?.message}</p>}
                     </div>
                 ))}
-                <Button type="button" variant="outline" onClick={() => appendVariant({ id: uuidv4(), name: '', stock: 0, color: '' })}>
+                <Button type="button" variant="outline" onClick={() => appendVariant({ id: uuidv4(), name: '', stock: 0 })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Variant
                 </Button>

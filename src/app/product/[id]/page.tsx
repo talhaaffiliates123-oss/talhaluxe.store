@@ -358,7 +358,6 @@ export default function ProductDetailPage() {
                 {product.variants?.map(variant => (
                   <Label key={variant.id} htmlFor={variant.id} className={cn("flex items-center justify-center rounded-md border-2 p-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer", { 'border-primary bg-accent text-accent-foreground': selectedVariant?.id === variant.id, 'opacity-50 cursor-not-allowed': variant.stock === 0 })}>
                     <RadioGroupItem value={variant.id} id={variant.id} className="sr-only" disabled={variant.stock === 0} />
-                    {variant.color && <span className="h-4 w-4 rounded-full mr-2" style={{ backgroundColor: variant.color }} />}
                     {variant.name}
                   </Label>
                 ))}

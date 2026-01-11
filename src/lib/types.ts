@@ -13,7 +13,6 @@ export type ShippingInfo = {
 export type Variant = {
   id: string;
   name: string;
-  color?: string;
   stock: number;
 };
 
