@@ -32,8 +32,24 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onRev
   const [comment, setComment] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  useEffect(() => {
+    setRating(0);
+    setComment('');
+    setHoverRating(0);
+  }, [productId]);
+
+
   if (!user || !firestore) {
-    return null;
+    return (
+        <Card className="bg-muted/50">
+            <CardContent className="p-6 text-center">
+                <p className="text-muted-foreground">You must be logged in to write a review.</p>
+                <Button asChild variant="link" className="mt-2">
+                    <Link href={`/login?redirect=/product/${productId}`}>Log in or Sign up</Link>
+                </Button>
+            </CardContent>
+        </Card>
+    );
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -122,7 +138,9 @@ const ReviewList = ({ reviews }: { reviews: Review[] }) => {
             <div className="flex items-center justify-between">
               <span className="font-semibold">{review.userName}</span>
               <span className="text-xs text-muted-foreground">
-                {review.createdAt ? formatDistanceToNow(review.createdAt.toDate(), { addSuffix: true }) : ''}
+                {review.createdAt && typeof review.createdAt.toDate === 'function' 
+                  ? formatDistanceToNow(review.createdAt.toDate(), { addSuffix: true }) 
+                  : 'Just now'}
               </span>
             </div>
             <div className="flex items-center gap-1 mt-1">
@@ -165,12 +183,13 @@ export default function ProductDetailPage() {
             }
             const reviewsData = await getReviews(firestore, productId);
             
-            // Set state together to avoid race conditions
             setProduct(productData);
             setReviews(reviewsData);
         } catch (error) {
             console.error("Error fetching product data:", error);
-            notFound();
+            // Don't call notFound() here if it's a review fetch error,
+            // but for now, we assume product fetch is the critical path.
+            setProduct(null); // Ensure no stale data is shown
         } finally {
             setLoading(false);
         }
@@ -180,21 +199,22 @@ export default function ProductDetailPage() {
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
-
-  const imageUrls = product?.imageUrls?.length ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
-
+  
   useEffect(() => {
-    if (product && imageUrls.length > 1) {
-      const timer = setInterval(() => {
-        setActiveImageIndex((prevIndex) => (prevIndex + 1) % imageUrls.length);
-      }, 10000); // Change image every 10 seconds
+    if (product) {
+        const imageUrls = product.imageUrls?.length ? product.imageUrls : [];
+        if (imageUrls.length > 1) {
+            const timer = setInterval(() => {
+                setActiveImageIndex((prevIndex) => (prevIndex + 1) % imageUrls.length);
+            }, 10000); // Change image every 10 seconds
 
-      return () => clearInterval(timer);
+            return () => clearInterval(timer);
+        }
     }
-  }, [product, imageUrls]);
+  }, [product]);
 
 
-  if (loading || !product) {
+  if (loading) {
     return (
         <div className="container mx-auto px-4 py-8 md:py-12">
             <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
@@ -220,6 +240,13 @@ export default function ProductDetailPage() {
         </div>
     );
   }
+
+  if (!product) {
+      // This state is reached if getProduct fails or returns null after loading.
+      return notFound();
+  }
+  
+  const imageUrls = product.imageUrls?.length ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
 
   const handleAddToCart = () => {
     addItem(product, quantity);
@@ -248,6 +275,7 @@ export default function ProductDetailPage() {
                 fill 
                 className="object-cover transition-opacity duration-500"
                 key={activeImageIndex}
+                sizes="(max-width: 768px) 100vw, 50vw"
               />
             </div>
             {imageUrls.length > 1 && (
@@ -261,7 +289,7 @@ export default function ProductDetailPage() {
                                 activeImageIndex === index ? "ring-2 ring-primary ring-offset-2" : "opacity-75 hover:opacity-100"
                             )}
                         >
-                            <Image src={url} alt={`Thumbnail ${index + 1}`} fill className="object-cover" />
+                            <Image src={url} alt={`Thumbnail ${index + 1}`} fill className="object-cover" sizes="10vw" />
                         </button>
                     ))}
                 </div>
@@ -342,25 +370,10 @@ export default function ProductDetailPage() {
                 <ReviewList reviews={reviews} />
             </div>
              <div>
-                {user ? (
-                    <ReviewForm productId={product.id} onReviewSubmitted={fetchAllData} />
-                ) : (
-                    <Card className="bg-muted/50">
-                        <CardContent className="p-6 text-center">
-                            <p className="text-muted-foreground">You must be logged in to write a review.</p>
-                            <Button asChild variant="link" className="mt-2">
-                                <Link href={`/login?redirect=/product/${product.id}`}>Log in or Sign up</Link>
-                            </Button>
-                        </CardContent>
-                    </Card>
-                )}
+                <ReviewForm productId={product.id} onReviewSubmitted={fetchAllData} />
             </div>
         </div>
       </div>
     </div>
   );
 }
-
-    
-
-    
