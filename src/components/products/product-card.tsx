@@ -9,6 +9,7 @@ import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
+import { useRouter } from 'next/navigation';
 
 type ProductCardProps = {
   product: Product;
@@ -17,18 +18,24 @@ type ProductCardProps = {
 export default function ProductCard({ product }: ProductCardProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
+  const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
   const imageUrls = product.imageUrls?.length > 0 ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
+  const hasVariants = product.variants && product.variants.length > 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent link navigation
+    e.stopPropagation(); 
     e.preventDefault();
-    addItem(product);
-    toast({
-      title: 'Added to cart',
-      description: `${product.name} has been added to your cart.`,
-    });
+    if (hasVariants) {
+        router.push(`/product/${product.id}`);
+    } else {
+        addItem(product);
+        toast({
+        title: 'Added to cart',
+        description: `${product.name} has been added to your cart.`,
+        });
+    }
   };
 
   const nextImage = (e: React.MouseEvent) => {
@@ -42,6 +49,8 @@ export default function ProductCard({ product }: ProductCardProps) {
     e.stopPropagation();
     setCurrentImageIndex((prevIndex) => (prevIndex - 1 + imageUrls.length) % imageUrls.length);
   };
+  
+  const totalStock = product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? product.stock;
 
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-xl">
@@ -77,6 +86,11 @@ export default function ProductCard({ product }: ProductCardProps) {
                     </Button>
                   </>
                 )}
+                 {totalStock === 0 && (
+                    <div className="absolute top-2 right-2 bg-destructive text-destructive-foreground text-xs font-bold px-2 py-1 rounded-md">
+                        SOLD OUT
+                    </div>
+                 )}
             </div>
         </Link>
         <div className="p-4">
@@ -84,7 +98,7 @@ export default function ProductCard({ product }: ProductCardProps) {
             <span>{product.category.charAt(0).toUpperCase() + product.category.slice(1)}</span>
             <div className="flex items-center gap-1">
               <Star className="w-4 h-4 fill-yellow-400 text-yellow-400" />
-              <span>{product.rating}</span>
+              <span>{product.rating.toFixed(1)}</span>
             </div>
           </div>
           <h3 className="mt-1 font-semibold truncate">
@@ -106,8 +120,10 @@ export default function ProductCard({ product }: ProductCardProps) {
             className="w-full mt-4"
             variant="secondary"
             onClick={handleAddToCart}
+            disabled={totalStock === 0}
           >
-            <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
+            <ShoppingCart className="mr-2 h-4 w-4" /> 
+            {hasVariants ? 'Select Options' : 'Add to Cart'}
           </Button>
         </div>
       </CardContent>

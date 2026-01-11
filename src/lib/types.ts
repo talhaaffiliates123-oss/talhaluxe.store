@@ -10,6 +10,13 @@ export type ShippingInfo = {
   country: string;
 };
 
+export type Variant = {
+  id: string;
+  name: string;
+  color?: string;
+  stock: number;
+};
+
 export type Product = {
   id: string;
   name: string;
@@ -26,6 +33,7 @@ export type Product = {
   isBestSeller: boolean;
   onSale?: boolean;
   reviews?: any[];
+  variants?: Variant[];
 };
 
 export type Order = {
@@ -67,6 +75,7 @@ export type Testimonial = {
 export type CartItem = {
   product: Product;
   quantity: number;
+  variant?: Variant;
 };
 
 export type CartItemData = {
@@ -74,6 +83,10 @@ export type CartItemData = {
     name: string;
     quantity: number;
     price: number;
+    variant?: {
+      id: string;
+      name: string;
+    }
 }
 
 export type Notification = {

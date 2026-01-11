@@ -29,9 +29,15 @@ import {
     CardDescription,
   } from '@/components/ui/card';
 import { useState } from 'react';
-import { Loader, Upload, X } from 'lucide-react';
-import { uploadImage } from '@/lib/storage';
+import { PlusCircle, Trash2, X } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+
+const variantSchema = z.object({
+  id: z.string().default(() => uuidv4()),
+  name: z.string().min(1, 'Variant name is required'),
+  color: z.string().optional(),
+  stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
+});
 
 const productSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -40,7 +46,6 @@ const productSchema = z.object({
   price: z.coerce.number().positive('Price must be a positive number'),
   discountedPrice: z.coerce.number().optional().nullable(),
   category: z.string().min(1, 'Category is required'),
-  stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   imageUrls: z.array(z.string().url("Must be a valid URL")).default([]),
   isNewArrival: z.boolean().default(false),
   isBestSeller: z.boolean().default(false),
@@ -48,6 +53,8 @@ const productSchema = z.object({
   rating: z.coerce.number().min(0).max(5).default(0),
   reviewCount: z.coerce.number().min(0).optional(),
   reviews: z.array(z.any()).optional(),
+  variants: z.array(variantSchema).optional().default([]),
+  stock: z.coerce.number().int().min(0, 'Stock cannot be negative').default(0),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -59,7 +66,6 @@ interface ProductFormProps {
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
-  const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -68,23 +74,30 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     handleSubmit,
     control,
     formState: { errors },
+    watch,
   } = useForm<ProductFormData>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       ...initialData,
       price: initialData?.price ?? 0,
       discountedPrice: initialData?.discountedPrice ?? null,
-      stock: initialData?.stock ?? 0,
       rating: initialData?.rating ?? 0,
       imageUrls: initialData?.imageUrls ?? [],
       category: initialData?.category ?? '',
       reviews: initialData?.reviews ?? [],
+      variants: initialData?.variants ?? [],
+      stock: initialData?.stock ?? 0,
     },
   });
   
-  const { fields, append, remove } = useFieldArray({
+  const { fields: imageUrlsFields, append: appendImageUrl, remove: removeImageUrl } = useFieldArray({
     control,
     name: "imageUrls"
+  });
+
+  const { fields: variantsFields, append: appendVariant, remove: removeVariant } = useFieldArray({
+    control,
+    name: "variants"
   });
 
   const isEditMode = !!initialData;
@@ -98,9 +111,15 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     setIsSubmitting(true);
 
     try {
+        // Calculate total stock from variants if they exist
+        const totalStock = data.variants && data.variants.length > 0
+            ? data.variants.reduce((acc, variant) => acc + variant.stock, 0)
+            : data.stock;
+
         const productData = {
             ...data,
             discountedPrice: data.discountedPrice || null,
+            stock: totalStock,
         };
 
         if (isEditMode) {
@@ -122,6 +141,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     }
   };
   
+  const variants = watch('variants');
+  const hasVariants = variants && variants.length > 0;
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="grid grid-cols-1 lg:grid-cols-3 gap-8">
       <div className="lg:col-span-2 space-y-6">
@@ -155,13 +177,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
-                    {fields.map((field, index) => (
+                    {imageUrlsFields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2">
                         <Input
                         {...register(`imageUrls.${index}`)}
                         placeholder="https://example.com/image.png"
                         />
-                        <Button type="button" variant="ghost" size="icon" onClick={() => remove(index)}>
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeImageUrl(index)}>
                         <X className="h-4 w-4 text-destructive" />
                         </Button>
                     </div>
@@ -169,12 +191,47 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <Button
                     type="button"
                     variant="outline"
-                    onClick={() => append("")}
+                    onClick={() => appendImageUrl("")}
                     >
                     Add Image URL
                     </Button>
                      {errors.imageUrls && <p className="text-destructive text-sm mt-1">{errors.imageUrls.message}</p>}
                 </div>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Variants</CardTitle>
+                <CardDescription>Add product variants like different colors or sizes.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {variantsFields.map((field, index) => (
+                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-4 gap-4 items-end p-4 border rounded-lg">
+                        <div className="md:col-span-2">
+                            <Label htmlFor={`variants.${index}.name`}>Variant Name (e.g., Black)</Label>
+                            <Input {...register(`variants.${index}.name`)} id={`variants.${index}.name`} />
+                        </div>
+                        <div>
+                            <Label htmlFor={`variants.${index}.color`}>Color (Hex)</Label>
+                            <Input {...register(`variants.${index}.color`)} id={`variants.${index}.color`} placeholder="#000000" />
+                        </div>
+                        <div className="flex items-end gap-2">
+                            <div>
+                                <Label htmlFor={`variants.${index}.stock`}>Stock</Label>
+                                <Input type="number" {...register(`variants.${index}.stock`)} id={`variants.${index}.stock`} />
+                            </div>
+                            <Button type="button" variant="destructive" size="icon" onClick={() => removeVariant(index)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                        </div>
+                         {errors.variants?.[index]?.name && <p className="text-destructive text-sm mt-1 col-span-full">{errors.variants[index]?.name?.message}</p>}
+                         {errors.variants?.[index]?.stock && <p className="text-destructive text-sm mt-1 col-span-full">{errors.variants[index]?.stock?.message}</p>}
+                    </div>
+                ))}
+                <Button type="button" variant="outline" onClick={() => appendVariant({ id: uuidv4(), name: '', stock: 0, color: '' })}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Add Variant
+                </Button>
             </CardContent>
         </Card>
       </div>
@@ -199,7 +256,12 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 </div>
                 <div>
                     <Label htmlFor="stock">Stock Quantity</Label>
-                    <Input id="stock" type="number" {...register('stock')} />
+                    <Input id="stock" type="number" {...register('stock')} disabled={hasVariants} />
+                    {hasVariants ? (
+                        <p className="text-xs text-muted-foreground mt-1">Total stock is automatically calculated from variants.</p>
+                    ) : (
+                        <p className="text-xs text-muted-foreground mt-1">Enter stock if product has no variants.</p>
+                    )}
                     {errors.stock && <p className="text-destructive text-sm mt-1">{errors.stock.message}</p>}
                 </div>
             </CardContent>

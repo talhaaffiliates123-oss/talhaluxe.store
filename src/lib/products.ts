@@ -74,12 +74,16 @@ export async function getProduct(
 
 export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
     const productsCollection = getProductsCollection(db);
-    return addDoc(productsCollection, productData)
+    // Auto-calculate stock from variants
+    const totalStock = productData.variants?.reduce((sum, v) => sum + v.stock, 0) ?? productData.stock ?? 0;
+    const finalProductData = { ...productData, stock: totalStock };
+
+    return addDoc(productsCollection, finalProductData)
     .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: productsCollection.path,
           operation: 'create',
-          requestResourceData: productData,
+          requestResourceData: finalProductData,
         });
         errorEmitter.emit('permission-error', permissionError);
         throw serverError;
@@ -89,12 +93,17 @@ export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
 export async function updateProduct(db: Firestore, id: string, productData: Partial<Product>) {
     const docRef = doc(db, 'products', id);
 
-    return updateDoc(docRef, productData)
+    // Auto-calculate stock from variants if they are part of the update
+    const totalStock = productData.variants?.reduce((sum, v) => sum + v.stock, 0) ?? productData.stock;
+    const finalProductData = { ...productData, stock: totalStock };
+
+
+    return updateDoc(docRef, finalProductData)
     .catch(async (serverError) => {
         const permissionError = new FirestorePermissionError({
           path: docRef.path,
           operation: 'update',
-          requestResourceData: productData,
+          requestResourceData: finalProductData,
         });
         errorEmitter.emit('permission-error', permissionError);
         throw serverError;
@@ -145,5 +154,3 @@ export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 
         throw serverError;
     });
 }
-
-    

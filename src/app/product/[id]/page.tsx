@@ -1,17 +1,18 @@
 
+
 'use client';
 
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Heart, Minus, Plus, Star, Truck } from 'lucide-react';
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { useFirestore, useUser } from '@/firebase';
 import { getProduct } from '@/lib/products';
-import { Product, Review } from '@/lib/types';
+import { Product, Review, Variant } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 import { getReviews, submitReview } from '@/lib/reviews';
@@ -21,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 
 const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onReviewSubmitted: () => void }) => {
@@ -164,35 +166,32 @@ export default function ProductDetailPage() {
   const { addItem } = useCart();
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useUser();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [reviews, setReviews] = useState<Review[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
 
   const fetchAllData = useCallback(async () => {
-    if (firestore && id) {
-        setLoading(true);
+    if (!firestore || !id) return;
+    
+    setLoading(true);
+    try {
         const productId = id as string;
-        try {
-            const productData = await getProduct(firestore, productId);
-            if (!productData) {
-                notFound();
-                return;
-            }
+        const productData = await getProduct(firestore, productId);
+        if (productData) {
             const reviewsData = await getReviews(firestore, productId);
-            
             setProduct(productData);
             setReviews(reviewsData);
-        } catch (error) {
-            console.error("Error fetching product data:", error);
-            // Don't call notFound() here if it's a review fetch error,
-            // but for now, we assume product fetch is the critical path.
-            setProduct(null); // Ensure no stale data is shown
-        } finally {
-            setLoading(false);
+        } else {
+            setProduct(null);
         }
+    } catch (error) {
+        console.error("Error fetching product data:", error);
+        setProduct(null);
+    } finally {
+        setLoading(false);
     }
   }, [firestore, id]);
   
@@ -206,12 +205,23 @@ export default function ProductDetailPage() {
         if (imageUrls.length > 1) {
             const timer = setInterval(() => {
                 setActiveImageIndex((prevIndex) => (prevIndex + 1) % imageUrls.length);
-            }, 10000); // Change image every 10 seconds
+            }, 10000);
 
             return () => clearInterval(timer);
         }
     }
   }, [product]);
+
+  useEffect(() => {
+    // If product has variants, but none are selected, and there's only one variant, select it by default.
+    if (product?.variants && product.variants.length === 1 && !selectedVariant) {
+        setSelectedVariant(product.variants[0]);
+    }
+    // If product has no variants, clear any selected variant state
+    if (product && (!product.variants || product.variants.length === 0)) {
+        setSelectedVariant(null);
+    }
+  }, [product, selectedVariant]);
 
 
   if (loading) {
@@ -242,22 +252,32 @@ export default function ProductDetailPage() {
   }
 
   if (!product) {
-      // This state is reached if getProduct fails or returns null after loading.
       return notFound();
   }
   
   const imageUrls = product.imageUrls?.length ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
+  const hasVariants = product.variants && product.variants.length > 0;
+  const canPurchase = !hasVariants || !!selectedVariant;
+  const currentStock = hasVariants ? (selectedVariant?.stock ?? 0) : product.stock;
 
   const handleAddToCart = () => {
-    addItem(product, quantity);
+    if (!canPurchase) {
+        toast({ variant: 'destructive', title: 'Please select an option' });
+        return;
+    }
+    addItem(product, quantity, selectedVariant || undefined);
     toast({
         title: "Added to cart",
-        description: `${quantity} x ${product.name} added to your cart.`,
+        description: `${quantity} x ${product.name}${selectedVariant ? ` (${selectedVariant.name})` : ''} added to your cart.`,
     });
   };
 
   const handleBuyNow = () => {
-    addItem(product, quantity);
+    if (!canPurchase) {
+        toast({ variant: 'destructive', title: 'Please select an option' });
+        return;
+    }
+    addItem(product, quantity, selectedVariant || undefined);
     router.push('/checkout');
   };
   
@@ -325,6 +345,28 @@ export default function ProductDetailPage() {
           </div>
 
           <Separator />
+
+          {hasVariants && (
+            <div className="space-y-4">
+              <Label>Options</Label>
+              <RadioGroup
+                value={selectedVariant?.id}
+                onValueChange={(id) => {
+                  const variant = product.variants?.find(v => v.id === id);
+                  if (variant) setSelectedVariant(variant);
+                }}
+                className="flex flex-wrap gap-2"
+              >
+                {product.variants?.map(variant => (
+                  <Label key={variant.id} htmlFor={variant.id} className={cn("flex items-center justify-center rounded-md border-2 p-3 text-sm font-medium hover:bg-accent hover:text-accent-foreground cursor-pointer", { 'border-primary bg-accent text-accent-foreground': selectedVariant?.id === variant.id, 'opacity-50 cursor-not-allowed': variant.stock === 0 })}>
+                    <RadioGroupItem value={variant.id} id={variant.id} className="sr-only" disabled={variant.stock === 0} />
+                    {variant.color && <span className="h-4 w-4 rounded-full mr-2" style={{ backgroundColor: variant.color }} />}
+                    {variant.name}
+                  </Label>
+                ))}
+              </RadioGroup>
+            </div>
+          )}
           
           <div className="space-y-4">
             <p className="text-muted-foreground">{product.description}</p>
@@ -344,14 +386,14 @@ export default function ProductDetailPage() {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <span className="text-sm text-muted-foreground">{product.stock > 0 ? `${product.stock} in stock` : 'Out of stock'}</span>
+            <span className="text-sm text-muted-foreground">{currentStock > 0 ? `${currentStock} in stock` : 'Out of stock'}</span>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBuyNow} disabled={product.stock === 0}>
+            <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBuyNow} disabled={!canPurchase || currentStock === 0}>
               Buy Now
             </Button>
-            <Button size="lg" variant="secondary" className="flex-1" onClick={handleAddToCart} disabled={product.stock === 0}>
+            <Button size="lg" variant="secondary" className="flex-1" onClick={handleAddToCart} disabled={!canPurchase || currentStock === 0}>
               Add to Cart
             </Button>
              <Button size="lg" variant="outline" className="px-4">
