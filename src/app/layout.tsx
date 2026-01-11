@@ -10,6 +10,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { CartProvider } from '@/context/cart-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import FirebaseErrorListener from '@/components/FirebaseErrorListener';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -51,6 +52,7 @@ export default function RootLayout({
             </CartProvider>
           </FirebaseErrorListener>
         </FirebaseClientProvider>
+        <SpeedInsights />
       </body>
     </html>
   );
