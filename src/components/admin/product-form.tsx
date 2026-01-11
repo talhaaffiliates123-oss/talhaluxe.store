@@ -46,7 +46,8 @@ const productSchema = z.object({
   isBestSeller: z.boolean().default(false),
   onSale: z.boolean().default(false),
   rating: z.coerce.number().min(0).max(5).default(0),
-  reviews: z.array(z.any()).default([]),
+  reviewCount: z.coerce.number().min(0).optional(),
+  reviews: z.array(z.any()).optional(),
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
