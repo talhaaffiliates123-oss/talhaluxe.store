@@ -75,7 +75,11 @@ export async function getProduct(
 export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
     const productsCollection = getProductsCollection(db);
     // Auto-calculate stock from variants
-    const totalStock = productData.variants?.reduce((sum, v) => sum + v.stock, 0) ?? productData.stock ?? 0;
+    const hasVariants = productData.variants && productData.variants.length > 0;
+    const totalStock = hasVariants
+        ? productData.variants!.reduce((sum, v) => sum + v.stock, 0)
+        : productData.stock ?? 0;
+
     const finalProductData = { ...productData, stock: totalStock };
 
     return addDoc(productsCollection, finalProductData)
@@ -94,7 +98,11 @@ export async function updateProduct(db: Firestore, id: string, productData: Part
     const docRef = doc(db, 'products', id);
 
     // Auto-calculate stock from variants if they are part of the update
-    const totalStock = productData.variants?.reduce((sum, v) => sum + v.stock, 0) ?? productData.stock;
+    const hasVariants = productData.variants && productData.variants.length > 0;
+    const totalStock = hasVariants
+      ? productData.variants!.reduce((sum, v) => sum + v.stock, 0)
+      : productData.stock;
+    
     const finalProductData = { ...productData, stock: totalStock };
 
 
