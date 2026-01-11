@@ -24,15 +24,15 @@ export default function ProductCard({ product }: ProductCardProps) {
   const hasVariants = product.variants && product.variants.length > 0;
   
   const imageUrls = useMemo(() => {
-    if (product.imageUrls?.length > 0) {
-      return product.imageUrls;
-    }
+    const allImages = [...(product.imageUrls || [])];
     if (hasVariants && product.variants) {
-      const variantImages = product.variants.map(v => v.imageUrl).filter(Boolean);
-      if (variantImages.length > 0) {
-        return variantImages;
-      }
+      product.variants.forEach(v => {
+        if (v.imageUrl && !allImages.includes(v.imageUrl)) {
+          allImages.push(v.imageUrl);
+        }
+      });
     }
+    if (allImages.length > 0) return allImages;
     return ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
   }, [product, hasVariants]);
 
@@ -63,9 +63,7 @@ export default function ProductCard({ product }: ProductCardProps) {
     setCurrentImageIndex((prevIndex) => (prevIndex - 1 + imageUrls.length) % imageUrls.length);
   };
   
-  const totalStock = hasVariants
-    ? product.variants!.reduce((sum, v) => sum + v.stock, 0)
-    : product.stock;
+  const totalStock = product.stock;
 
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-xl">

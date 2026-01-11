@@ -3,12 +3,13 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Package, Settings, ShoppingCart, Users } from 'lucide-react';
+import { Home, Package, Settings, ShoppingCart, Users } from 'lucide-react';
 
 export function AdminNav() {
   const pathname = usePathname();
 
   const navLinks = [
+    { href: '/admin', label: 'Dashboard', icon: Home, exact: true },
     { href: '/admin/products', label: 'Products', icon: Package },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
     { href: '/admin/users', label: 'Users', icon: Users },
@@ -18,7 +19,7 @@ export function AdminNav() {
   return (
     <nav className="grid items-start gap-2">
       {navLinks.map((link) => {
-        const isActive = pathname.startsWith(link.href);
+        const isActive = link.exact ? pathname === link.href : pathname.startsWith(link.href);
         return (
           <Link
             key={link.href}

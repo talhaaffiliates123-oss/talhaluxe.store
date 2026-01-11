@@ -47,7 +47,7 @@ const productSchema = z.object({
   discountedPrice: z.coerce.number().optional().nullable(),
   shippingCost: z.coerce.number().min(0, 'Shipping cost cannot be negative').optional().default(0),
   category: z.string().min(1, 'Category is required'),
-  imageUrls: z.array(z.string().url("Must be a valid URL")).default([]),
+  imageUrls: z.array(z.string().url("Must be a valid URL")).optional().default([]),
   isNewArrival: z.boolean().default(false),
   isBestSeller: z.boolean().default(false),
   onSale: z.boolean().default(false),
@@ -59,7 +59,7 @@ const productSchema = z.object({
 }).refine(data => {
     // If there are no variants, at least one image URL is required.
     if (!data.variants || data.variants.length === 0) {
-        return data.imageUrls.length > 0;
+        return data.imageUrls && data.imageUrls.length > 0;
     }
     return true;
 }, {
@@ -129,7 +129,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         
         // If there are variants, ensure their image URLs are in the main imageUrls array.
         const variantImageUrls = data.variants?.map(v => v.imageUrl).filter(Boolean) as string[] || [];
-        const combinedImageUrls = [...new Set([...data.imageUrls, ...variantImageUrls])];
+        const combinedImageUrls = [...new Set([...(data.imageUrls || []), ...variantImageUrls])];
 
         const productData = {
             ...data,
@@ -257,7 +257,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       <div className="space-y-6">
         <Card>
             <CardHeader>
-                <CardTitle>Pricing, Shipping & Inventory</CardTitle>
+                <CardTitle>Pricing & Inventory</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                  <div className="grid grid-cols-2 gap-4">

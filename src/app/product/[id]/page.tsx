@@ -274,7 +274,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product) {
+  if (!product && !loading) {
       return notFound();
   }
   
