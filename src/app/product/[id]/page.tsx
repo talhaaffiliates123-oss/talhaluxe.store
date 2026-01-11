@@ -200,7 +200,8 @@ export default function ProductDetailPage() {
   useEffect(() => {
     fetchAllData();
   }, [fetchAllData]);
-  
+
+  // Autoplay image slider effect
   useEffect(() => {
     if (product && product.imageUrls && product.imageUrls.length > 1) {
       const timer = setInterval(() => {
@@ -208,7 +209,7 @@ export default function ProductDetailPage() {
       }, 10000);
       return () => clearInterval(timer);
     }
-  }, [product]);
+  }, [product, selectedVariant]); // Reruns if selectedVariant changes
 
   useEffect(() => {
     // If product has variants, but none are selected, and there's only one variant, select it by default.
@@ -220,6 +221,19 @@ export default function ProductDetailPage() {
         setSelectedVariant(null);
     }
   }, [product, selectedVariant]);
+  
+  const handleVariantChange = (variantId: string) => {
+    const variant = product?.variants?.find(v => v.id === variantId);
+    if (variant) {
+        setSelectedVariant(variant);
+        if (variant.imageUrl) {
+            const imageIndex = product?.imageUrls.findIndex(url => url === variant.imageUrl);
+            if (imageIndex !== -1) {
+                setActiveImageIndex(imageIndex);
+            }
+        }
+    }
+  };
 
 
   if (loading || !product) {
@@ -349,10 +363,7 @@ export default function ProductDetailPage() {
               <Label>Options</Label>
               <RadioGroup
                 value={selectedVariant?.id}
-                onValueChange={(id) => {
-                  const variant = product.variants?.find(v => v.id === id);
-                  if (variant) setSelectedVariant(variant);
-                }}
+                onValueChange={handleVariantChange}
                 className="flex flex-wrap gap-2"
               >
                 {product.variants?.map(variant => (

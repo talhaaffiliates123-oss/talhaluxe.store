@@ -36,6 +36,7 @@ const variantSchema = z.object({
   id: z.string().default(() => uuidv4()),
   name: z.string().min(1, 'Variant name is required'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
+  imageUrl: z.string().url("Image URL must be a valid URL").optional().or(z.literal('')),
 });
 
 const productSchema = z.object({
@@ -86,7 +87,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       imageUrls: initialData?.imageUrls ?? [],
       category: initialData?.category ?? '',
       reviews: initialData?.reviews ?? [],
-      variants: initialData?.variants ?? [],
+      variants: initialData?.variants?.map(v => ({ ...v, imageUrl: v.imageUrl || '' })) ?? [],
       stock: initialData?.stock ?? 0,
     },
   });
@@ -204,16 +205,20 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         <Card>
             <CardHeader>
                 <CardTitle>Variants</CardTitle>
-                <CardDescription>Add product variants like different colors or sizes.</CardDescription>
+                <CardDescription>Add product variants like different colors or sizes. Add variant image URLs to the main image list too.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 {variantsFields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end p-4 border rounded-lg">
-                        <div className="md:col-span-2">
+                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end p-4 border rounded-lg">
+                        <div className="col-span-full">
                             <Label htmlFor={`variants.${index}.name`}>Variant Name (e.g., Black, Large)</Label>
                             <Input {...register(`variants.${index}.name`)} id={`variants.${index}.name`} />
                         </div>
-                        <div className="flex items-end gap-2">
+                        <div className="col-span-full">
+                            <Label htmlFor={`variants.${index}.imageUrl`}>Variant Image URL (Optional)</Label>
+                            <Input {...register(`variants.${index}.imageUrl`)} id={`variants.${index}.imageUrl`} />
+                        </div>
+                        <div className="flex items-end gap-2 col-span-full">
                             <div>
                                 <Label htmlFor={`variants.${index}.stock`}>Stock</Label>
                                 <Input type="number" {...register(`variants.${index}.stock`)} id={`variants.${index}.stock`} />
@@ -224,9 +229,10 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                         </div>
                          {errors.variants?.[index]?.name && <p className="text-destructive text-sm mt-1 col-span-full">{errors.variants[index]?.name?.message}</p>}
                          {errors.variants?.[index]?.stock && <p className="text-destructive text-sm mt-1 col-span-full">{errors.variants[index]?.stock?.message}</p>}
+                         {errors.variants?.[index]?.imageUrl && <p className="text-destructive text-sm mt-1 col-span-full">{errors.variants[index]?.imageUrl?.message}</p>}
                     </div>
                 ))}
-                <Button type="button" variant="outline" onClick={() => appendVariant({ id: uuidv4(), name: '', stock: 0 })}>
+                <Button type="button" variant="outline" onClick={() => appendVariant({ id: uuidv4(), name: '', stock: 0, imageUrl: '' })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Variant
                 </Button>
