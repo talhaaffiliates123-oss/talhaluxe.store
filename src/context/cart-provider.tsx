@@ -9,7 +9,9 @@ interface CartContextType {
   removeItem: (productId: string, variantId?: string) => void;
   updateQuantity: (productId: string, quantity: number, variantId?: string) => void;
   clearCart: () => void;
+  subtotal: number;
   totalPrice: number;
+  shippingTotal: number;
   totalItems: number;
 }
 
@@ -72,16 +74,27 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     setItems([]);
   };
 
-  const totalPrice = items.reduce(
+  const subtotal = items.reduce(
     (total, item) => total + (item.product.discountedPrice ?? item.product.price) * item.quantity,
     0
   );
   
+  const shippingTotal = items.reduce((total, item) => {
+    // Basic implementation: add shipping cost for each unique product.
+    // To avoid charging shipping per quantity, we find if this product is already added.
+    const isProductAlreadyCounted = items.slice(0, items.indexOf(item)).some(i => i.product.id === item.product.id);
+    if (!isProductAlreadyCounted) {
+      return total + (item.product.shippingCost ?? 0);
+    }
+    return total;
+  }, 0);
+
+  const totalPrice = subtotal + shippingTotal;
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clearCart, totalPrice, totalItems }}
+      value={{ items, addItem, removeItem, updateQuantity, clearCart, subtotal, totalPrice, shippingTotal, totalItems }}
     >
       {children}
     </CartContext.Provider>

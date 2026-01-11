@@ -34,6 +34,7 @@ export type Product = {
   onSale?: boolean;
   reviews?: any[];
   variants?: Variant[];
+  shippingCost?: number;
 };
 
 export type Order = {

@@ -7,9 +7,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
 
 export default function CartPage() {
-  const { items, removeItem, updateQuantity, totalPrice, clearCart } = useCart();
+  const { items, removeItem, updateQuantity, subtotal, shippingTotal, totalPrice, clearCart } = useCart();
 
   if (items.length === 0) {
     return (
@@ -92,12 +93,13 @@ export default function CartPage() {
             <CardContent className="space-y-4">
               <div className="flex justify-between">
                 <span>Subtotal</span>
-                <span>PKR {totalPrice.toFixed(2)}</span>
+                <span>PKR {subtotal.toFixed(2)}</span>
               </div>
               <div className="flex justify-between">
                 <span>Shipping</span>
-                <span>Free</span>
+                <span>{shippingTotal > 0 ? `PKR ${shippingTotal.toFixed(2)}` : 'Free'}</span>
               </div>
+              <Separator />
               <div className="flex justify-between font-bold text-lg">
                 <span>Total</span>
                 <span>PKR {totalPrice.toFixed(2)}</span>

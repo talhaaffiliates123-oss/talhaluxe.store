@@ -178,15 +178,17 @@ export default function ProductDetailPage() {
     
     setLoading(true);
     try {
-        const productId = id as string;
-        const productData = await getProduct(firestore, productId);
-        if (productData) {
-            const reviewsData = await getReviews(firestore, productId);
-            setProduct(productData);
-            setReviews(reviewsData);
-        } else {
-            setProduct(null);
-        }
+      const productId = id as string;
+      const productData = await getProduct(firestore, productId);
+      
+      if (productData) {
+        const reviewsData = await getReviews(firestore, productId);
+        setProduct(productData);
+        setReviews(reviewsData);
+      } else {
+        setProduct(null);
+        setReviews([]);
+      }
     } catch (error) {
         console.error("Error fetching product data:", error);
         setProduct(null);
@@ -200,15 +202,11 @@ export default function ProductDetailPage() {
   }, [fetchAllData]);
   
   useEffect(() => {
-    if (product) {
-        const imageUrls = product.imageUrls?.length ? product.imageUrls : [];
-        if (imageUrls.length > 1) {
-            const timer = setInterval(() => {
-                setActiveImageIndex((prevIndex) => (prevIndex + 1) % imageUrls.length);
-            }, 10000);
-
-            return () => clearInterval(timer);
-        }
+    if (product && product.imageUrls && product.imageUrls.length > 1) {
+      const timer = setInterval(() => {
+          setActiveImageIndex((prevIndex) => (prevIndex + 1) % (product.imageUrls?.length || 1));
+      }, 10000);
+      return () => clearInterval(timer);
     }
   }, [product]);
 
@@ -224,7 +222,7 @@ export default function ProductDetailPage() {
   }, [product, selectedVariant]);
 
 
-  if (loading) {
+  if (loading || !product) {
     return (
         <div className="container mx-auto px-4 py-8 md:py-12">
             <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
@@ -370,10 +368,6 @@ export default function ProductDetailPage() {
           
           <div className="space-y-4">
             <p className="text-muted-foreground">{product.description}</p>
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <Truck className="h-5 w-5 text-accent"/>
-                <span>Free shipping on orders over $50</span>
-            </div>
           </div>
 
           <div className="flex items-center gap-4">

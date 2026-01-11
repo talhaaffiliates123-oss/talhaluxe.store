@@ -45,6 +45,7 @@ const productSchema = z.object({
   description: z.string().min(1, 'Description is required'),
   price: z.coerce.number().positive('Price must be a positive number'),
   discountedPrice: z.coerce.number().optional().nullable(),
+  shippingCost: z.coerce.number().min(0, 'Shipping cost cannot be negative').optional().default(0),
   category: z.string().min(1, 'Category is required'),
   imageUrls: z.array(z.string().url("Must be a valid URL")).default([]),
   isNewArrival: z.boolean().default(false),
@@ -81,6 +82,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       ...initialData,
       price: initialData?.price ?? 0,
       discountedPrice: initialData?.discountedPrice ?? null,
+      shippingCost: initialData?.shippingCost ?? 0,
       rating: initialData?.rating ?? 0,
       imageUrls: initialData?.imageUrls ?? [],
       category: initialData?.category ?? '',
@@ -119,6 +121,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         const productData = {
             ...data,
             discountedPrice: data.discountedPrice || null,
+            shippingCost: data.shippingCost || 0,
             stock: totalStock,
         };
 
@@ -239,7 +242,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       <div className="space-y-6">
         <Card>
             <CardHeader>
-                <CardTitle>Pricing & Inventory</CardTitle>
+                <CardTitle>Pricing, Shipping & Inventory</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
                  <div className="grid grid-cols-2 gap-4">
@@ -253,6 +256,11 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                         <Input id="discountedPrice" type="number" step="0.01" {...register('discountedPrice')} />
                         {errors.discountedPrice && <p className="text-destructive text-sm mt-1">{errors.discountedPrice.message}</p>}
                     </div>
+                </div>
+                 <div>
+                    <Label htmlFor="shippingCost">Shipping Cost (PKR)</Label>
+                    <Input id="shippingCost" type="number" step="0.01" {...register('shippingCost')} />
+                    {errors.shippingCost && <p className="text-destructive text-sm mt-1">{errors.shippingCost.message}</p>}
                 </div>
                 <div>
                     <Label htmlFor="stock">Stock Quantity</Label>

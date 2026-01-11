@@ -1,4 +1,5 @@
 
+
 'use client';
 import { useCart } from '@/hooks/use-cart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +36,7 @@ function CheckoutPageSkeleton() {
 
 export default function CheckoutPage() {
     const { user, loading: userLoading } = useUser();
-    const { items, totalPrice, clearCart } = useCart();
+    const { items, subtotal, shippingTotal, totalPrice, clearCart } = useCart();
     const router = useRouter();
     const { toast } = useToast();
     const firestore = useFirestore();
@@ -218,8 +219,8 @@ export default function CheckoutPage() {
                     </div>
                     <Separator className="my-6" />
                     <div className="space-y-2">
-                        <div className="flex justify-between"><span>Subtotal</span><span>PKR {totalPrice.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span>Shipping</span><span>Free</span></div>
+                        <div className="flex justify-between"><span>Subtotal</span><span>PKR {subtotal.toFixed(2)}</span></div>
+                        <div className="flex justify-between"><span>Shipping</span><span>{shippingTotal > 0 ? `PKR ${shippingTotal.toFixed(2)}` : 'Free'}</span></div>
                         <Separator className="my-2" />
                         <div className="flex justify-between font-bold text-lg"><span>Total</span><span>PKR {totalPrice.toFixed(2)}</span></div>
                     </div>
