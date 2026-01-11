@@ -180,17 +180,17 @@ export default function ProductDetailPage() {
     fetchAllData();
   }, [firestore, id]);
 
-  const imageUrls = product?.imageUrls?.length > 0 ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
+  const imageUrls = product?.imageUrls?.length ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
 
   useEffect(() => {
-    if (imageUrls.length > 1) {
+    if (imageUrls && imageUrls.length > 1) {
       const timer = setInterval(() => {
         setActiveImageIndex((prevIndex) => (prevIndex + 1) % imageUrls.length);
       }, 10000); // Change image every 10 seconds
 
       return () => clearInterval(timer);
     }
-  }, [imageUrls.length]);
+  }, [imageUrls]);
 
 
   if (loading || !product) {
