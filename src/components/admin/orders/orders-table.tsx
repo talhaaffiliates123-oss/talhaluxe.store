@@ -308,6 +308,7 @@ The Talha Luxe Team
             </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
     </>
