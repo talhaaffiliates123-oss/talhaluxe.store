@@ -5,7 +5,7 @@ import { notFound, useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Heart, Minus, Plus, Star, Truck } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -20,6 +20,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Link from 'next/link';
 
 
 const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onReviewSubmitted: () => void }) => {
@@ -152,22 +153,21 @@ export default function ProductDetailPage() {
   const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  const fetchAllData = async () => {
+  const fetchAllData = useCallback(async () => {
     if (firestore && id) {
         setLoading(true);
         const productId = id as string;
         try {
-            const [productData, reviewsData] = await Promise.all([
-                getProduct(firestore, productId),
-                getReviews(firestore, productId)
-            ]);
-            
-            if (productData) {
-                setProduct(productData);
-                setReviews(reviewsData);
-            } else {
+            const productData = await getProduct(firestore, productId);
+            if (!productData) {
                 notFound();
+                return;
             }
+            const reviewsData = await getReviews(firestore, productId);
+            
+            // Set state together to avoid race conditions
+            setProduct(productData);
+            setReviews(reviewsData);
         } catch (error) {
             console.error("Error fetching product data:", error);
             notFound();
@@ -175,23 +175,23 @@ export default function ProductDetailPage() {
             setLoading(false);
         }
     }
-  };
+  }, [firestore, id]);
   
   useEffect(() => {
     fetchAllData();
-  }, [firestore, id]);
+  }, [fetchAllData]);
 
   const imageUrls = product?.imageUrls?.length ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
 
   useEffect(() => {
-    if (imageUrls && imageUrls.length > 1) {
+    if (product && imageUrls.length > 1) {
       const timer = setInterval(() => {
         setActiveImageIndex((prevIndex) => (prevIndex + 1) % imageUrls.length);
       }, 10000); // Change image every 10 seconds
 
       return () => clearInterval(timer);
     }
-  }, [imageUrls]);
+  }, [product, imageUrls]);
 
 
   if (loading || !product) {
@@ -360,5 +360,7 @@ export default function ProductDetailPage() {
     </div>
   );
 }
+
+    
 
     
