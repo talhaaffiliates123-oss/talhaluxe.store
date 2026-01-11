@@ -39,7 +39,7 @@ export function Header() {
       <div className="container flex h-16 items-center">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Image src="/logo.png" alt="Talha Luxe Logo" width={100} height={40} className="h-10 w-auto" />
+            <Image src="/logo.png" alt="Talha Luxe Logo" width={120} height={40} className="h-10 w-auto" />
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
             {navLinks.map((link) => (
