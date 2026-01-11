@@ -19,7 +19,6 @@ import {
 import { UserNav } from './user-nav';
 import { useCart } from '@/hooks/use-cart';
 import { useUser } from '@/firebase';
-import Image from 'next/image';
 
 export function Header() {
   const { items } = useCart();
@@ -39,7 +38,7 @@ export function Header() {
       <div className="container flex h-16 items-center">
         <div className="mr-4 hidden md:flex">
           <Link href="/" className="mr-6 flex items-center space-x-2">
-            <Image src="/logo.png" alt="Talha Luxe Logo" width={120} height={40} className="h-10 w-auto" />
+            <span className="font-bold text-lg font-headline">Talha Luxe</span>
           </Link>
           <nav className="flex items-center space-x-6 text-sm font-medium">
             {navLinks.map((link) => (
@@ -74,7 +73,7 @@ export function Header() {
                 href="/"
                 className="flex items-center gap-2 text-lg font-semibold"
               >
-                 <Image src="/logo.png" alt="Talha Luxe Logo" width={120} height={48} className="h-12 w-auto" />
+                 <span className="font-bold text-xl font-headline">Talha Luxe</span>
               </Link>
               {navLinks.map((link) => (
                 <Link

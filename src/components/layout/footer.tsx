@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Twitter, Instagram, Facebook } from 'lucide-react';
-import Image from 'next/image';
 
 export function Footer() {
   return (
@@ -11,7 +10,7 @@ export function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <Link href="/" className="flex items-center space-x-2">
-               <Image src="/logo.png" alt="Talha Luxe Logo" width={120} height={48} className="h-12 w-auto" />
+               <span className="font-bold text-xl font-headline">Talha Luxe</span>
             </Link>
             <p className="text-sm text-muted-foreground">
               Premium fashion for the discerning individual.
