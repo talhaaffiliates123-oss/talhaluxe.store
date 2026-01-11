@@ -25,6 +25,7 @@ export type Product = {
   isNewArrival: boolean;
   isBestSeller: boolean;
   onSale?: boolean;
+  reviews?: any[];
 };
 
 export type Order = {
@@ -34,6 +35,7 @@ export type Order = {
   totalPrice: number;
   shippingInfo: ShippingInfo;
   paymentMethod: string;
+
   status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
   createdAt: any; // Firestore Timestamp
 };
