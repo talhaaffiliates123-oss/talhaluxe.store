@@ -214,7 +214,7 @@ export default function ProductDetailPage() {
   useEffect(() => {
     // If product has variants, but none are selected, and there's only one variant, select it by default.
     if (product?.variants && product.variants.length === 1 && !selectedVariant) {
-        setSelectedVariant(product.variants[0]);
+        handleVariantChange(product.variants[0].id);
     }
     // If product has no variants, clear any selected variant state
     if (product && (!product.variants || product.variants.length === 0)) {
@@ -226,11 +226,9 @@ export default function ProductDetailPage() {
     const variant = product?.variants?.find(v => v.id === variantId);
     if (variant) {
         setSelectedVariant(variant);
-        if (variant.imageUrl) {
-            const imageIndex = product?.imageUrls.findIndex(url => url === variant.imageUrl);
-            if (imageIndex !== -1) {
-                setActiveImageIndex(imageIndex);
-            }
+        const imageIndex = product?.imageUrls.findIndex(url => url === variant.imageUrl);
+        if (imageIndex !== -1) {
+            setActiveImageIndex(imageIndex);
         }
     }
   };
@@ -267,8 +265,18 @@ export default function ProductDetailPage() {
       return notFound();
   }
   
-  const imageUrls = product.imageUrls?.length ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
   const hasVariants = product.variants && product.variants.length > 0;
+
+  const imageUrls = useMemo(() => {
+    if (product.imageUrls?.length) {
+      return product.imageUrls;
+    }
+    if (hasVariants) {
+      return product.variants!.map(v => v.imageUrl).filter(Boolean) as string[];
+    }
+    return ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
+  }, [product, hasVariants]);
+
   const canPurchase = !hasVariants || !!selectedVariant;
   const currentStock = hasVariants ? (selectedVariant?.stock ?? 0) : product.stock;
 
@@ -301,14 +309,20 @@ export default function ProductDetailPage() {
       <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
         <div>
            <div className="aspect-square relative w-full overflow-hidden rounded-lg border">
-              <Image 
-                src={imageUrls[activeImageIndex]} 
-                alt={`${product.name} image ${activeImageIndex + 1}`} 
-                fill 
-                className="object-cover transition-opacity duration-500"
-                key={activeImageIndex}
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
+              {imageUrls.length > 0 ? (
+                <Image 
+                  src={imageUrls[activeImageIndex]} 
+                  alt={`${product.name} image ${activeImageIndex + 1}`} 
+                  fill 
+                  className="object-cover transition-opacity duration-500"
+                  key={activeImageIndex}
+                  sizes="(max-width: 768px) 100vw, 50vw"
+                />
+              ) : (
+                <div className="flex items-center justify-center h-full bg-muted">
+                    <p className="text-muted-foreground">No Image Available</p>
+                </div>
+              )}
             </div>
             {imageUrls.length > 1 && (
                 <div className="mt-4 grid grid-cols-5 gap-4">

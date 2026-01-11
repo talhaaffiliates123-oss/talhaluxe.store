@@ -14,7 +14,7 @@ export type Variant = {
   id: string;
   name: string;
   stock: number;
-  imageUrl?: string;
+  imageUrl: string;
 };
 
 export type Product = {

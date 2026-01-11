@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { ShoppingCart, Star, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
@@ -20,9 +20,22 @@ export default function ProductCard({ product }: ProductCardProps) {
   const { toast } = useToast();
   const router = useRouter();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const imageUrls = product.imageUrls?.length > 0 ? product.imageUrls : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
+  
   const hasVariants = product.variants && product.variants.length > 0;
+  
+  const imageUrls = useMemo(() => {
+    if (product.imageUrls?.length > 0) {
+      return product.imageUrls;
+    }
+    if (hasVariants && product.variants) {
+      const variantImages = product.variants.map(v => v.imageUrl).filter(Boolean);
+      if (variantImages.length > 0) {
+        return variantImages;
+      }
+    }
+    return ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
+  }, [product, hasVariants]);
+
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.stopPropagation(); 

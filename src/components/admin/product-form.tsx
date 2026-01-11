@@ -36,7 +36,7 @@ const variantSchema = z.object({
   id: z.string().default(() => uuidv4()),
   name: z.string().min(1, 'Variant name is required'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
-  imageUrl: z.string().url("Image URL must be a valid URL").optional().or(z.literal('')),
+  imageUrl: z.string().url("Image URL must be a valid URL"),
 });
 
 const productSchema = z.object({
@@ -56,6 +56,15 @@ const productSchema = z.object({
   reviews: z.array(z.any()).optional(),
   variants: z.array(variantSchema).optional().default([]),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative').default(0),
+}).refine(data => {
+    // If there are no variants, at least one image URL is required.
+    if (!data.variants || data.variants.length === 0) {
+        return data.imageUrls.length > 0;
+    }
+    return true;
+}, {
+    message: "At least one product image is required when there are no variants.",
+    path: ["imageUrls"], // Specify the path to show the error
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -117,12 +126,17 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         const totalStock = data.variants && data.variants.length > 0
             ? data.variants.reduce((acc, variant) => acc + variant.stock, 0)
             : data.stock;
+        
+        // If there are variants, ensure their image URLs are in the main imageUrls array.
+        const variantImageUrls = data.variants?.map(v => v.imageUrl).filter(Boolean) as string[] || [];
+        const combinedImageUrls = [...new Set([...data.imageUrls, ...variantImageUrls])];
 
         const productData = {
             ...data,
             discountedPrice: data.discountedPrice || null,
             shippingCost: data.shippingCost || 0,
             stock: totalStock,
+            imageUrls: combinedImageUrls,
         };
 
         if (isEditMode) {
@@ -176,7 +190,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         <Card>
             <CardHeader>
                 <CardTitle>Product Images</CardTitle>
-                <CardDescription>Add URLs for the product images. The first image will be the main display image.</CardDescription>
+                <CardDescription>Add URLs for the product images. If product has no variants, at least one image is required.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
@@ -205,7 +219,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         <Card>
             <CardHeader>
                 <CardTitle>Variants</CardTitle>
-                <CardDescription>Add product variants like different colors or sizes. Add variant image URLs to the main image list too.</CardDescription>
+                <CardDescription>Add product variants like different colors or sizes. Each variant requires an image URL.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 {variantsFields.map((field, index) => (
@@ -215,7 +229,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                             <Input {...register(`variants.${index}.name`)} id={`variants.${index}.name`} />
                         </div>
                         <div className="col-span-full">
-                            <Label htmlFor={`variants.${index}.imageUrl`}>Variant Image URL (Optional)</Label>
+                            <Label htmlFor={`variants.${index}.imageUrl`}>Variant Image URL</Label>
                             <Input {...register(`variants.${index}.imageUrl`)} id={`variants.${index}.imageUrl`} />
                         </div>
                         <div className="flex items-end gap-2 col-span-full">

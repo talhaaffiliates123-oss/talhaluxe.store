@@ -80,7 +80,10 @@ export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
         ? productData.variants!.reduce((sum, v) => sum + v.stock, 0)
         : productData.stock ?? 0;
 
-    const finalProductData = { ...productData, stock: totalStock };
+    const variantImageUrls = productData.variants?.map(v => v.imageUrl).filter(Boolean) as string[] || [];
+    const combinedImageUrls = [...new Set([...productData.imageUrls, ...variantImageUrls])];
+
+    const finalProductData = { ...productData, stock: totalStock, imageUrls: combinedImageUrls };
 
     return addDoc(productsCollection, finalProductData)
     .catch(async (serverError) => {
@@ -103,7 +106,10 @@ export async function updateProduct(db: Firestore, id: string, productData: Part
       ? productData.variants!.reduce((sum, v) => sum + v.stock, 0)
       : productData.stock;
     
-    const finalProductData = { ...productData, stock: totalStock };
+    const variantImageUrls = productData.variants?.map(v => v.imageUrl).filter(Boolean) as string[] || [];
+    const combinedImageUrls = [...new Set([...(productData.imageUrls || []), ...variantImageUrls])];
+
+    const finalProductData = { ...productData, stock: totalStock, imageUrls: combinedImageUrls };
 
 
     return updateDoc(docRef, finalProductData)
@@ -131,34 +137,4 @@ export async function deleteProduct(db: Firestore, id: string) {
         errorEmitter.emit('permission-error', permissionError);
         throw serverError;
       });
-}
-
-export async function seedDatabase(db: Firestore, productsToSeed: Omit<Product, 'id'>[]) {
-    const productsCollection = getProductsCollection(db);
-
-    const existingProducts = await getProducts(db);
-    
-    if (existingProducts.length > 0) {
-        // Delete documents from firestore
-        const deleteBatch = writeBatch(db);
-        existingProducts.forEach(p => deleteBatch.delete(doc(db, 'products', p.id)));
-        await deleteBatch.commit();
-    }
-    
-    // Add new products
-    const addBatch = writeBatch(db);
-    productsToSeed.forEach(product => {
-      const newDocRef = doc(productsCollection);
-      addBatch.set(newDocRef, product);
-    });
-
-    return addBatch.commit().catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: productsCollection.path,
-          operation: 'create',
-          requestResourceData: { note: "Batch write for seeding failed."}
-        });
-        errorEmitter.emit('permission-error', permissionError);
-        throw serverError;
-    });
 }
