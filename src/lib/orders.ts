@@ -11,6 +11,7 @@ import {
     where,
     getDocs,
     writeBatch,
+    deleteDoc,
   } from 'firebase/firestore';
   import type { Order } from './types';
   import { errorEmitter } from '@/firebase/error-emitter';
@@ -40,26 +41,30 @@ import {
     const ordersCollection = collection(db, 'orders');
     const q = query(ordersCollection, where('status', 'in', ['Shipped', 'Delivered', 'Cancelled']));
 
-    const querySnapshot = await getDocs(q);
+    try {
+        const querySnapshot = await getDocs(q);
 
-    if (querySnapshot.empty) {
-        return; // Nothing to delete
-    }
+        if (querySnapshot.empty) {
+            return; // Nothing to delete
+        }
+        
+        // Firestore security rules may prevent batch deletes across different documents
+        // if the rule depends on resource data. Deleting one by one is safer.
+        const deletePromises = querySnapshot.docs.map(docSnapshot => 
+            deleteDoc(doc(db, 'orders', docSnapshot.id))
+        );
 
-    const batch = writeBatch(db);
-    querySnapshot.forEach(doc => {
-        batch.delete(doc.ref);
-    });
+        await Promise.all(deletePromises);
 
-    await batch.commit().catch((serverError) => {
+    } catch(serverError: any) {
+        // Broad error for permission denied on a list/query
         const permissionError = new FirestorePermissionError({
-          path: ordersCollection.path,
-          operation: 'delete',
-          requestResourceData: { note: 'Batch delete for completed orders failed.'},
+            path: ordersCollection.path,
+            operation: 'list', // The initial query might fail
         });
         errorEmitter.emit('permission-error', permissionError);
         throw serverError;
-    });
+    }
   }
 
   export async function clearUserOrderHistory(db: Firestore, userId: string) {

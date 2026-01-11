@@ -132,7 +132,7 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
     if (!firestore) return;
 
     try {
-        await updateOrderStatus(firestore, orderId, status, 'admin');
+        await updateOrderStatus(firestore, orderId, status);
         toast({
             title: "Order Updated",
             description: `Order status changed to ${status}.`
@@ -308,7 +308,6 @@ The Talha Luxe Team
             </AlertDialogAction>
             </AlertDialogFooter>
         </AlertDialogContent>
-      </AlertDialog>
       </CardContent>
     </Card>
     </>
