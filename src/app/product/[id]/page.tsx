@@ -1,3 +1,4 @@
+
 'use client';
 
 import { notFound, useParams, useRouter } from 'next/navigation';
@@ -233,8 +234,8 @@ export default function ProductDetailPage() {
     router.push('/checkout');
   };
   
-  const averageRating = product.rating;
-  const reviewCount = product.reviewCount || 0;
+  const averageRating = product.rating ?? 0;
+  const reviewCount = product.reviewCount ?? 0;
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
@@ -359,3 +360,5 @@ export default function ProductDetailPage() {
     </div>
   );
 }
+
+    
