@@ -50,7 +50,7 @@ export default function ShopPage() {
               {/* Category Filter */}
               <div className="space-y-4 border-b pb-6">
                 <h3 className="font-medium">Category</h3>
-                {categories.filter(c => !['new-arrivals', 'best-sellers'].includes(c.slug)).map((category) => (
+                {categories.filter(c => !['new-arrivals', 'best-sellers', 'sale'].includes(c.slug)).map((category) => (
                   <div key={category.id} className="flex items-center space-x-2">
                     <Checkbox id={category.slug} />
                     <Label htmlFor={category.slug} className="font-normal">{category.name}</Label>

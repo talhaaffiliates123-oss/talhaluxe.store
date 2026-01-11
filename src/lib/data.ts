@@ -6,9 +6,10 @@ export const categories: Category[] = [
   { id: '2', name: 'Bags', slug: 'bags' },
   { id: '3', name: 'Jewelry', slug: 'jewelry' },
   { id: '4', name: 'Sunglasses', slug: 'sunglasses' },
-  { id: '5', name: 'New Arrivals', slug: 'new-arrivals' },
-  { id: '6', name: 'Best Sellers', slug: 'best-sellers' },
-  { id: '7', name: 'Sale', slug: 'sale' },
+  { id: '5', name: 'Wallets', slug: 'wallets' },
+  { id: '6', name: 'New Arrivals', slug: 'new-arrivals' },
+  { id: '7', name: 'Best Sellers', slug: 'best-sellers' },
+  { id: '8', name: 'Sale', slug: 'sale' },
 ];
 
 // Product data is now managed in Firestore.
@@ -193,6 +194,36 @@ export const products: Omit<Product, 'id'>[] = [
     isNewArrival: false,
     isBestSeller: false,
     onSale: false,
+  },
+  {
+    name: 'Classic Leather Bifold',
+    shortDescription: 'A timeless and slim leather wallet.',
+    description: 'Crafted from premium full-grain leather, this bifold wallet offers a classic design with modern functionality. It features six card slots, a full-length bill compartment, and two hidden pockets, all in a slim profile that fits comfortably in your pocket.',
+    price: 8500,
+    discountedPrice: null,
+    category: 'wallets',
+    imageUrls: ['https://picsum.photos/seed/leatherwallet1/600/600'],
+    stock: 50,
+    rating: 4.8,
+    reviewCount: 65,
+    isNewArrival: true,
+    isBestSeller: false,
+    onSale: false,
+  },
+  {
+    name: 'Minimalist Cardholder',
+    shortDescription: 'Sleek and simple for the essentials.',
+    description: 'For those who carry only the essentials, our Minimalist Cardholder is the perfect choice. Made from durable, top-grain leather, it features four card slots and a central pocket for folded cash. Its ultra-slim design is ideal for front-pocket carry.',
+    price: 4500,
+    discountedPrice: 3900,
+    category: 'wallets',
+    imageUrls: ['https://picsum.photos/seed/cardholder2/600/600'],
+    stock: 75,
+    rating: 4.9,
+    reviewCount: 82,
+    isNewArrival: false,
+    isBestSeller: true,
+    onSale: true,
   }
 ];
 

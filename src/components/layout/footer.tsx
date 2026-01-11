@@ -38,6 +38,7 @@ export function Footer() {
               <li><Link href="/shop?category=bags" className="text-muted-foreground hover:text-foreground">Bags</Link></li>
               <li><Link href="/shop?category=jewelry" className="text-muted-foreground hover:text-foreground">Jewelry</Link></li>
               <li><Link href="/shop?category=sunglasses" className="text-muted-foreground hover:text-foreground">Sunglasses</Link></li>
+              <li><Link href="/shop?category=wallets" className="text-muted-foreground hover:text-foreground">Wallets</Link></li>
             </ul>
           </div>
           
