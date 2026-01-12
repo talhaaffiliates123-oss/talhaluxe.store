@@ -11,6 +11,7 @@ import { CartProvider } from '@/context/cart-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import FirebaseErrorListener from '@/components/FirebaseErrorListener';
 import { useEffect } from 'react';
+import Script from 'next/script';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -49,6 +50,9 @@ export default function RootLayout({
           />
       </head>
       <body>
+        <Script id="ad-script-2">
+          {`(function(s){s.dataset.zone='10453119',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`}
+        </Script>
         <FirebaseClientProvider>
           <FirebaseErrorListener>
             <CartProvider>
