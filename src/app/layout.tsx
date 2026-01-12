@@ -10,7 +10,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { CartProvider } from '@/context/cart-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 import FirebaseErrorListener from '@/components/FirebaseErrorListener';
-import { useEffect } from 'react';
 import Script from 'next/script';
 
 const inter = Inter({
@@ -31,15 +30,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  useEffect(() => {
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .then((registration) => console.log('Service Worker registered with scope:', registration.scope))
-        .catch((error) => console.error('Service Worker registration failed:', error));
-    }
-  }, []);
-
   return (
     <html lang="en" className={`${inter.variable} font-body antialiased`}>
       <head>
@@ -50,9 +40,7 @@ export default function RootLayout({
           />
       </head>
       <body>
-        <Script id="ad-script-2">
-          {`(function(s){s.dataset.zone='10453119',s.src='https://al5sm.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`}
-        </Script>
+        <Script src="https://3nbf4.com/act/files/tag.min.js?z=10453217" data-cfasync="false" async></Script>
         <FirebaseClientProvider>
           <FirebaseErrorListener>
             <CartProvider>
