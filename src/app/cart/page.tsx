@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useCart } from '@/hooks/use-cart';
@@ -85,7 +86,12 @@ export default function CartPage() {
            <Button variant="outline" onClick={clearCart}>Clear Cart</Button>
         </div>
 
-        <aside className="lg:col-span-1">
+        <aside className="lg:col-span-1 space-y-6">
+            <div className="bg-muted p-4 rounded-lg text-center hover:bg-muted/90 transition-colors">
+                <a href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground">
+                    ✨ Unlock Exclusive Savings! Click here to discover special offers from our partner. ✨
+                </a>
+            </div>
           <Card>
             <CardHeader>
               <CardTitle>Order Summary</CardTitle>
