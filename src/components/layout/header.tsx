@@ -27,6 +27,7 @@ export function Header() {
 
   const navLinks = [
     { href: '/shop', label: 'Shop' },
+    { href: '/blog', label: 'Blog' },
     { href: '/shop?category=new-arrivals', label: 'New Arrivals' },
     { href: '/shop?category=sale', label: 'Sale' },
     { href: '/about', label: 'About' },
