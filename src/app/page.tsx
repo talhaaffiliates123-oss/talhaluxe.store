@@ -66,7 +66,7 @@ export default function Home() {
       <section className="container mx-auto px-4 -mt-8">
         <div className="bg-muted p-4 rounded-lg text-center hover:bg-muted/90 transition-colors">
           <a href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground">
-            Sponsored Advertisement
+            ✨ Unlock Exclusive Savings! Click here to discover special offers from our partner. ✨
           </a>
         </div>
       </section>
