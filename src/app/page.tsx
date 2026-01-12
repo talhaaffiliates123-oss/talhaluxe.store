@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -63,10 +64,10 @@ export default function Home() {
       </section>
 
       {/* Advertisement Section */}
-      <section className="container mx-auto px-4 -mt-8">
-        <div className="bg-muted p-4 rounded-lg text-center hover:bg-muted/90 transition-colors">
-          <a href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground">
-            ✨ Unlock Exclusive Savings! Click here to discover special offers from our partner. ✨
+      <section className="container mx-auto px-4 -mt-10">
+        <div className="bg-muted p-4 rounded-lg text-center hover:bg-muted/90 transition-colors shadow-lg border border-accent/50">
+          <a href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-accent-foreground animate-pulse">
+            🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
           </a>
         </div>
       </section>
