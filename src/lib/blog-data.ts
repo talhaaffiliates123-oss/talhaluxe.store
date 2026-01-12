@@ -203,7 +203,7 @@ export const blogPosts: BlogPost[] = [
 `
     },
     {
-        slug: 'secret-to-finding-perfect-handbag',
+        slug: 'the-secret-to-finding-perfect-handbag',
         title: 'The Secret to Finding the Perfect Handbag: Balancing Style and Function',
         summary: 'A handbag is more than just a utility item; it’s a statement. Learn how to choose the perfect handbag by considering your lifestyle, body shape, and the key elements of a quality bag.',
         author: 'Talha Luxe Staff',
@@ -367,7 +367,7 @@ export const blogPosts: BlogPost[] = [
         summary: 'A handbag is more than just a utility item; it’s a statement. Learn how to choose the perfect handbag by considering your lifestyle, body shape, and the key elements of a quality bag.',
         author: 'Talha Luxe Staff',
         date: 'October 10, 2023',
-        imageUrl: 'https://images.unsplash.com/photo-1550995694-395f8a43f87c?ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxoYW5kYmFnfGVufDB8fHx8fDE3MDM1OTE1NzR8MA&ixlib=rb-4.0.3&q=80&w=1080&fit=max',
+        imageUrl: 'https://images.unsplash.com/photo-1550995694-395f8a43f87c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxoYW5kYmFnfGVufDB8fHx8fDE3MDM1OTE1NzR8MA&ixlib=rb-4.0.3&q=80&w=1080',
         imageHint: 'handbag',
         content: `
 <p>The perfect handbag is the ultimate accessory. It holds our daily essentials, completes our outfits, and often, carries a piece of our identity. But finding "the one" can be a challenge. It's a delicate balance between trend-driven aesthetics and practical, everyday functionality. If you're on the hunt for your next go-to bag, here’s how to find the perfect one that you'll love and use for years.</p>
@@ -408,7 +408,7 @@ export const blogPosts: BlogPost[] = [
         summary: 'Sales can be exciting, but they can also lead to impulse buys. Learn how to shop sales smartly, from making a wishlist to understanding return policies, ensuring you get the best value.',
         author: 'Talha Luxe Staff',
         date: 'October 5, 2023',
-        imageUrl: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzYWxlfGVufDB8fHx8fDE3MDM1OTE2MDd8MA&ixlib=rb-4.0.3&q=80&w=1080&fit=max',
+        imageUrl: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzYWxlfGVufDB8fHx8fDE3MDM1OTE2MDd8MA&ixlib=rb-4.0.3&q=80&w=1080',
         imageHint: 'sale',
         content: `
 <p>The word "SALE" has an almost magical pull. In Pakistan, sale season—whether it's for lawn, electronics, or fashion accessories—is a major event. While sales offer a fantastic opportunity to grab great items at a lower price, they can also be a trap for impulse purchases and buyer's remorse. To become a truly savvy sale shopper, you need a strategy. Here’s how to navigate the sales landscape and come out with pieces you love and value.</p>
@@ -444,5 +444,7 @@ export const blogPosts: BlogPost[] = [
 `
     }
 ];
+
+    
 
     
