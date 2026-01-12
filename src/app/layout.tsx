@@ -17,14 +17,6 @@ const inter = Inter({
   variable: '--font-inter',
 });
 
-// Metadata can't be exported from a client component.
-// We can keep it here, but it won't be actively used in this client-side layout.
-// export const metadata: Metadata = {
-//   title: 'Talha Luxe - Premium Fashion',
-//   description:
-//     'Discover premium fashion at Talha Luxe. Shop the latest trends in watches, bags, jewelry, and more.',
-// };
-
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -32,8 +24,27 @@ export default function RootLayout({
 }>) {
   const title = "Talha Luxe - Premium Watches, Bags & Jewelry in Pakistan";
   const description = "Discover premium fashion at Talha Luxe. Shop the latest trends in watches, bags, jewelry, and more. Quality craftsmanship and timeless style delivered in Pakistan.";
-  const siteUrl = "https://talhaluxe.com"; // Replace with your actual domain
+  const siteUrl = "https://talhaluxe.com";
   const heroImageUrl = "https://images.unsplash.com/photo-1614208194190-5bf690ad8a98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYXNoaW9uJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
+
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    name: 'Talha Luxe',
+    url: siteUrl,
+    logo: `${siteUrl}/logo.png`, // Assuming you have a logo file at public/logo.png
+    contactPoint: {
+      '@type': 'ContactPoint',
+      telephone: '+92-329-0586406',
+      contactType: 'Customer Service',
+      email: 'Talhaluxe999@gmail.com'
+    },
+    sameAs: [
+      'https://www.facebook.com/', // Add your real social media links
+      'https://www.twitter.com/',
+      'https://www.instagram.com/'
+    ]
+  };
 
   return (
     <html lang="en" className={`${inter.variable} font-body antialiased`}>
@@ -48,6 +59,7 @@ export default function RootLayout({
           <meta property="og:title" content={title} />
           <meta property="og:description" content={description} />
           <meta property="og:image" content={heroImageUrl} />
+          <meta property="og:site_name" content="Talha Luxe" />
 
           {/* Twitter */}
           <meta property="twitter:card" content="summary_large_image" />
@@ -55,6 +67,12 @@ export default function RootLayout({
           <meta property="twitter:title" content={title} />
           <meta property="twitter:description" content={description} />
           <meta property="twitter:image" content={heroImageUrl} />
+
+          {/* Schema.org */}
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+          />
       </head>
       <body>
         

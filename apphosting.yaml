@@ -5,3 +5,20 @@ runConfig:
   # Increase this value if you'd like to automatically spin up
   # more instances in response to increased traffic.
   maxInstances: 1
+
+# Add redirects to handle www and non-www versions of the URL.
+redirects:
+  - type: 301 # Permanent redirect
+    regex: '^/www\\.(.*)$'
+    destination: 'https://talhaluxe.com/$1' # Replace with your actual domain if different
+
+# Add headers to improve performance by caching static assets.
+headers:
+  - source: /_next/static/images/(.*)
+    headers:
+      - key: Cache-Control
+        value: public, max-age=31536000, immutable
+  - source: /images/(.*)
+    headers:
+      - key: Cache-Control
+        value: public, max-age=31536000, immutable

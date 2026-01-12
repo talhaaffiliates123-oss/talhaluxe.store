@@ -1,0 +1,12 @@
+# See https://www.robotstxt.org/robotstxt.html for documentation on how to use the robots.txt file
+
+User-agent: *
+Disallow: /admin/
+Disallow: /cart/
+Disallow: /checkout/
+Disallow: /account/
+Disallow: /login/
+Disallow: /signup/
+Disallow: /wishlist/
+
+Sitemap: https://talhaluxe.com/sitemap.xml
