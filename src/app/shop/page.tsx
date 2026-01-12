@@ -16,6 +16,7 @@ import { getProducts } from "@/lib/products";
 import type { Product } from "@/lib/types";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 
 const MAX_PRICE = 150000;
 
@@ -113,9 +114,9 @@ export default function ShopPage() {
 
       <div className="my-8">
         <div className="bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
-            <a href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-black animate-pulse">
+            <Link href="/shop" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-black animate-pulse" onClick={(e) => { e.preventDefault(); window.open('https://otieu.com/4/10452971', '_blank'); }}>
                 🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
-            </a>
+            </Link>
         </div>
       </div>
 
@@ -212,6 +213,13 @@ export default function ShopPage() {
                 </div>
             )}
           </div>
+            <div className="my-8">
+                <div className="bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
+                    <Link href="/shop" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-black animate-pulse" onClick={(e) => { e.preventDefault(); window.open('https://otieu.com/4/10452971', '_blank'); }}>
+                        🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
+                    </Link>
+                </div>
+            </div>
         </main>
       </div>
     </div>

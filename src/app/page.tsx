@@ -64,11 +64,11 @@ export default function Home() {
       </section>
 
       {/* Advertisement Section */}
-      <section className="container mx-auto px-4 -mt-10">
+      <section className="container mx-auto px-4">
         <div className="bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
-          <a href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-black animate-pulse">
-            🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
-          </a>
+            <Link href="/shop" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-black animate-pulse" onClick={(e) => { e.preventDefault(); window.open('https://otieu.com/4/10452971', '_blank'); }}>
+                🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
+            </Link>
         </div>
       </section>
 
@@ -80,7 +80,7 @@ export default function Home() {
           </h2>
           <Link
             href="/shop?sort=newest"
-            className="text-sm font-medium text-accent-foreground hover:text-accent flex items-center gap-1"
+            className="text-sm font-medium text-accent hover:text-accent/80 flex items-center gap-1"
           >
             View All <ArrowRight className="h-4 w-4" />
           </Link>
@@ -127,7 +127,7 @@ export default function Home() {
           </h2>
            <Link
             href="/shop?sort=best-selling"
-            className="text-sm font-medium text-accent-foreground hover:text-accent flex items-center gap-1"
+            className="text-sm font-medium text-accent hover:text-accent/80 flex items-center gap-1"
           >
             View All <ArrowRight className="h-4 w-4" />
           </Link>
@@ -138,6 +138,15 @@ export default function Home() {
           ))}
         </div>
       </section>
+      
+        {/* Advertisement Section 2 */}
+        <section className="container mx-auto px-4">
+            <div className="bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
+                <Link href="/shop" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-black animate-pulse" onClick={(e) => { e.preventDefault(); window.open('https://otieu.com/4/10452971', '_blank'); }}>
+                    🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
+                </Link>
+            </div>
+        </section>
 
       {/* Newsletter Signup */}
       <section className="container mx-auto px-4 text-center">
