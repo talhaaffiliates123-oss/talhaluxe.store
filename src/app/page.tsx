@@ -62,6 +62,15 @@ export default function Home() {
         </div>
       </section>
 
+      {/* Advertisement Section */}
+      <section className="container mx-auto px-4 -mt-8">
+        <div className="bg-muted p-4 rounded-lg text-center hover:bg-muted/90 transition-colors">
+          <a href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-muted-foreground">
+            Sponsored Advertisement
+          </a>
+        </div>
+      </section>
+
       {/* New Arrivals Section */}
       <section className="container mx-auto px-4">
         <div className="flex justify-between items-baseline mb-8">
