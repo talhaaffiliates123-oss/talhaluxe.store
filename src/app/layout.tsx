@@ -40,7 +40,7 @@ export default function RootLayout({
           />
       </head>
       <body>
-        <Script src="https://3nbf4.com/act/files/tag.min.js?z=10453217" data-cfasync="false" async></Script>
+        
         <FirebaseClientProvider>
           <FirebaseErrorListener>
             <CartProvider>
