@@ -38,6 +38,7 @@ export default function RootLayout({
             name="description"
             content="Discover premium fashion at Talha Luxe. Shop the latest trends in watches, bags, jewelry, and more."
           />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       </head>
       <body>
         

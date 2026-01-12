@@ -1,3 +1,4 @@
+
 'use client';
 import type { Product } from '@/lib/types';
 import Link from 'next/link';
@@ -63,7 +64,9 @@ export default function ProductCard({ product }: ProductCardProps) {
     setCurrentImageIndex((prevIndex) => (prevIndex - 1 + imageUrls.length) % imageUrls.length);
   };
   
-  const totalStock = product.stock;
+  const totalStock = hasVariants
+    ? product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0
+    : product.stock;
 
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-xl">
