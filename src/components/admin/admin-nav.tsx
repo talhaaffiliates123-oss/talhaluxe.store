@@ -13,7 +13,7 @@ export function AdminNav() {
     { href: '/admin/products', label: 'Products', icon: Package },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
     { href: '/admin/users', label: 'Users', icon: Users },
-    // { href: '/admin/settings', label: 'Settings', icon: Settings },
+    { href: '/admin/settings', label: 'Settings', icon: Settings },
   ];
 
   return (

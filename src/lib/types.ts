@@ -1,5 +1,4 @@
 
-
 export type ShippingInfo = {
   name: string;
   email: string;
@@ -105,4 +104,10 @@ export type CancellationReason = {
     reasons: string[];
     customReason?: string;
     createdAt: any; // Firestore Timestamp
+}
+
+
+export type FcmToken = {
+    uid: string;
+    token: string;
 }

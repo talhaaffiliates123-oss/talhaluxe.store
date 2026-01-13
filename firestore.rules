@@ -49,5 +49,11 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if request.auth != null && isOwner(request.resource.data.userId);
     }
+
+    // Rules for FCM tokens
+    match /fcmTokens/{userId} {
+      allow read: if isAdmin();
+      allow write: if isOwner(userId); // Users can write their own FCM token
+    }
   }
 }

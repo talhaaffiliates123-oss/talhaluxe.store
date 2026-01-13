@@ -1,7 +1,7 @@
 'use client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import Link from 'next/link';
-import { Package, Users } from 'lucide-react';
+import { Package, Users, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import DashboardStats from '@/components/admin/dashboard-stats';
 
@@ -35,6 +35,20 @@ export default function AdminDashboard() {
                     <Button variant="secondary">
                         <Users className="mr-2 h-4 w-4" />
                         Go to Users
+                    </Button>
+                </Link>
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
+                <CardTitle>Settings</CardTitle>
+                <CardDescription>Configure admin preferences and notifications.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Link href="/admin/settings">
+                    <Button variant="secondary">
+                        <Settings className="mr-2 h-4 w-4" />
+                        Go to Settings
                     </Button>
                 </Link>
             </CardContent>
