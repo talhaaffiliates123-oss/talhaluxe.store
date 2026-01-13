@@ -7,13 +7,18 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 export function FirebaseClientProvider({ children }: { children: ReactNode }) {
   const [firebase, setFirebase] = useState<FirebaseContextValue | null>(null);
+  const [isInitializing, setIsInitializing] = useState(true);
 
   useEffect(() => {
+    // This effect runs only once on the client
     const { app, auth, firestore, storage } = initializeFirebase();
-    setFirebase({ app, auth, firestore, storage });
+    if (app && auth && firestore && storage) {
+      setFirebase({ app, auth, firestore, storage });
+    }
+    setIsInitializing(false);
   }, []); // Empty dependency array ensures this runs only once on mount
 
-  if (!firebase) {
+  if (isInitializing || !firebase) {
     // Render a skeleton layout or a loading spinner while Firebase is initializing
     return (
         <div className="flex min-h-screen flex-col">

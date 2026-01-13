@@ -113,10 +113,8 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
 }, [firestore, toast]);
   
   useEffect(() => {
-    if(firestore) {
-        fetchOrders();
-    }
-  }, [firestore, fetchOrders]);
+    fetchOrders();
+  }, [fetchOrders]);
 
   const filteredOrders = useMemo(() => {
     if (!searchTerm) {

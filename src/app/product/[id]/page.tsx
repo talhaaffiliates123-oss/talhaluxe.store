@@ -56,7 +56,6 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onRev
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) return;
     if (rating === 0) {
       toast({ variant: 'destructive', title: 'Rating Required', description: 'Please select a star rating before submitting.' });
       return;
@@ -115,7 +114,7 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onRev
               rows={4}
             />
           </div>
-          <Button type="submit" disabled={isSubmitting || rating === 0 || !firestore}>
+          <Button type="submit" disabled={isSubmitting || rating === 0}>
             {isSubmitting ? 'Submitting...' : 'Submit Review'}
           </Button>
         </form>
@@ -174,16 +173,16 @@ export default function ProductDetailPage() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
 
-  const fetchAllData = useCallback(async () => {
-    if (!firestore || !id) return;
+  const fetchAllData = useCallback(async (db: any) => {
+    if (!db || !id) return;
     
     setLoading(true);
     try {
       const productId = id as string;
-      const productData = await getProduct(firestore, productId);
+      const productData = await getProduct(db, productId);
       
       if (productData) {
-        const reviewsData = await getReviews(firestore, productId);
+        const reviewsData = await getReviews(db, productId);
         setProduct(productData);
         setReviews(reviewsData);
         if (productData.variants && productData.variants.length === 1) {
@@ -201,11 +200,11 @@ export default function ProductDetailPage() {
     } finally {
         setLoading(false);
     }
-  }, [firestore, id]);
+  }, [id]);
   
   useEffect(() => {
     if (firestore) {
-        fetchAllData();
+        fetchAllData(firestore);
     }
   }, [firestore, fetchAllData]);
 
@@ -245,7 +244,7 @@ export default function ProductDetailPage() {
   };
 
 
-  if (loading || !firestore) {
+  if (loading) {
     return (
         <div className="container mx-auto px-4 py-8 md:py-12">
             <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
@@ -272,7 +271,7 @@ export default function ProductDetailPage() {
     );
   }
 
-  if (!product && !loading) {
+  if (!product) {
       return notFound();
   }
   
@@ -441,7 +440,7 @@ export default function ProductDetailPage() {
                 <ReviewList reviews={reviews} />
             </div>
              <div>
-                <ReviewForm productId={product.id} onReviewSubmitted={fetchAllData} />
+                <ReviewForm productId={product.id} onReviewSubmitted={() => fetchAllData(firestore)} />
             </div>
         </div>
       </div>
