@@ -122,8 +122,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     setIsSubmitting(true);
 
     try {
-        // Calculate total stock from variants if they exist
-        const totalStock = data.variants && data.variants.length > 0
+        const hasVariants = data.variants && data.variants.length > 0;
+        // Calculate total stock from variants if they exist, otherwise use the main stock field
+        const totalStock = hasVariants
             ? data.variants.reduce((acc, variant) => acc + variant.stock, 0)
             : data.stock;
         
