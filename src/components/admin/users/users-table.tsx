@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Table,
@@ -88,17 +89,18 @@ export default function UsersTable() {
 }, [firestore, lastVisible, toast]);
 
     const fetchTotalCount = useCallback(async () => {
-         if(firestore) {
-            const coll = collection(firestore, 'users');
-            const snap = await getDocs(coll);
-            setTotalUsers(snap.size);
-        }
+         if(!firestore) return;
+         const coll = collection(firestore, 'users');
+         const snap = await getDocs(coll);
+         setTotalUsers(snap.size);
     }, [firestore]);
   
   useEffect(() => {
-    fetchTotalCount();
-    fetchUsers('initial');
-  }, [fetchUsers, fetchTotalCount]);
+    if(firestore){
+      fetchTotalCount();
+      fetchUsers('initial');
+    }
+  }, [firestore, fetchUsers, fetchTotalCount]);
 
 
   const handleNextPage = () => {

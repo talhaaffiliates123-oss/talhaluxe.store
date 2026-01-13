@@ -113,8 +113,10 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
 }, [firestore, toast]);
   
   useEffect(() => {
-    fetchOrders();
-  }, [fetchOrders]);
+    if(firestore) {
+        fetchOrders();
+    }
+  }, [firestore, fetchOrders]);
 
   const filteredOrders = useMemo(() => {
     if (!searchTerm) {
@@ -259,7 +261,7 @@ The Talha Luxe Team
 
                                 <DropdownMenu>
                                     <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                        <Button variant="ghost" className="h-8 w-8 p-0" disabled={!firestore}>
                                             <span className="sr-only">Open menu</span>
                                             <MoreHorizontal className="h-4 w-4" />
                                         </Button>
@@ -307,7 +309,6 @@ The Talha Luxe Team
                 Confirm Cancellation
             </AlertDialogAction>
             </AlertDialogFooter>
-        </AlertDialogContent>
         </AlertDialog>
       </CardContent>
     </Card>

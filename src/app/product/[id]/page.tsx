@@ -56,6 +56,7 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onRev
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firestore) return;
     if (rating === 0) {
       toast({ variant: 'destructive', title: 'Rating Required', description: 'Please select a star rating before submitting.' });
       return;
@@ -114,7 +115,7 @@ const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onRev
               rows={4}
             />
           </div>
-          <Button type="submit" disabled={isSubmitting || rating === 0}>
+          <Button type="submit" disabled={isSubmitting || rating === 0 || !firestore}>
             {isSubmitting ? 'Submitting...' : 'Submit Review'}
           </Button>
         </form>
@@ -185,6 +186,11 @@ export default function ProductDetailPage() {
         const reviewsData = await getReviews(firestore, productId);
         setProduct(productData);
         setReviews(reviewsData);
+        if (productData.variants && productData.variants.length === 1) {
+          setSelectedVariant(productData.variants[0]);
+        } else {
+          setSelectedVariant(null);
+        }
       } else {
         setProduct(null);
         setReviews([]);
@@ -226,16 +232,6 @@ export default function ProductDetailPage() {
     }
   }, [imageUrls]);
 
-  useEffect(() => {
-    // If product has variants, but none are selected, and there's only one variant, select it by default.
-    if (product?.variants && product.variants.length === 1 && !selectedVariant) {
-        handleVariantChange(product.variants[0].id);
-    }
-    // If product has no variants, clear any selected variant state
-    if (product && (!product.variants || product.variants.length === 0)) {
-        setSelectedVariant(null);
-    }
-  }, [product, selectedVariant]);
   
   const handleVariantChange = (variantId: string) => {
     const variant = product?.variants?.find(v => v.id === variantId);
@@ -285,18 +281,17 @@ export default function ProductDetailPage() {
   // A product can be purchased if it has no variants, OR if it has variants and one has been selected.
   const isReadyToPurchase = !hasVariants || !!selectedVariant;
 
-  // The total available stock for the product (sum of variants or main stock)
-  const totalStock = useMemo(() => {
+  const currentStock = useMemo(() => {
     if (!product) return 0;
-    if (hasVariants) {
-        return product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
-    }
+    if (selectedVariant) return selectedVariant.stock;
+    if (hasVariants) return product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
     return product.stock ?? 0;
-  }, [product, hasVariants]);
+  }, [product, hasVariants, selectedVariant]);
+  
 
   const handleAddToCart = () => {
     if (!product) return;
-    if (!isReadyToPurchase) {
+    if (hasVariants && !selectedVariant) {
         toast({ variant: 'destructive', title: 'Please select an option' });
         return;
     }
@@ -309,7 +304,7 @@ export default function ProductDetailPage() {
 
   const handleBuyNow = () => {
     if (!product) return;
-    if (!isReadyToPurchase) {
+    if (hasVariants && !selectedVariant) {
         toast({ variant: 'destructive', title: 'Please select an option' });
         return;
     }
@@ -420,14 +415,14 @@ export default function ProductDetailPage() {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <span className="text-sm text-muted-foreground">{totalStock > 0 ? `${totalStock} in stock` : 'Out of stock'}</span>
+            <span className="text-sm text-muted-foreground">{currentStock > 0 ? `${currentStock} in stock` : 'Out of stock'}</span>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBuyNow} disabled={totalStock === 0}>
+            <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBuyNow} disabled={currentStock === 0}>
               Buy Now
             </Button>
-            <Button size="lg" variant="secondary" className="flex-1" onClick={handleAddToCart} disabled={totalStock === 0}>
+            <Button size="lg" variant="secondary" className="flex-1" onClick={handleAddToCart} disabled={currentStock === 0}>
               Add to Cart
             </Button>
              <Button size="lg" variant="outline" className="px-4">

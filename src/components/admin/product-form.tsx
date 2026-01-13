@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
@@ -352,7 +353,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             </CardContent>
         </Card>
         
-        <Button type="submit" size="lg" disabled={isSubmitting} className="w-full">
+        <Button type="submit" size="lg" disabled={isSubmitting || !firestore} className="w-full">
           {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Product')}
         </Button>
       </div>

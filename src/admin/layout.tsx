@@ -30,15 +30,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const adminEmail = "talhaaffiliates123@gmail.com";
 
   useEffect(() => {
-    if (firestore) {
-      const settingsRef = doc(firestore, 'settings', 'site');
-      getDoc(settingsRef).then(docSnap => {
-        if (docSnap.exists()) {
-          const settings = docSnap.data() as SiteSettings;
-          setLogoUrl(settings.logoUrl || null);
-        }
-      });
-    }
+    if (!firestore) return;
+
+    const settingsRef = doc(firestore, 'settings', 'site');
+    getDoc(settingsRef).then(docSnap => {
+      if (docSnap.exists()) {
+        const settings = docSnap.data() as SiteSettings;
+        setLogoUrl(settings.logoUrl || null);
+      }
+    });
   }, [firestore]);
 
 

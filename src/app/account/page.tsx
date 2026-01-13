@@ -115,7 +115,7 @@ export default function AccountPage() {
 
 
   const handleProfileUpdate = async () => {
-    if (!userProfileRef) return;
+    if (!userProfileRef || !firestore) return;
     const updatedData = { name: displayName };
     updateDoc(userProfileRef, updatedData)
     .catch(async (serverError) => {
@@ -283,7 +283,7 @@ export default function AccountPage() {
                     </div>
                     <AlertDialog open={clearHistoryAlertOpen} onOpenChange={setClearHistoryAlertOpen}>
                         <AlertDialogTrigger asChild>
-                            <Button variant="outline" disabled={!canClearHistory} className="w-full md:w-auto">
+                            <Button variant="outline" disabled={!canClearHistory || !firestore} className="w-full md:w-auto">
                                 <Trash className="mr-2 h-4 w-4" />
                                 Clear History
                             </Button>
@@ -339,6 +339,7 @@ export default function AccountPage() {
                                                     size="sm"
                                                     onClick={() => setOrderToCancel(order)}
                                                     className="flex-1"
+                                                    disabled={!firestore}
                                                 >
                                                     Cancel Order
                                                 </Button>
@@ -378,6 +379,7 @@ export default function AccountPage() {
                                                 variant="destructive"
                                                 size="sm"
                                                 onClick={() => setOrderToCancel(order)}
+                                                disabled={!firestore}
                                             >
                                                 Cancel Order
                                             </Button>
@@ -414,14 +416,15 @@ export default function AccountPage() {
                             <Input 
                                 id="name" 
                                 value={displayName} 
-                                onChange={(e) => setDisplayName(e.target.value)} 
+                                onChange={(e) => setDisplayName(e.target.value)}
+                                disabled={!firestore} 
                             />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" type="email" value={userProfile?.email ?? ''} disabled/>
                         </div>
-                        <Button onClick={handleProfileUpdate}>Save Changes</Button>
+                        <Button onClick={handleProfileUpdate} disabled={!firestore}>Save Changes</Button>
                     </>
                 )}
                 </CardContent>
