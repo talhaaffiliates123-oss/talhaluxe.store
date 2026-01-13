@@ -15,11 +15,10 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const firestore = useFirestore();
 
   useEffect(() => {
-    // Do not proceed if firestore or the reference is not ready
-    if (!firestore || !ref) {
+    // Do not proceed if the reference is not ready
+    if (!ref) {
       setLoading(false);
       return;
     }
@@ -44,9 +43,7 @@ export function useDoc<T extends DocumentData>(ref: DocumentReference<T> | null)
     );
 
     return () => unsubscribe();
-    // We stringify the ref path to create a stable dependency for the useEffect hook.
-    // We also depend on the firestore instance itself.
-  }, [firestore, ref ? ref.path : 'null']);
+  }, [ref]);
 
   return { data, loading, error };
 }

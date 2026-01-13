@@ -14,7 +14,6 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const firestore = useFirestore();
 
   useEffect(() => {
     // Do not proceed if the query is not ready
