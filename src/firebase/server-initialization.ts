@@ -6,24 +6,35 @@ import { firebaseConfig } from './config'; // Reuse client-side config for proje
 // This is a server-side only initialization for Firebase Admin SDK.
 // It's used in Server Components and API routes for direct database access.
 
-let app: FirebaseApp;
-let firestore: Firestore;
-
-function initializeFirebaseAdmin() {
-  if (!getApps().length) {
-    app = initializeApp({
-        // Using projectId from client config is safe and standard
-        projectId: firebaseConfig.projectId, 
-    });
-  } else {
-    app = getApp();
-  }
-  firestore = getFirestore(app);
-  return { app, firestore };
+interface FirebaseAdminInstances {
+  app: FirebaseApp;
+  firestore: Firestore;
 }
 
-// Export a single instance to be used across the server-side of the app.
-export const { firestore: serverFirestore, app: serverApp } = initializeFirebaseAdmin();
+let instances: FirebaseAdminInstances | null = null;
 
-// We can also export the function if granular initialization is needed elsewhere.
-export { initializeFirebaseAdmin as initializeFirebase };
+function initializeFirebaseAdmin(): FirebaseAdminInstances {
+  if (!instances) {
+    if (!getApps().length) {
+      const app = initializeApp({
+          // Using projectId from client config is safe and standard
+          projectId: firebaseConfig.projectId, 
+      });
+      const firestore = getFirestore(app);
+      instances = { app, firestore };
+    } else {
+      const app = getApp();
+      const firestore = getFirestore(app);
+      instances = { app, firestore };
+    }
+  }
+  return instances;
+}
+
+// Export a function to get the firestore instance
+export function getFirebaseAdmin() {
+  return initializeFirebaseAdmin();
+}
+
+// Legacy export for any files that might still use it directly
+export const { firestore, app } = initializeFirebaseAdmin();
