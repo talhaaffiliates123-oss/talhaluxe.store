@@ -1,3 +1,4 @@
+
 'use client';
 import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
@@ -35,7 +36,7 @@ export default function AdminBlogPage() {
           <p className="text-muted-foreground">Manage all blog posts for your store.</p>
         </div>
         <div className="flex items-center gap-2">
-            <Button variant="outline" onClick={handleSeed} disabled={isSeeding}>
+            <Button variant="outline" onClick={handleSeed} disabled={isSeeding || !firestore}>
                 {isSeeding ? 'Seeding...' : 'Seed Initial Posts'}
             </Button>
             <Button asChild>

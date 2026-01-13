@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Table,
@@ -62,8 +63,10 @@ export default function BlogPostsTable() {
 }, [firestore, toast]);
   
   useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+    if (firestore) {
+      fetchPosts();
+    }
+  }, [fetchPosts, firestore]);
 
   const handleDeletePost = async (postId: string) => {
     if (!firestore) return;

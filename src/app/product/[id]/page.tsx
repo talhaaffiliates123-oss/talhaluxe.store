@@ -198,8 +198,10 @@ export default function ProductDetailPage() {
   }, [firestore, id]);
   
   useEffect(() => {
-    fetchAllData();
-  }, [fetchAllData]);
+    if (firestore) {
+        fetchAllData();
+    }
+  }, [firestore, fetchAllData]);
 
   const imageUrls = useMemo(() => {
     if (product?.imageUrls && product.imageUrls.length > 0) {
@@ -247,7 +249,7 @@ export default function ProductDetailPage() {
   };
 
 
-  if (loading || !product) {
+  if (loading || !firestore) {
     return (
         <div className="container mx-auto px-4 py-8 md:py-12">
             <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
@@ -285,6 +287,7 @@ export default function ProductDetailPage() {
 
   // The total available stock for the product (sum of variants or main stock)
   const totalStock = useMemo(() => {
+    if (!product) return 0;
     if (hasVariants) {
         return product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
     }
@@ -292,6 +295,7 @@ export default function ProductDetailPage() {
   }, [product, hasVariants]);
 
   const handleAddToCart = () => {
+    if (!product) return;
     if (!isReadyToPurchase) {
         toast({ variant: 'destructive', title: 'Please select an option' });
         return;
@@ -304,6 +308,7 @@ export default function ProductDetailPage() {
   };
 
   const handleBuyNow = () => {
+    if (!product) return;
     if (!isReadyToPurchase) {
         toast({ variant: 'destructive', title: 'Please select an option' });
         return;
