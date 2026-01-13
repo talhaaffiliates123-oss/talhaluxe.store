@@ -279,12 +279,20 @@ export default function ProductDetailPage() {
   }
   
   const hasVariants = product.variants && product.variants.length > 0;
+  
+  // A product can be purchased if it has no variants, OR if it has variants and one has been selected.
+  const isReadyToPurchase = !hasVariants || !!selectedVariant;
 
-  const canPurchase = !hasVariants || !!selectedVariant;
-  const currentStock = hasVariants ? (selectedVariant?.stock ?? 0) : product.stock;
+  // The total available stock for the product (sum of variants or main stock)
+  const totalStock = useMemo(() => {
+    if (hasVariants) {
+        return product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
+    }
+    return product.stock ?? 0;
+  }, [product, hasVariants]);
 
   const handleAddToCart = () => {
-    if (!canPurchase) {
+    if (!isReadyToPurchase) {
         toast({ variant: 'destructive', title: 'Please select an option' });
         return;
     }
@@ -296,7 +304,7 @@ export default function ProductDetailPage() {
   };
 
   const handleBuyNow = () => {
-    if (!canPurchase) {
+    if (!isReadyToPurchase) {
         toast({ variant: 'destructive', title: 'Please select an option' });
         return;
     }
@@ -315,7 +323,7 @@ export default function ProductDetailPage() {
               {imageUrls.length > 0 ? (
                 <Image 
                   src={imageUrls[activeImageIndex]} 
-                  alt={`${product.name} - image ${activeImageIndex + 1}`} 
+                  alt={product.name}
                   fill 
                   className="object-cover transition-opacity duration-500"
                   key={activeImageIndex}
@@ -407,14 +415,14 @@ export default function ProductDetailPage() {
                 <Plus className="h-4 w-4" />
               </Button>
             </div>
-            <span className="text-sm text-muted-foreground">{currentStock > 0 ? `${currentStock} in stock` : 'Out of stock'}</span>
+            <span className="text-sm text-muted-foreground">{totalStock > 0 ? `${totalStock} in stock` : 'Out of stock'}</span>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBuyNow} disabled={!canPurchase || currentStock === 0}>
+            <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBuyNow} disabled={totalStock === 0}>
               Buy Now
             </Button>
-            <Button size="lg" variant="secondary" className="flex-1" onClick={handleAddToCart} disabled={!canPurchase || currentStock === 0}>
+            <Button size="lg" variant="secondary" className="flex-1" onClick={handleAddToCart} disabled={totalStock === 0}>
               Add to Cart
             </Button>
              <Button size="lg" variant="outline" className="px-4">
