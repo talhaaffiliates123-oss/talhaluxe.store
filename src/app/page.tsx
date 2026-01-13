@@ -65,11 +65,11 @@ export default function Home() {
 
       {/* Advertisement Section */}
       <section className="container mx-auto px-4">
-        <div className="bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
-            <Link href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-primary">
+        <Link href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="block bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
+            <span className="text-lg font-bold text-black">
                 🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
-            </Link>
-        </div>
+            </span>
+        </Link>
       </section>
 
       {/* New Arrivals Section */}
@@ -141,11 +141,11 @@ export default function Home() {
       
         {/* Advertisement Section 2 */}
         <section className="container mx-auto px-4">
-            <div className="bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
-                <Link href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-primary">
+            <Link href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="block bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
+                <span className="text-lg font-bold text-black">
                     🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
-                </Link>
-            </div>
+                </span>
+            </Link>
         </section>
 
       {/* Newsletter Signup */}
