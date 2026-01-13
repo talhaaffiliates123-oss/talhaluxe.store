@@ -17,8 +17,8 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
   const firestore = useFirestore();
 
   useEffect(() => {
-    // Do not proceed if firestore or the query is not ready
-    if (!firestore || !query) {
+    // Do not proceed if the query is not ready
+    if (!query) {
       setLoading(false);
       return;
     }
@@ -44,8 +44,7 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
 
     return () => unsubscribe();
   // We stringify the query to create a stable dependency for the useEffect hook.
-  // We also depend on the firestore instance itself.
-  }, [firestore, query ? JSON.stringify(query) : 'null']);
+  }, [query]);
 
   return { data, loading, error };
 }
