@@ -1,21 +1,48 @@
-import { blogPosts, BlogPost } from '@/lib/blog-data';
-import { notFound } from 'next/navigation';
+'use client';
+import { notFound, useParams } from 'next/navigation';
 import Image from 'next/image';
 import { Calendar, User } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-
-export async function generateStaticParams() {
-  return blogPosts.map((post) => ({
-    slug: post.slug,
-  }));
-}
-
-function getPost(slug: string): BlogPost | undefined {
-  return blogPosts.find((post) => post.slug === slug);
-}
+import { useFirestore } from '@/firebase';
+import { useEffect, useState } from 'react';
+import type { BlogPost } from '@/lib/types';
+import { getBlogPostBySlug } from '@/lib/blog';
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const post = getPost(params.slug);
+  const { slug } = params;
+  const firestore = useFirestore();
+  const [post, setPost] = useState<BlogPost | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (firestore && slug) {
+      getBlogPostBySlug(firestore, slug as string).then((postData) => {
+        setPost(postData);
+        setLoading(false);
+      });
+    }
+  }, [firestore, slug]);
+
+
+  if (loading) {
+    return (
+        <article>
+            <Skeleton className="h-[50vh] w-full" />
+            <div className="container mx-auto max-w-4xl px-4 py-12">
+                <Card>
+                    <div className="p-8 space-y-4">
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-6 w-5/6" />
+                        <Skeleton className="h-6 w-full" />
+                        <Skeleton className="h-6 w-3/4" />
+                    </div>
+                </Card>
+            </div>
+        </article>
+    );
+  }
+
 
   if (!post) {
     notFound();

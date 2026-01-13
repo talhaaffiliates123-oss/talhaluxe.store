@@ -111,3 +111,20 @@ export type FcmToken = {
     uid: string;
     token: string;
 }
+
+export type BlogPost = {
+    id: string;
+    slug: string;
+    title: string;
+    summary: string;
+    author: string;
+    date: string; // Keep as string for simplicity, can be converted to Timestamp on write
+    imageUrl: string;
+    imageHint: string;
+    content: string; // Markdown content
+    createdAt: any; // Firestore Timestamp
+};
+
+export type SiteSettings = {
+    logoUrl?: string;
+}

@@ -18,7 +18,7 @@ service cloud.firestore {
 
     match /products/{productId} {
       allow read: if true;
-      allow list: if isAdmin();
+      allow list: if true; // Allow public listing of products
       allow write: if isAdmin();
 
        match /reviews/{reviewId} {
@@ -26,6 +26,17 @@ service cloud.firestore {
          // Allow create if user is authenticated and the userId matches their own UID
          allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
        }
+    }
+    
+    match /blog/{postId} {
+      allow read: if true;
+      allow list: if true;
+      allow write: if isAdmin();
+    }
+    
+    match /settings/site {
+        allow read: if true;
+        allow write: if isAdmin();
     }
 
     match /orders/{orderId} {
