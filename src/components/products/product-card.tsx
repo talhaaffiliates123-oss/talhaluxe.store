@@ -64,9 +64,13 @@ export default function ProductCard({ product }: ProductCardProps) {
     setCurrentImageIndex((prevIndex) => (prevIndex - 1 + imageUrls.length) % imageUrls.length);
   };
   
-  const totalStock = hasVariants
-    ? product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0
-    : product.stock;
+  const totalStock = useMemo(() => {
+    if (hasVariants) {
+        return product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
+    }
+    return product.stock ?? 0;
+  }, [product, hasVariants]);
+
 
   return (
     <Card className="group overflow-hidden transition-all duration-300 hover:shadow-xl">
