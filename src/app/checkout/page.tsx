@@ -135,7 +135,7 @@ export default function CheckoutPage() {
           <h1 className="text-4xl font-bold tracking-tight font-headline">Checkout</h1>
         </div>
         <form onSubmit={handlePlaceOrder} className="grid lg:grid-cols-2 gap-12">
-            <div className="order-2 lg:order-1">
+            <div className="order-2 lg:order-1 space-y-6">
                 <Card>
                 <CardHeader>
                     <CardTitle>Shipping & Payment</CardTitle>
@@ -204,16 +204,17 @@ export default function CheckoutPage() {
                 <CardContent>
                     <div className="space-y-4">
                     {items.map(({ product, quantity, variant }) => (
-                        <div key={product.id + (variant?.id || '')} className="flex items-center gap-4">
+                        <div key={product.id + (variant?.id || '')} className="flex items-start gap-4">
                             <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
                                 <Image src={variant?.imageUrl || product.imageUrls?.[0] || 'https://placehold.co/64x64'} alt={product.name} width={64} height={64} className="h-full w-full object-cover"/>
                                 <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-muted text-sm">{quantity}</span>
                             </div>
-                            <div className="flex-1">
-                                <p className="font-medium truncate">{product.name}</p>
+                            <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm sm:text-base leading-tight">{product.name}</p>
                                 {variant && <p className="text-sm text-muted-foreground">{variant.name}</p>}
+                                <p className="font-medium sm:hidden mt-1">PKR {((product.discountedPrice ?? product.price) * quantity).toFixed(2)}</p>
                             </div>
-                            <p className="font-medium">PKR {((product.discountedPrice ?? product.price) * quantity).toFixed(2)}</p>
+                            <p className="font-medium hidden sm:block">PKR {((product.discountedPrice ?? product.price) * quantity).toFixed(2)}</p>
                         </div>
                     ))}
                     </div>
@@ -239,4 +240,5 @@ export default function CheckoutPage() {
       </div>
     );
 }
+
 
