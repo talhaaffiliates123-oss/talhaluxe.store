@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -41,7 +42,7 @@ export function UserNav() {
           <Avatar className="h-8 w-8">
             <AvatarImage
               src={user?.photoURL ?? 'https://picsum.photos/seed/user-avatar/100/100'}
-              alt={user?.displayName ?? 'User'}
+              alt={user?.displayName ? `${user.displayName}'s avatar` : 'User avatar'}
               data-ai-hint="person avatar"
             />
             <AvatarFallback>

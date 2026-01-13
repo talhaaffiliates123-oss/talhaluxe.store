@@ -133,7 +133,7 @@ const ReviewList = ({ reviews }: { reviews: Review[] }) => {
       {reviews.map(review => (
         <div key={review.id} className="flex gap-4">
           <Avatar>
-            <AvatarImage src={`https://picsum.photos/seed/${review.userId}/40/40`} />
+            <AvatarImage src={`https://picsum.photos/seed/${review.userId}/40/40`} alt={`${review.userName}'s avatar`} />
             <AvatarFallback>{review.userName.charAt(0)}</AvatarFallback>
           </Avatar>
           <div className="flex-1">
@@ -315,7 +315,7 @@ export default function ProductDetailPage() {
               {imageUrls.length > 0 ? (
                 <Image 
                   src={imageUrls[activeImageIndex]} 
-                  alt={`${product.name} image ${activeImageIndex + 1}`} 
+                  alt={`${product.name} - image ${activeImageIndex + 1}`} 
                   fill 
                   className="object-cover transition-opacity duration-500"
                   key={activeImageIndex}
@@ -338,7 +338,7 @@ export default function ProductDetailPage() {
                                 activeImageIndex === index ? "ring-2 ring-primary ring-offset-2" : "opacity-75 hover:opacity-100"
                             )}
                         >
-                            <Image src={url} alt={`Thumbnail ${index + 1}`} fill className="object-cover" sizes="10vw" />
+                            <Image src={url} alt={`Thumbnail for ${product.name} ${index + 1}`} fill className="object-cover" sizes="10vw" />
                         </button>
                     ))}
                 </div>

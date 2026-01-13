@@ -114,7 +114,7 @@ export default function ShopPage() {
 
       <div className="my-8">
         <div className="bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
-            <Link href="/shop" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-black animate-pulse" onClick={(e) => { e.preventDefault(); window.open('https://otieu.com/4/10452971', '_blank'); }}>
+            <Link href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-primary">
                 🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
             </Link>
         </div>
@@ -215,7 +215,7 @@ export default function ShopPage() {
           </div>
             <div className="my-8">
                 <div className="bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
-                    <Link href="/shop" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-black animate-pulse" onClick={(e) => { e.preventDefault(); window.open('https://otieu.com/4/10452971', '_blank'); }}>
+                    <Link href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-primary">
                         🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
                     </Link>
                 </div>
