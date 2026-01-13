@@ -52,7 +52,7 @@ export default function RootLayout({
           <meta name="description" content={description} />
           <meta name="keywords" content="premium watches pakistan, leather bags pakistan, fine jewelry, talha luxe, online shopping pakistan, luxury accessories" />
 
-          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
           
           {/* Open Graph / Facebook */}
           <meta property="og:type" content="website" />
