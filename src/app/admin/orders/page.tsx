@@ -46,12 +46,12 @@ export default function AdminOrdersPage() {
 
   return (
     <div>
-      <div className="flex items-center justify-between mb-6 gap-4">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
         <div>
           <h1 className="text-3xl font-bold">Orders</h1>
           <p className="text-muted-foreground">Manage all orders in your store.</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex w-full md:w-auto items-center gap-2">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button variant="outline">
@@ -74,7 +74,7 @@ export default function AdminOrdersPage() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
-            <div className="w-full max-w-sm">
+            <div className="w-full flex-1 md:max-w-sm">
             <Input 
                 placeholder="Search by name or order ID..."
                 value={searchTerm}

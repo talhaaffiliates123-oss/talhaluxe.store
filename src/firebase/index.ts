@@ -5,6 +5,7 @@ import {
   getAuth,
   Auth,
 } from 'firebase/auth';
+import { getMessaging, Messaging } from "firebase/messaging";
 import { getStorage, FirebaseStorage } from 'firebase/storage';
 import { firebaseConfig } from './config';
 import { useCollection } from './firestore/use-collection';
@@ -19,12 +20,15 @@ import {
   useFirestore,
   useAuth,
   useStorage,
+  useMessaging
 } from './provider';
 
 let app: FirebaseApp | null = null;
 let auth: Auth | null = null;
 let firestore: Firestore | null = null;
 let storage: FirebaseStorage | null = null;
+let messaging: Messaging | null = null;
+
 
 function initializeFirebase() {
   if (typeof window !== 'undefined') {
@@ -34,6 +38,7 @@ function initializeFirebase() {
         auth = getAuth(app);
         firestore = getFirestore(app);
         storage = getStorage(app);
+        messaging = getMessaging(app);
       } catch (e) {
         console.error('Failed to initialize Firebase', e);
       }
@@ -42,9 +47,15 @@ function initializeFirebase() {
       auth = getAuth(app);
       firestore = getFirestore(app);
       storage = getStorage(app);
+      // Messaging might not be initialized if getApps().length > 0 but it wasn't initialized before.
+      try {
+        messaging = getMessaging(app);
+      } catch (e) {
+        // This can happen with HMR, it's usually safe to ignore
+      }
     }
   }
-  return { app, auth, firestore, storage };
+  return { app, auth, firestore, storage, messaging };
 }
 
 export {
@@ -59,4 +70,5 @@ export {
   useFirestore,
   useAuth,
   useStorage,
+  useMessaging,
 };

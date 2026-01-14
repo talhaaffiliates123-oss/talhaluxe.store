@@ -28,8 +28,10 @@ import {
   } from "@/components/ui/alert-dialog"
 import {
     Drawer,
+    DrawerClose,
     DrawerContent,
     DrawerDescription,
+    DrawerFooter,
     DrawerHeader,
     DrawerTitle,
     DrawerTrigger,
@@ -53,6 +55,7 @@ import { format } from 'date-fns';
 import type { Order } from '@/lib/types';
 import { updateOrderStatus } from '@/lib/orders';
 import { MoreHorizontal } from 'lucide-react';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 
 interface OrdersTableProps {
@@ -86,6 +89,7 @@ const Highlight = ({ text, highlight }: { text: string; highlight: string }) => 
 export default function OrdersTable({ searchTerm }: OrdersTableProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [allOrders, setAllOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
@@ -172,6 +176,154 @@ The Talha Luxe Team
 ` : '';
 
 
+  const OrderDetailsDrawer = ({ order }: { order: Order }) => (
+    <Drawer>
+        <DrawerTrigger asChild>
+            <Button variant="outline" size="sm">View Details</Button>
+        </DrawerTrigger>
+        <DrawerContent>
+            <div className="mx-auto w-full max-w-2xl p-4 select-text">
+                <DrawerHeader>
+                    <DrawerTitle>Order Details</DrawerTitle>
+                    <DrawerDescription>Order ID: <Highlight text={order.id} highlight={searchTerm} /></DrawerDescription>
+                </DrawerHeader>
+                <div className="p-4 space-y-4">
+                    <div className="space-y-1">
+                        <h4 className="font-medium">Shipping Address</h4>
+                        <p className="text-sm text-muted-foreground">
+                            {order.shippingInfo.name}<br />
+                            {order.shippingInfo.address}<br />
+                            {order.shippingInfo.city}, {order.shippingInfo.state} {order.shippingInfo.zip}<br />
+                            {order.shippingInfo.country}
+                        </p>
+                    </div>
+                        <div className="space-y-1">
+                        <h4 className="font-medium">Items</h4>
+                        <ul className="text-sm text-muted-foreground list-disc pl-5">
+                            {order.items.map(item => (
+                                <li key={item.productId}>{item.name} (x{item.quantity})</li>
+                            ))}
+                        </ul>
+                    </div>
+                </div>
+                <DrawerFooter className="pt-4">
+                    <DrawerClose asChild>
+                        <Button variant="outline">Close</Button>
+                    </DrawerClose>
+                </DrawerFooter>
+            </div>
+        </DrawerContent>
+    </Drawer>
+  );
+
+  const renderDesktopTable = () => (
+    <Table>
+        <TableHeader>
+            <TableRow>
+                <TableHead>Customer</TableHead>
+                <TableHead>Date</TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="text-right">Total</TableHead>
+                <TableHead className="text-right">Actions</TableHead>
+            </TableRow>
+        </TableHeader>
+        <TableBody>
+        {filteredOrders.map((order) => (
+            <TableRow key={order.id}>
+                <TableCell>
+                    <div className="font-medium">
+                        <Highlight text={order.shippingInfo?.name ?? 'N/A'} highlight={searchTerm} />
+                    </div>
+                    <div className="text-sm text-muted-foreground">{order.shippingInfo?.email ?? order.userId}</div>
+                </TableCell>
+                <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
+                <TableCell>
+                    <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
+                </TableCell>
+                <TableCell className="text-right">PKR {order.totalPrice.toFixed(2)}</TableCell>
+                <TableCell className="text-right">
+                    <div className="flex items-center justify-end gap-2">
+                        <OrderDetailsDrawer order={order} />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0" disabled={!firestore}>
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => navigator.clipboard.writeText(order.id)}>Copy order ID</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Processing')}>Mark as Processing</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Shipped')}>Mark as Shipped</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Delivered')}>Mark as Delivered</DropdownMenuItem>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem
+                                        className="text-destructive"
+                                        onSelect={(e) => { e.preventDefault(); setOrderToCancel(order); }}
+                                    >
+                                        Cancel Order
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </TableCell>
+            </TableRow>
+        ))}
+        </TableBody>
+    </Table>
+  );
+
+  const renderMobileCards = () => (
+    <div className="space-y-4">
+        {filteredOrders.map(order => (
+            <Card key={order.id}>
+                <CardContent className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="font-semibold"><Highlight text={order.shippingInfo?.name ?? 'N/A'} highlight={searchTerm} /></p>
+                            <p className="text-sm text-muted-foreground">{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</p>
+                        </div>
+                        <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
+                    </div>
+                    <div className="flex justify-between items-center font-semibold">
+                        <span>Total</span>
+                        <span>PKR {order.totalPrice.toFixed(2)}</span>
+                    </div>
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                        <OrderDetailsDrawer order={order} />
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" className="h-8 w-8 p-0" disabled={!firestore}>
+                                    <span className="sr-only">Open menu</span>
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Processing')}>Mark as Processing</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Shipped')}>Mark as Shipped</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Delivered')}>Mark as Delivered</DropdownMenuItem>
+                                <AlertDialogTrigger asChild>
+                                    <DropdownMenuItem
+                                        className="text-destructive"
+                                        onSelect={(e) => { e.preventDefault(); setOrderToCancel(order); }}
+                                    >
+                                        Cancel Order
+                                    </DropdownMenuItem>
+                                </AlertDialogTrigger>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                </CardContent>
+            </Card>
+        ))}
+    </div>
+  );
+
+
   return (
     <>
     <Card>
@@ -181,113 +333,18 @@ The Talha Luxe Team
       </CardHeader>
       <CardContent>
         <AlertDialog>
-          <Table>
-              <TableHeader>
-              <TableRow>
-                  <TableHead>Customer</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Actions</TableHead>
-              </TableRow>
-              </TableHeader>
-              <TableBody>
-              {loading ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell><Skeleton className="h-6 w-32" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-6 w-16" /></TableCell>
-                        <TableCell><Skeleton className="h-8 w-24" /></TableCell>
-                    </TableRow>
-                  ))
-              ) : filteredOrders.length === 0 ? (
-                  <TableRow>
-                      <TableCell colSpan={5} className="text-center py-10">
-                          <p>{searchTerm ? 'No orders match your search.' : 'No orders found.'}</p>
-                      </TableCell>
-                  </TableRow>
-              ) : filteredOrders.map((order) => {
-                  return (
-                      <TableRow key={order.id}>
-                          <TableCell>
-                            <div className="font-medium">
-                                <Highlight text={order.shippingInfo?.name ?? 'N/A'} highlight={searchTerm} />
-                            </div>
-                            <div className="text-sm text-muted-foreground">{order.shippingInfo?.email ?? order.userId}</div>
-                          </TableCell>
-                          <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
-                          <TableCell>
-                            <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
-                          </TableCell>
-                          <TableCell className="text-right">PKR {order.totalPrice.toFixed(2)}</TableCell>
-                          <TableCell className="text-right">
-                            <div className="flex items-center justify-end gap-2">
-                                <Drawer>
-                                    <DrawerTrigger asChild>
-                                        <Button variant="outline" size="sm">View Details</Button>
-                                    </DrawerTrigger>
-                                    <DrawerContent>
-                                        <div className="mx-auto w-full max-w-sm">
-                                        <DrawerHeader>
-                                            <DrawerTitle>Order Details</DrawerTitle>
-                                            <DrawerDescription>Order ID: <Highlight text={order.id} highlight={searchTerm} /></DrawerDescription>
-                                        </DrawerHeader>
-                                        <div className="p-4 space-y-4">
-                                            <div className="space-y-1">
-                                                <h4 className="font-medium">Shipping Address</h4>
-                                                <p className="text-sm text-muted-foreground">
-                                                    {order.shippingInfo.name}<br />
-                                                    {order.shippingInfo.address}<br />
-                                                    {order.shippingInfo.city}, {order.shippingInfo.state} {order.shippingInfo.zip}<br />
-                                                    {order.shippingInfo.country}
-                                                </p>
-                                            </div>
-                                             <div className="space-y-1">
-                                                <h4 className="font-medium">Items</h4>
-                                                <ul className="text-sm text-muted-foreground list-disc pl-5">
-                                                    {order.items.map(item => (
-                                                        <li key={item.productId}>{item.name} (x{item.quantity})</li>
-                                                    ))}
-                                                </ul>
-                                            </div>
-                                        </div>
-                                        </div>
-                                    </DrawerContent>
-                                </Drawer>
+          {loading ? (
+            <div className="space-y-2">
+                {Array.from({length: 5}).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}
+            </div>
+          ) : filteredOrders.length === 0 ? (
+            <div className="text-center py-10">
+                <p>{searchTerm ? 'No orders match your search.' : 'No orders found.'}</p>
+            </div>
+          ) : (
+            isMobile ? renderMobileCards() : renderDesktopTable()
+          )}
 
-                                <DropdownMenu>
-                                    <DropdownMenuTrigger asChild>
-                                        <Button variant="ghost" className="h-8 w-8 p-0" disabled={!firestore}>
-                                            <span className="sr-only">Open menu</span>
-                                            <MoreHorizontal className="h-4 w-4" />
-                                        </Button>
-                                    </DropdownMenuTrigger>
-                                    <DropdownMenuContent align="end">
-                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                        <DropdownMenuItem onClick={() => navigator.clipboard.writeText(order.id)}>Copy order ID</DropdownMenuItem>
-                                        <DropdownMenuSeparator />
-                                        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Processing')}>Mark as Processing</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Shipped')}>Mark as Shipped</DropdownMenuItem>
-                                        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Delivered')}>Mark as Delivered</DropdownMenuItem>
-                                        <AlertDialogTrigger asChild>
-                                            <DropdownMenuItem
-                                                className="text-destructive"
-                                                onSelect={(e) => { e.preventDefault(); setOrderToCancel(order); }}
-                                            >
-                                                Cancel Order
-                                            </DropdownMenuItem>
-                                        </AlertDialogTrigger>
-                                    </DropdownMenuContent>
-                                </DropdownMenu>
-                            </div>
-                          </TableCell>
-                      </TableRow>
-                  )
-              })}
-              </TableBody>
-          </Table>
           <AlertDialogContent>
             <AlertDialogHeader>
             <AlertDialogTitle>Notify Customer of Cancellation</AlertDialogTitle>
@@ -307,7 +364,7 @@ The Talha Luxe Team
                 Confirm Cancellation
             </AlertDialogAction>
             </AlertDialogFooter>
-        </AlertDialog>
+        </AlertDialogContent>
       </CardContent>
     </Card>
     </>

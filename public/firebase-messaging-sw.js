@@ -1,38 +1,21 @@
-// This file should be in the `public` directory
+// This service worker file is intentionally left almost empty.
+// It is required for Firebase Cloud Messaging to work in the background.
 
-// Import and initialize the Firebase SDK
-// It's important to import the a-la-carte SDKs you need
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js');
-importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-compat.js');
+// The service worker will be registered by the Firebase SDK, and it will
+// automatically handle displaying notifications when the app is not in the
+// active tab.
 
-// Your web app's Firebase configuration
-const firebaseConfig = {
-    apiKey: 'AIzaSyBSOD9aHuhr5lYk9QDVKhHbOAtcgSueOXM',
-    authDomain: 'studio-4597970746-e4842.firebaseapp.com',
-    databaseURL: 'https://studio-4597970746-e4842-default-rtdb.firebaseio.com',
-    projectId: 'studio-4597970746-e4842',
-    storageBucket: 'studio-4597970746-e4842.appspot.com',
-    messagingSenderId: '424210099774',
-    appId: '1:424210099774:web:ce8ed86cf460de296d6b6f',
-};
+// For more advanced background message handling, you can add logic here,
+// but for simple display of notifications, this is sufficient.
 
+// You can optionally import and initialize Firebase here if you need to
+// perform actions (like interacting with Firestore) when a background
+// notification is received. For now, we keep it simple.
 
-firebase.initializeApp(firebaseConfig);
+self.addEventListener("install", function (event) {
+  console.log("FCM Service Worker installed.");
+});
 
-const messaging = firebase.messaging();
-
-// Handle incoming messages. Called when:
-// - a message is received while the app has focus
-// - a message is received while the app is in the background
-messaging.onBackgroundMessage((payload) => {
-  console.log('[firebase-messaging-sw.js] Received background message ', payload);
-
-  // Customize notification here
-  const notificationTitle = payload.notification.title;
-  const notificationOptions = {
-    body: payload.notification.body,
-    icon: '/logo.png', // Make sure you have a logo.png in your public folder
-  };
-
-  self.registration.showNotification(notificationTitle, notificationOptions);
+self.addEventListener("activate", function (event) {
+  console.log("FCM Service Worker activated.");
 });

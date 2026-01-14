@@ -89,14 +89,19 @@ export type CartItemData = {
     }
 }
 
-export type Notification = {
-    id: string;
-    userId: string;
-    message: string;
-    read: boolean;
-    createdAt: any; // Firestore Timestamp
-    link?: string;
+export type FcmSettings = {
+    notificationsEnabled?: boolean;
+    tokens?: string[];
 }
+
+export type UserProfile = {
+    id: string;
+    name: string;
+    email: string;
+    createdAt: any; // Firestore Timestamp
+    fcmSettings?: FcmSettings;
+};
+
 
 export type CancellationReason = {
     orderId: string;

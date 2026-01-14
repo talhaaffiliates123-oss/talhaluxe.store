@@ -12,14 +12,14 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     // This effect runs only once on the client
-    const { app, auth, firestore, storage } = initializeFirebase();
+    const { app, auth, firestore, storage, messaging } = initializeFirebase();
     if (app && auth && firestore && storage) {
-      setFirebase({ app, auth, firestore, storage });
+      setFirebase({ app, auth, firestore, storage, messaging });
     }
     setIsInitializing(false);
   }, []); // Empty dependency array ensures this runs only once on mount
 
-  if (isInitializing || !firebase) {
+  if (isInitializing) {
     // Render a skeleton layout or a loading spinner while Firebase is initializing
     // This prevents any child components from rendering until Firebase is ready.
     return (
@@ -48,7 +48,7 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <FirebaseProvider value={firebase}>
+    <FirebaseProvider value={firebase!}>
       {children}
     </FirebaseProvider>
   );
