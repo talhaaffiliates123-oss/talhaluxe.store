@@ -15,7 +15,8 @@ export function useUser() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // If auth is not yet available, we are still loading. Do not proceed.
+    // If auth is not yet available, don't do anything.
+    // The hook will re-run when the auth object becomes available.
     if (!auth) {
       return;
     }
