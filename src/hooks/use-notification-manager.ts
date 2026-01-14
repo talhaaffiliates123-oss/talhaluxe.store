@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getToken, isSupported as isFcmSupported } from 'firebase/messaging';
 import { useFirestore, useMessaging, useUser } from '@/firebase';
-import { doc, getDoc, updateDoc, arrayUnion, setDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, setDoc, serverTimestamp } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
 // The VAPID key from your Firebase project settings.
@@ -34,6 +34,7 @@ export function useNotificationManager() {
       if (supported) {
         setPermission(Notification.permission);
       }
+      // We don't stop loading here, because we still need to fetch user settings.
     }
     checkSupportAndPermission();
   }, []);
@@ -42,12 +43,8 @@ export function useNotificationManager() {
   // It should only run after we know who the user is and have a firestore instance.
   useEffect(() => {
     if (!user || !firestore) {
-      if (!user && !firestore) {
-        // Still loading user/firestore, so don't stop loading yet.
-        return;
-      }
-      // If we have one but not the other, or user is null, loading is done.
-      setIsLoading(false);
+      // If user is not logged in, or firebase isn't ready, loading is effectively done.
+      if (!user) setIsLoading(false);
       return;
     }
     
@@ -56,7 +53,8 @@ export function useNotificationManager() {
     getDoc(userSettingsRef).then(docSnap => {
       if (docSnap.exists()) {
         const settings = docSnap.data()?.fcmSettings;
-        setNotificationsEnabled(settings?.notificationsEnabled ?? false);
+        // Only set enabled if browser permission is also granted
+        setNotificationsEnabled(settings?.notificationsEnabled && Notification.permission === 'granted');
       } else {
         setNotificationsEnabled(false);
       }
@@ -66,7 +64,7 @@ export function useNotificationManager() {
     }).finally(() => {
       setIsLoading(false);
     });
-  }, [user, firestore]);
+  }, [user, firestore, permission]); // Rerun when permission changes
 
   /**
    * Requests notification permission from the user and retrieves an FCM token.
@@ -79,7 +77,7 @@ export function useNotificationManager() {
     
     // Request permission. The browser will show a popup here.
     const currentPermission = await Notification.requestPermission();
-    setPermission(currentPermission);
+    setPermission(currentPermission); // This will trigger the useEffect to re-evaluate
     
     if (currentPermission !== 'granted') {
       throw new Error('Notification permission was not granted.');
@@ -94,9 +92,9 @@ export function useNotificationManager() {
     // Save the token to Firestore.
     const userSettingsRef = doc(firestore, 'users', user.uid);
     await setDoc(userSettingsRef, {
-        fcmSettings: {
-            tokens: arrayUnion(fcmToken)
-        }
+      fcmSettings: {
+          tokens: arrayUnion(fcmToken)
+      }
     }, { merge: true });
 
     return fcmToken;
@@ -113,9 +111,9 @@ export function useNotificationManager() {
 
     const userSettingsRef = doc(firestore, 'users', user.uid);
     await setDoc(userSettingsRef, {
-        fcmSettings: {
-            notificationsEnabled: enabled
-        }
+      fcmSettings: {
+        notificationsEnabled: enabled
+      }
     }, { merge: true });
     
     setNotificationsEnabled(enabled);
@@ -131,36 +129,39 @@ export function useNotificationManager() {
     
     // If currently enabled, we are turning them off.
     if (notificationsEnabled) {
-        try {
-            await updateNotificationPreference(false);
-            toast({ title: 'Notifications Disabled', description: 'You will no longer receive order updates.' });
-        } catch (error: any) {
-             toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
-        } finally {
-            setIsLoading(false);
-        }
-        return;
+      try {
+        await updateNotificationPreference(false);
+        toast({ title: 'Notifications Disabled', description: 'You will no longer receive order updates.' });
+      } catch (error: any) {
+        toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+      } finally {
+        setIsLoading(false);
+      }
+      return;
     }
 
     // If currently disabled, we are turning them on.
     try {
-        // This will trigger the browser permission prompt if not already granted.
-        await getAndRegisterToken();
+      // This will trigger the browser permission prompt if not already granted.
+      await getAndRegisterToken();
 
-        // If permission was granted, the above function will complete without error.
-        // We can now update the preference in Firestore.
-        await updateNotificationPreference(true);
-        toast({ title: 'Notifications Enabled!', description: 'You will now receive updates for new orders.' });
+      // If permission was granted, the above function will complete without error.
+      // We can now update the preference in Firestore.
+      await updateNotificationPreference(true);
+      toast({ title: 'Notifications Enabled!', description: 'You will now receive updates for new orders.' });
     
     } catch (error: any) {
-        console.error('Error toggling notifications:', error);
+      console.error('Error toggling notifications:', error);
+      // Only show a toast if the error is something other than the user denying permission.
+      if (error.message !== 'Notification permission was not granted.') {
         toast({
             variant: 'destructive',
             title: 'Could Not Enable Notifications',
             description: error.message || 'Please check your browser settings and try again.',
         });
-        // Ensure the visual state remains 'off' if it failed
-        setNotificationsEnabled(false);
+      }
+      // Ensure the visual state remains 'off' if it failed
+      setNotificationsEnabled(false);
     } finally {
         setIsLoading(false);
     }
