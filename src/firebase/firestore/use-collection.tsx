@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -42,7 +43,7 @@ export function useCollection<T extends DocumentData>(query: Query<T> | null) {
         // Create and emit a contextual error for permission issues on list operations
         if (err.code === 'permission-denied') {
             const permissionError = new FirestorePermissionError({
-                path: query.path,
+                path: (query as any)._query.path.segments.join('/'),
                 operation: 'list',
             });
             errorEmitter.emit('permission-error', permissionError);

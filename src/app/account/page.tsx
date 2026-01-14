@@ -283,7 +283,7 @@ export default function AccountPage() {
                     </div>
                     <AlertDialog open={clearHistoryAlertOpen} onOpenChange={setClearHistoryAlertOpen}>
                         <AlertDialogTrigger asChild>
-                            <Button variant="outline" disabled={!canClearHistory} className="w-full md:w-auto">
+                            <Button variant="outline" disabled={!canClearHistory || !firestore} className="w-full md:w-auto">
                                 <Trash className="mr-2 h-4 w-4" />
                                 Clear History
                             </Button>
@@ -421,7 +421,7 @@ export default function AccountPage() {
                             <Label htmlFor="email">Email</Label>
                             <Input id="email" type="email" value={userProfile?.email ?? ''} disabled/>
                         </div>
-                        <Button onClick={handleProfileUpdate}>Save Changes</Button>
+                        <Button onClick={handleProfileUpdate} disabled={!firestore}>Save Changes</Button>
                     </>
                 )}
                 </CardContent>
