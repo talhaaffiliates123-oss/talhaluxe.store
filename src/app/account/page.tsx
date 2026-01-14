@@ -110,6 +110,7 @@ export default function AccountPage() {
   }, [rawOrders]);
 
   const canClearHistory = useMemo(() => {
+    if (!orders) return false;
     return orders.some(o => ['Shipped', 'Delivered', 'Cancelled'].includes(o.status));
   }, [orders]);
 
