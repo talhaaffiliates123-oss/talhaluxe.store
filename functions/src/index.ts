@@ -9,13 +9,18 @@ import * as functions from "firebase-functions";
 import * as admin from "firebase-admin";
 
 // Initialize the Firebase Admin SDK.
-// The SDK will automatically use the project's service account credentials.
-admin.initializeApp();
+// The SDK will automatically use the project's service account credentials
+// when deployed in the Firebase environment. For other environments like Vercel,
+// you must provide credentials via environment variables.
+if (admin.apps.length === 0) {
+  admin.initializeApp();
+}
 
 const db = admin.firestore();
 const messaging = admin.messaging();
 
 // The hardcoded email of the single admin user for this application.
+// In a production app, this should be moved to an environment variable.
 const ADMIN_EMAIL = "talhaaffiliates123@gmail.com";
 
 /**
