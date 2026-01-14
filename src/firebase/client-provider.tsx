@@ -20,16 +20,27 @@ export function FirebaseClientProvider({ children }: { children: ReactNode }) {
 
   if (isInitializing || !firebase) {
     // Render a skeleton layout or a loading spinner while Firebase is initializing
+    // This prevents any child components from rendering until Firebase is ready.
     return (
         <div className="flex min-h-screen flex-col">
             <header className="sticky top-0 z-50 w-full border-b bg-background/95 p-4">
-                <Skeleton className="h-8 w-full" />
+                <div className="container flex h-8 items-center">
+                    <Skeleton className="h-6 w-32" />
+                    <div className="ml-auto flex items-center gap-4">
+                        <Skeleton className="h-6 w-24" />
+                        <Skeleton className="h-6 w-24" />
+                    </div>
+                </div>
             </header>
             <main className="flex-grow p-4">
-                <Skeleton className="h-[60vh] w-full" />
+                <div className="container">
+                    <Skeleton className="h-[60vh] w-full" />
+                </div>
             </main>
-            <footer className="border-t bg-muted/40 p-4">
-                 <Skeleton className="h-24 w-full" />
+            <footer className="border-t bg-muted/40 p-8">
+                 <div className="container">
+                    <Skeleton className="h-24 w-full" />
+                </div>
             </footer>
         </div>
     );
