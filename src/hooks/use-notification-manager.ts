@@ -4,7 +4,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { getToken, isSupported as isFcmSupported } from 'firebase/messaging';
 import { useFirestore, useMessaging, useUser } from '@/firebase';
-import { doc, getDoc, updateDoc, arrayUnion, arrayRemove, setDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc, arrayUnion, setDoc } from 'firebase/firestore';
 import { useToast } from './use-toast';
 
 // The VAPID key from your Firebase project settings.
@@ -26,27 +26,31 @@ export function useNotificationManager() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
-  // Check for FCM support and current permission status on mount.
+  // This effect runs once on mount to check for browser support and set the initial permission state.
   useEffect(() => {
-    async function checkSupport() {
+    async function checkSupportAndPermission() {
       const supported = await isFcmSupported();
       setIsSupported(supported);
       if (supported) {
         setPermission(Notification.permission);
       }
-      setIsLoading(false);
     }
-    checkSupport();
+    checkSupportAndPermission();
   }, []);
 
-  // Fetch user's notification preference from Firestore.
+  // This effect fetches the user's saved notification preference from Firestore.
+  // It should only run after we know who the user is and have a firestore instance.
   useEffect(() => {
     if (!user || !firestore) {
-      setNotificationsEnabled(false);
+      if (!user && !firestore) {
+        // Still loading user/firestore, so don't stop loading yet.
+        return;
+      }
+      // If we have one but not the other, or user is null, loading is done.
       setIsLoading(false);
       return;
     }
-
+    
     setIsLoading(true);
     const userSettingsRef = doc(firestore, 'users', user.uid);
     getDoc(userSettingsRef).then(docSnap => {
@@ -56,6 +60,9 @@ export function useNotificationManager() {
       } else {
         setNotificationsEnabled(false);
       }
+    }).catch(error => {
+      console.error("Error fetching notification settings:", error);
+      setNotificationsEnabled(false);
     }).finally(() => {
       setIsLoading(false);
     });
@@ -150,7 +157,7 @@ export function useNotificationManager() {
         toast({
             variant: 'destructive',
             title: 'Could Not Enable Notifications',
-            description: error.message || 'Please try again.',
+            description: error.message || 'Please check your browser settings and try again.',
         });
         // Ensure the visual state remains 'off' if it failed
         setNotificationsEnabled(false);
