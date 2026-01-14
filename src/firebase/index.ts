@@ -23,39 +23,32 @@ import {
   useMessaging
 } from './provider';
 
-let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
-let firestore: Firestore | null = null;
-let storage: FirebaseStorage | null = null;
-let messaging: Messaging | null = null;
-
-
+// This function should only be called on the client side.
 function initializeFirebase() {
   if (typeof window !== 'undefined') {
     if (!getApps().length) {
-      try {
-        app = initializeApp(firebaseConfig);
-        auth = getAuth(app);
-        firestore = getFirestore(app);
-        storage = getStorage(app);
-        messaging = getMessaging(app);
-      } catch (e) {
-        console.error('Failed to initialize Firebase', e);
-      }
+      const app = initializeApp(firebaseConfig);
+      const auth = getAuth(app);
+      const firestore = getFirestore(app);
+      const storage = getStorage(app);
+      const messaging = getMessaging(app);
+      return { app, auth, firestore, storage, messaging };
     } else {
-      app = getApp();
-      auth = getAuth(app);
-      firestore = getFirestore(app);
-      storage = getStorage(app);
-      // Messaging might not be initialized if getApps().length > 0 but it wasn't initialized before.
+      const app = getApp();
+      const auth = getAuth(app);
+      const firestore = getFirestore(app);
+      const storage = getStorage(app);
+      let messaging: Messaging | null = null;
       try {
         messaging = getMessaging(app);
       } catch (e) {
         // This can happen with HMR, it's usually safe to ignore
       }
+      return { app, auth, firestore, storage, messaging };
     }
   }
-  return { app, auth, firestore, storage, messaging };
+  // Return nulls for server-side rendering
+  return { app: null, auth: null, firestore: null, storage: null, messaging: null };
 }
 
 export {

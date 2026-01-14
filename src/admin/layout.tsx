@@ -30,6 +30,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const adminEmail = "talhaaffiliates123@gmail.com";
 
   useEffect(() => {
+    // This code should only run in the browser.
+    if (typeof window === 'undefined') {
+        return;
+    }
+
     if (!firestore) return;
 
     const settingsRef = doc(firestore, 'settings', 'site');
@@ -43,6 +48,11 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
 
 
   useEffect(() => {
+    // This code should only run in the browser.
+     if (typeof window === 'undefined') {
+        return;
+    }
+    
     if (!loading) {
       if (user && user.email === adminEmail) {
         setIsAuthorized(true);
@@ -54,8 +64,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
     }
   }, [user, loading, router, adminEmail]);
 
-  if (isVerifying) {
-    // Show a loading/verification screen while checking.
+  if (isVerifying || typeof window === 'undefined') {
+    // Show a loading/verification screen while checking or if on the server.
     return (
       <div className="flex h-screen w-full items-center justify-center bg-gray-900 text-white">
         <div className="flex flex-col items-center gap-4">
