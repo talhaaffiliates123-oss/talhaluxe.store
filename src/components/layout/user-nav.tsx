@@ -16,9 +16,10 @@ import { useAuth, useUser } from '@/firebase';
 import { signOut } from '@/firebase/auth';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { Skeleton } from '../ui/skeleton';
 
 export function UserNav() {
-  const { user } = useUser();
+  const { user, loading: userLoading } = useUser();
   const auth = useAuth();
   const router = useRouter();
 
@@ -34,6 +35,10 @@ export function UserNav() {
       console.error('Sign out failed', error);
     }
   };
+
+  if (userLoading) {
+    return <Skeleton className="h-8 w-8 rounded-full" />;
+  }
 
   return (
     <DropdownMenu>
