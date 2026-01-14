@@ -9,7 +9,7 @@ import { useToast } from './use-toast';
 
 // The VAPID key from your Firebase project settings.
 // This is public and safe to include in client-side code.
-const VAPID_KEY = 'YOUR_VAPID_KEY_FROM_FIREBASE_SETTINGS';
+const VAPID_KEY = 'BPPi1UjP6yU2r2hfsO0a_L-d3n1ZgC-olq2_1XVT29wW6f-2JdaYhprr3jEzj7i_p1kP2p5J2Fh_H4x6j4J2Sg0';
 
 /**
  * A custom hook to manage FCM notification permissions, token registration,
@@ -42,6 +42,7 @@ export function useNotificationManager() {
   // Fetch user's notification preference from Firestore.
   useEffect(() => {
     if (!user || !firestore) {
+      setNotificationsEnabled(false);
       setIsLoading(false);
       return;
     }
@@ -52,7 +53,10 @@ export function useNotificationManager() {
       if (docSnap.exists()) {
         const settings = docSnap.data()?.fcmSettings;
         setNotificationsEnabled(settings?.notificationsEnabled ?? false);
+      } else {
+        setNotificationsEnabled(false);
       }
+    }).finally(() => {
       setIsLoading(false);
     });
   }, [user, firestore]);
@@ -66,7 +70,7 @@ export function useNotificationManager() {
       throw new Error('Firebase services not ready.');
     }
     
-    // Request permission.
+    // Request permission. The browser will show a popup here.
     const currentPermission = await Notification.requestPermission();
     setPermission(currentPermission);
     
@@ -117,28 +121,41 @@ export function useNotificationManager() {
    */
   const toggleNotifications = async () => {
     setIsLoading(true);
+    
+    // If currently enabled, we are turning them off.
+    if (notificationsEnabled) {
+        try {
+            await updateNotificationPreference(false);
+            toast({ title: 'Notifications Disabled', description: 'You will no longer receive order updates.' });
+        } catch (error: any) {
+             toast({ variant: 'destructive', title: 'Update Failed', description: error.message });
+        } finally {
+            setIsLoading(false);
+        }
+        return;
+    }
+
+    // If currently disabled, we are turning them on.
     try {
-      if (notificationsEnabled) {
-        // If turning off, just update the preference in Firestore.
-        await updateNotificationPreference(false);
-        toast({ title: 'Notifications Disabled', description: 'You will no longer receive order updates.' });
-      } else {
-        // If turning on, get a token first, then update preference.
+        // This will trigger the browser permission prompt if not already granted.
         await getAndRegisterToken();
+
+        // If permission was granted, the above function will complete without error.
+        // We can now update the preference in Firestore.
         await updateNotificationPreference(true);
         toast({ title: 'Notifications Enabled!', description: 'You will now receive updates for new orders.' });
-      }
+    
     } catch (error: any) {
-      console.error('Error toggling notifications:', error);
-      toast({
-        variant: 'destructive',
-        title: 'Could Not Update Settings',
-        description: error.message || 'Please try again.',
-      });
-      // Revert UI state on failure
-      setNotificationsEnabled(prev => !prev);
+        console.error('Error toggling notifications:', error);
+        toast({
+            variant: 'destructive',
+            title: 'Could Not Enable Notifications',
+            description: error.message || 'Please try again.',
+        });
+        // Ensure the visual state remains 'off' if it failed
+        setNotificationsEnabled(false);
     } finally {
-      setIsLoading(false);
+        setIsLoading(false);
     }
   };
 
