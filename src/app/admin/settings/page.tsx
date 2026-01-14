@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -12,15 +13,26 @@ import type { SiteSettings } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Switch } from '@/components/ui/switch';
 import { useNotificationManager } from '@/hooks/use-notification-manager';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+  } from "@/components/ui/alert-dialog";
+import { Info } from 'lucide-react';
 
 export default function AdminSettingsPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const { toast } = useToast();
   const firestore = useFirestore();
-  const { user } = useUser();
   
   const [logoUrl, setLogoUrl] = useState('');
+  const [showInstructions, setShowInstructions] = useState(false);
+
 
   // Hook for managing notification state and permissions
   const {
@@ -80,6 +92,55 @@ export default function AdminSettingsPage() {
     }
   };
 
+  const renderNotificationControl = () => {
+    if (permission === 'denied') {
+      return (
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <Button variant="secondary">
+              <Info className="mr-2 h-4 w-4" />
+              Re-enable Notifications
+            </Button>
+          </AlertDialogTrigger>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>How to Enable Notifications</AlertDialogTitle>
+              <AlertDialogDescription>
+                You have previously blocked notifications for this site. To receive them, you must manually change the permission in your browser settings.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="text-sm space-y-4">
+              <p>
+                <strong>1. </strong> Go to your browser's site settings. A quick way is to click the padlock icon 🔒 in the address bar.
+              </p>
+              <p>
+                <strong>2. </strong> Find the "Notifications" permission.
+              </p>
+              <p>
+                <strong>3. </strong> Change the setting from "Block" to "Allow" or "Ask".
+              </p>
+              <p>
+                <strong>4. </strong> Reload this page and try enabling notifications again.
+              </p>
+            </div>
+            <AlertDialogFooter>
+              <AlertDialogAction>Got it</AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+      );
+    }
+
+    return (
+      <Switch
+        checked={notificationsEnabled}
+        onCheckedChange={toggleNotifications}
+        disabled={!isSupported || notificationsLoading}
+        aria-label="Enable order notifications"
+      />
+    );
+  };
+
 
   return (
     <div className="space-y-8">
@@ -106,12 +167,7 @@ export default function AdminSettingsPage() {
                   <NotificationStatusDescription />
                 </p>
               </div>
-              <Switch
-                checked={notificationsEnabled}
-                onCheckedChange={toggleNotifications}
-                disabled={!isSupported || permission === 'denied' || notificationsLoading}
-                aria-label="Enable order notifications"
-              />
+              {renderNotificationControl()}
             </div>
             {notificationsLoading && <p className="text-sm text-muted-foreground">Processing...</p>}
           </div>
