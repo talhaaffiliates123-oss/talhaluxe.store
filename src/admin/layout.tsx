@@ -26,58 +26,51 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
   const firestore = useFirestore();
 
-  // Hardcode the admin email to ensure the check works without relying on environment variables.
   const adminEmail = "talhaaffiliates123@gmail.com";
 
   useEffect(() => {
-    // This code should only run in the browser.
-    if (typeof window === 'undefined') {
-        return;
+    if (firestore) {
+        const settingsRef = doc(firestore, 'settings', 'site');
+        getDoc(settingsRef).then(docSnap => {
+        if (docSnap.exists()) {
+            const settings = docSnap.data() as SiteSettings;
+            setLogoUrl(settings.logoUrl || null);
+        }
+        });
     }
-
-    if (!firestore) return;
-
-    const settingsRef = doc(firestore, 'settings', 'site');
-    getDoc(settingsRef).then(docSnap => {
-      if (docSnap.exists()) {
-        const settings = docSnap.data() as SiteSettings;
-        setLogoUrl(settings.logoUrl || null);
-      }
-    });
   }, [firestore]);
 
 
   useEffect(() => {
-    // This code should only run in the browser.
-     if (typeof window === 'undefined') {
-        return;
-    }
-    
+    // Only perform authorization checks once the user loading state is resolved.
     if (!loading) {
       if (user && user.email === adminEmail) {
         setIsAuthorized(true);
       } else {
+        // If not authorized, redirect to the homepage.
         setIsAuthorized(false);
         router.replace('/');
       }
+      // Finished verification attempt.
       setIsVerifying(false);
     }
   }, [user, loading, router, adminEmail]);
 
-  if (isVerifying || typeof window === 'undefined') {
-    // Show a loading/verification screen while checking or if on the server.
+  // While user status is loading, show a verifying screen.
+  if (isVerifying) {
     return (
-      <div className="flex h-screen w-full items-center justify-center bg-gray-900 text-white">
+      <div className="flex h-screen w-full items-center justify-center bg-card">
         <div className="flex flex-col items-center gap-4">
-          <p className="text-gray-400">Verifying access...</p>
-          <Skeleton className="h-6 w-32 bg-gray-700" />
+          <p className="text-muted-foreground">Verifying access...</p>
+          <Skeleton className="h-6 w-32 bg-muted" />
         </div>
       </div>
     );
   }
 
+  // If verification is complete but user is not authorized, render nothing.
+  // The useEffect above will handle the redirect.
   if (!isAuthorized) {
-    // This will be shown briefly before the redirect happens.
     return null;
   }
   
@@ -121,8 +114,8 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
                     <span className="sr-only">Toggle navigation menu</span>
                     </Button>
                 </SheetTrigger>
-                <SheetContent side="left" className="flex flex-col">
-                    <nav className="grid gap-2 text-lg font-medium">
+                <SheetContent side="left" className="flex flex-col dark bg-card text-foreground">
+                    <nav className="grid gap-2 text-lg font-medium mt-8">
                     <Link
                         href="/admin"
                         className="flex items-center gap-2 text-lg font-semibold mb-4"
