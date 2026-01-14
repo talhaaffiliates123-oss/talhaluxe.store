@@ -106,12 +106,6 @@ export type CancellationReason = {
     createdAt: any; // Firestore Timestamp
 }
 
-
-export type FcmToken = {
-    uid: string;
-    token: string;
-}
-
 export type BlogPost = {
     id: string;
     slug: string;

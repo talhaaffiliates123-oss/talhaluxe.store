@@ -6,19 +6,15 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useNotificationManager } from '@/lib/notifications';
-import { Bell } from 'lucide-react';
 import { useFirestore } from '@/firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import type { SiteSettings } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdminSettingsPage() {
-  const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [loadingSettings, setLoadingSettings] = useState(true);
   const { toast } = useToast();
-  const { getAndSaveToken, requestNotificationPermission } = useNotificationManager();
   const firestore = useFirestore();
   
   const [logoUrl, setLogoUrl] = useState('');
@@ -34,40 +30,6 @@ export default function AdminSettingsPage() {
       }).finally(() => setLoadingSettings(false));
     }
   }, [firestore]);
-
-  const handleEnableNotifications = async () => {
-    setIsLoading(true);
-
-    try {
-      const permissionGranted = await requestNotificationPermission();
-      if (!permissionGranted) {
-        toast({
-          variant: 'destructive',
-          title: 'Permission Denied',
-          description: 'You need to allow notifications in your browser settings.',
-        });
-        return;
-      }
-
-      const token = await getAndSaveToken();
-      if (token) {
-        toast({
-          title: 'Notifications Enabled',
-          description: 'You will now receive alerts for new orders on this device.',
-        });
-      } else {
-        throw new Error('Failed to get notification token.');
-      }
-    } catch (error: any) {
-      toast({
-        variant: 'destructive',
-        title: 'Error Enabling Notifications',
-        description: error.message || 'An unknown error occurred.',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
   
   const handleSaveSiteSettings = async () => {
     if (!firestore) return;
@@ -129,26 +91,6 @@ export default function AdminSettingsPage() {
                     </Button>
                 </div>
             )}
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Push Notifications</CardTitle>
-          <CardDescription>
-            Enable push notifications to get real-time alerts for new orders directly on your device.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center gap-4">
-            <Button onClick={handleEnableNotifications} disabled={isLoading}>
-              <Bell className="mr-2" />
-              {isLoading ? 'Enabling...' : 'Enable Order Notifications'}
-            </Button>
-          </div>
-           <p className="text-xs text-muted-foreground mt-4">
-              Note: You may need to do this on each device (e.g., your phone and your computer) where you want to receive notifications.
-            </p>
         </CardContent>
       </Card>
     </div>
