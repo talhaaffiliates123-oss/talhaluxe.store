@@ -240,9 +240,21 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         </div>
-                         {errors.variants?.[index]?.name && <p className="text-destructive text-sm mt-1 col-span-full">{String(errors.variants[index]?.name?.message)}</p>}
-                         {errors.variants?.[index]?.stock && <p className="text-destructive text-sm mt-1 col-span-full">{String(errors.variants[index]?.stock?.message)}</p>}
-                         {errors.variants?.[index]?.imageUrl && <p className="text-destructive text-sm mt-1 col-span-full">{String(errors.variants[index]?.imageUrl?.message)}</p>}
+                        {(errors.variants as any)?.[index]?.name && (
+                            <p className="text-destructive text-sm mt-1 col-span-full">
+                                {String((errors.variants as any)[index]?.name?.message)}
+                            </p>
+                        )}
+                        {(errors.variants as any)?.[index]?.stock && (
+                            <p className="text-destructive text-sm mt-1 col-span-full">
+                                {String((errors.variants as any)[index]?.stock?.message)}
+                            </p>
+                        )}
+                        {(errors.variants as any)?.[index]?.imageUrl && (
+                            <p className="text-destructive text-sm mt-1 col-span-full">
+                                {String((errors.variants as any)[index]?.imageUrl?.message)}
+                            </p>
+                        )}
                     </div>
                 ))}
                 <Button type="button" variant="outline" onClick={() => appendVariant({ id: uuidv4(), name: '', stock: 0, imageUrl: '' })}>
