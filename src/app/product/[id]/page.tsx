@@ -4,14 +4,10 @@ import { initializeFirebase } from '@/firebase/server-initialization';
 import { Product, Review } from '@/lib/types';
 import ProductDetailClient from './product-detail-client';
 
-const { firestore } = initializeFirebase();
-
 async function getProductAndReviews(productId: string): Promise<{ product: Product | null; reviews: Review[] }> {
-  if (!firestore) {
-    return { product: null, reviews: [] };
-  }
-
   try {
+    const { firestore } = initializeFirebase();
+
     const productRef = firestore.collection('products').doc(productId);
     const productDoc = await productRef.get();
 
@@ -34,7 +30,8 @@ async function getProductAndReviews(productId: string): Promise<{ product: Produ
 
     return { product: productData, reviews: reviewsData };
   } catch (error) {
-    console.error("Error fetching product and reviews:", error);
+    console.error(`Error fetching product and reviews for ID "${productId}":`, error);
+    // If fetching fails, return nulls to trigger a notFound or error boundary
     return { product: null, reviews: [] };
   }
 }

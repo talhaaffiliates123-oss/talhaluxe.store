@@ -3,35 +3,41 @@ import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Calendar, User } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { getFirestore } from 'firebase-admin/firestore';
 import type { BlogPost } from '@/lib/types';
-import { getBlogPostBySlug } from '@/lib/blog';
 import { initializeFirebase } from '@/firebase/server-initialization';
 
-// Initialize Firebase Admin SDK for server-side fetching
-const { firestore } = initializeFirebase();
-
 async function getPost(slug: string): Promise<BlogPost | null> {
-    if (!firestore) return null;
-    // We need a server-side compatible getBlogPostBySlug. Let's assume lib/blog can be adapted or use a direct query.
-    // For now, I will use getBlogPostBySlug but it must be server-safe.
-    // Let's create a server-side version of this fetch.
+  try {
+    const { firestore } = initializeFirebase();
     const blogCollection = firestore.collection('blog');
     const q = blogCollection.where('slug', '==', slug);
     const snapshot = await q.get();
+
     if (snapshot.empty) {
         return null;
     }
     const doc = snapshot.docs[0];
     const data = doc.data();
-    // Convert Firestore Timestamp to a serializable format if needed
+
+    // Ensure data conforms to BlogPost and handle Timestamps
     const postData = {
-        ...data,
         id: doc.id,
-        date: data.date, // Assuming date is already a string
-        createdAt: data.createdAt.toDate().toISOString(), // Example of converting timestamp
-    } as BlogPost
+        title: data.title || '',
+        slug: data.slug || '',
+        summary: data.summary || '',
+        author: data.author || '',
+        date: data.date || '',
+        imageUrl: data.imageUrl || '',
+        imageHint: data.imageHint || '',
+        content: data.content || '',
+        createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+    } as BlogPost;
     return postData;
+  } catch (error) {
+      console.error(`Failed to fetch blog post with slug "${slug}":`, error);
+      // Return null or rethrow, depending on desired behavior. Here, we'll treat it as not found.
+      return null;
+  }
 }
 
 
