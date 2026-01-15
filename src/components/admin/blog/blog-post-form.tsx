@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useForm } from 'react-hook-form';
@@ -83,11 +84,17 @@ export default function BlogPostForm({ initialData }: BlogPostFormProps) {
     setIsSubmitting(true);
 
     try {
-      if (isEditMode) {
-        await updateBlogPost(firestore, initialData.id, data);
+      if (isEditMode && initialData) {
+        await updateBlogPost(firestore, initialData.id, {
+          ...data,
+          imageHint: data.imageHint || '',
+        });
         toast({ title: 'Success', description: 'Blog post updated successfully.' });
       } else {
-        await addBlogPost(firestore, data);
+        await addBlogPost(firestore, {
+          ...data,
+          imageHint: data.imageHint || '',
+        });
         toast({ title: 'Success', description: 'Blog post added successfully.' });
       }
       
