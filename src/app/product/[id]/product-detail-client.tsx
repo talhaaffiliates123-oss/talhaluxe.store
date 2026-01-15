@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { Heart, Minus, Plus, Star } from 'lucide-react';
+import { Heart, Minus, Plus, Star, AlertTriangle } from 'lucide-react';
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
@@ -20,7 +20,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { notFound } from 'next/navigation';
 
 
 const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onReviewSubmitted: () => void }) => {
@@ -182,9 +181,19 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
     }
   }, [product]);
 
-  // Early return if product is not available. This satisfies TypeScript's null check.
   if (!product) {
-    return notFound();
+    return (
+        <div className="container mx-auto px-4 py-16 text-center">
+            <AlertTriangle className="mx-auto h-16 w-16 text-destructive" />
+            <h1 className="mt-4 text-2xl font-bold">Product Not Found</h1>
+            <p className="mt-2 text-muted-foreground">
+                Sorry, we couldn't find the product you're looking for. It might have been removed or the link is incorrect.
+            </p>
+            <Button asChild className="mt-6">
+                <Link href="/shop">Back to Shop</Link>
+            </Button>
+        </div>
+    );
   }
 
   const imageUrls = useMemo(() => {
