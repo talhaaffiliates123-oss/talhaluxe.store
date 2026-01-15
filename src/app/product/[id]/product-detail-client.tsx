@@ -13,6 +13,7 @@ import { useFirestore, useUser } from '@/firebase';
 import { Product, Review, Variant } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { getReviews, submitReview } from '@/lib/reviews';
+import { getProduct } from '@/lib/products';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +21,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { AlertTriangle } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onReviewSubmitted: () => void }) => {
   const { user } = useUser();
@@ -152,18 +155,77 @@ const ReviewList = ({ reviews }: { reviews: Review[] }) => {
   );
 }
 
+function ProductPageSkeleton() {
+    return (
+        <div className="container mx-auto px-4 py-8 md:py-12">
+            <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+                <div>
+                    <Skeleton className="aspect-square w-full rounded-lg" />
+                    <div className="mt-4 grid grid-cols-5 gap-4">
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                    </div>
+                </div>
+                <div className="space-y-6">
+                    <Skeleton className="h-10 w-3/4" />
+                    <Skeleton className="h-6 w-1/2" />
+                    <Skeleton className="h-8 w-1/4" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                    </div>
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </div>
+        </div>
+    )
+}
 
-export default function ProductDetailClient({ initialProduct, initialReviews }: { initialProduct: Product, initialReviews: Review[] }) {
+
+export default function ProductDetailClient({ id }: { id: string }) {
   const router = useRouter();
-  const [quantity, setQuantity] = useState(1);
+  const firestore = useFirestore();
   const { addItem } = useCart();
   const { toast } = useToast();
-  const firestore = useFirestore();
 
-  const [product] = useState<Product | null>(initialProduct);
-  const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  const [quantity, setQuantity] = useState(1);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
+
+  const fetchProductData = useCallback(async () => {
+    if (!firestore || !id) return;
+    setLoading(true);
+    setError(null);
+    try {
+      const productData = await getProduct(firestore, id);
+      if (productData) {
+        setProduct(productData);
+        const reviewsData = await getReviews(firestore, id);
+        setReviews(reviewsData);
+      } else {
+        setError('Product not found.');
+      }
+    } catch (e: any) {
+      setError('Failed to fetch product details.');
+      console.error(e);
+    } finally {
+      setLoading(false);
+    }
+  }, [firestore, id]);
+
+  useEffect(() => {
+    fetchProductData();
+  }, [fetchProductData]);
   
   useEffect(() => {
       if (product?.variants && product.variants.length === 1) {
@@ -173,21 +235,18 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
       }
   }, [product]);
 
-  const fetchReviews = useCallback(async () => {
-    if (firestore && product) {
-        const reviewsData = await getReviews(firestore, product.id);
-        setReviews(reviewsData);
-    }
-  }, [firestore, product]);
-
   const imageUrls = useMemo(() => {
     if (!product) return [];
+    
+    // Using a Set to avoid duplicate URLs
     const allImages = new Set<string>();
 
+    // Safely add product.imageUrls if it exists
     if (product.imageUrls && Array.isArray(product.imageUrls)) {
         product.imageUrls.forEach(url => allImages.add(url));
     }
     
+    // Safely add variant images
     if (product.variants && Array.isArray(product.variants)) {
       product.variants.forEach(v => {
         if (v.imageUrl) {
@@ -261,12 +320,27 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
     router.push('/checkout');
   };
   
+  if (loading) {
+    return <ProductPageSkeleton />;
+  }
+
+  if (error || !product) {
+     return (
+        <div className="container mx-auto px-4 py-16 text-center">
+            <AlertTriangle className="mx-auto h-16 w-16 text-destructive" />
+            <h1 className="mt-4 text-2xl font-bold">{error || 'Product Not Found'}</h1>
+            <p className="mt-2 text-muted-foreground">
+                Sorry, we couldn't find the product you're looking for. It might have been removed or the link is incorrect.
+            </p>
+            <Button asChild className="mt-6">
+                <Link href="/shop">Back to Shop</Link>
+            </Button>
+        </div>
+    );
+  }
+
   const averageRating = product?.rating ?? 0;
   const reviewCount = product?.reviewCount ?? 0;
-
-  if (!product) {
-    return <div className="flex h-screen items-center justify-center">Finding your product...</div>;
-  }
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
@@ -396,7 +470,7 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
                     <ReviewList reviews={reviews} />
                 </div>
                 <div>
-                    <ReviewForm productId={product.id} onReviewSubmitted={fetchReviews} />
+                    <ReviewForm productId={product.id} onReviewSubmitted={fetchProductData} />
                 </div>
             </div>
         </div>
