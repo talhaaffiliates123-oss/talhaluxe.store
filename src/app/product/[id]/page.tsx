@@ -1,6 +1,6 @@
 
 import { Suspense } from 'react';
-import ProductDetailClient from './product-detail-client';
+import ProductDetailServer from './product-detail-server';
 import { Skeleton } from '@/components/ui/skeleton';
 
 function ProductPageSkeleton() {
@@ -34,10 +34,10 @@ function ProductPageSkeleton() {
     )
 }
 
-export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ProductDetailPage({ params }: { params: { id: string } }) {
   return (
     <Suspense fallback={<ProductPageSkeleton />}>
-      <ProductDetailClient params={params} />
+      <ProductDetailServer id={params.id} />
     </Suspense>
   );
 }

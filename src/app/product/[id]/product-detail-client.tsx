@@ -4,8 +4,8 @@
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { Heart, Minus, Plus, Star, AlertTriangle } from 'lucide-react';
-import { useEffect, useState, useCallback, useMemo, use } from 'react';
+import { Heart, Minus, Plus, Star } from 'lucide-react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -20,8 +20,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { getProduct } from '@/lib/products';
-import { Skeleton } from '@/components/ui/skeleton';
 
 const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onReviewSubmitted: () => void }) => {
   const { user } = useUser();
@@ -155,42 +153,25 @@ const ReviewList = ({ reviews }: { reviews: Review[] }) => {
 }
 
 
-export default function ProductDetailClient({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function ProductDetailClient({ initialProduct, initialReviews }: { initialProduct: Product, initialReviews: Review[] }) {
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  const [product, setProduct] = useState<Product | null>(null);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [product] = useState<Product | null>(initialProduct);
+  const [reviews, setReviews] = useState<Review[]>(initialReviews);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
   
-  const fetchProductData = useCallback(async () => {
-    if (!firestore || !id) return;
-    setLoading(true);
-    const productData = await getProduct(firestore, id);
-    if(productData) {
-        const reviewsData = await getReviews(firestore, id);
-        setProduct(productData);
-        setReviews(reviewsData);
-        if (productData.variants && productData.variants.length === 1) {
-          setSelectedVariant(productData.variants[0]);
-        } else {
-          setSelectedVariant(null);
-        }
-    } else {
-        setProduct(null);
-    }
-    setLoading(false);
-  }, [firestore, id]);
-
   useEffect(() => {
-    fetchProductData();
-  }, [fetchProductData]);
+      if (product?.variants && product.variants.length === 1) {
+        setSelectedVariant(product.variants[0]);
+      } else {
+        setSelectedVariant(null);
+      }
+  }, [product]);
 
   const fetchReviews = useCallback(async () => {
     if (firestore && product) {
@@ -221,28 +202,10 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
 
 
   useEffect(() => {
-    // Reset active image index if selected variant's image is now out of bounds or product changes
     if (activeImageIndex >= imageUrls.length) {
         setActiveImageIndex(0);
     }
   }, [imageUrls, activeImageIndex]);
-
-
-  if (!loading && !product) {
-    return (
-        <div className="container mx-auto px-4 py-16 text-center">
-            <AlertTriangle className="mx-auto h-16 w-16 text-destructive" />
-            <h1 className="mt-4 text-2xl font-bold">Product Not Found</h1>
-            <p className="mt-2 text-muted-foreground">
-                Sorry, we couldn't find the product you're looking for. It might have been removed or the link is incorrect.
-            </p>
-            <Button asChild className="mt-6">
-                <Link href="/shop">Back to Shop</Link>
-            </Button>
-        </div>
-    );
-  }
-
 
   useEffect(() => {
     if (imageUrls && imageUrls.length > 1) {
@@ -275,7 +238,6 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
     return product?.stock ?? 0;
   }, [product, hasVariants, selectedVariant]);
   
-
   const handleAddToCart = () => {
     if (!product) return;
     if (hasVariants && !selectedVariant) {
@@ -302,6 +264,10 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
   const averageRating = product?.rating ?? 0;
   const reviewCount = product?.reviewCount ?? 0;
 
+  if (!product) {
+    return <div className="flex h-screen items-center justify-center">Finding your product...</div>;
+  }
+
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
       <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
@@ -315,6 +281,7 @@ export default function ProductDetailClient({ params }: { params: Promise<{ id: 
                   className="object-cover transition-opacity duration-500"
                   key={activeImageIndex}
                   sizes="(max-width: 768px) 100vw, 50vw"
+                  priority
                 />
               ) : (
                 <div className="flex items-center justify-center h-full bg-muted">
