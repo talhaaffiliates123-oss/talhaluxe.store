@@ -48,7 +48,7 @@ const productSchema = z.object({
   discountedPrice: z.coerce.number().optional().nullable(),
   shippingCost: z.coerce.number().min(0, 'Shipping cost cannot be negative').optional().default(0),
   category: z.string().min(1, 'Category is required'),
-  imageUrls: z.array(z.string().url("Must be a valid URL")).optional().default([]),
+  imageUrls: z.array(z.object({ value: z.string().url("Must be a valid URL") })).optional().default([]),
   isNewArrival: z.boolean().default(false),
   isBestSeller: z.boolean().default(false),
   onSale: z.boolean().default(false),
@@ -77,7 +77,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     control,
     formState: { errors },
     watch,
-  } = useForm<ProductFormData>({
+  } = useForm<any>({
     resolver: zodResolver(productSchema),
     defaultValues: {
       ...initialData,
@@ -85,7 +85,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
       discountedPrice: initialData?.discountedPrice ?? null,
       shippingCost: initialData?.shippingCost ?? 0,
       rating: initialData?.rating ?? 0,
-      imageUrls: initialData?.imageUrls ?? [],
+      imageUrls: initialData?.imageUrls?.map(url => ({ value: url })) ?? [],
       category: initialData?.category ?? '',
       reviews: initialData?.reviews ?? [],
       variants: initialData?.variants?.map(v => ({ ...v, imageUrl: v.imageUrl || '' })) ?? [],
@@ -115,14 +115,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
     try {
         const hasVariants = data.variants && data.variants.length > 0;
-        // Calculate total stock from variants if they exist, otherwise use the main stock field
         const totalStock = hasVariants
             ? data.variants.reduce((acc, variant) => acc + variant.stock, 0)
             : data.stock;
         
-        // If there are variants, ensure their image URLs are in the main imageUrls array.
+        const plainImageUrls = data.imageUrls?.map(img => img.value) || [];
         const variantImageUrls = data.variants?.map(v => v.imageUrl).filter(Boolean) as string[] || [];
-        const combinedImageUrls = [...new Set([...(data.imageUrls || []), ...variantImageUrls])];
+        const combinedImageUrls = [...new Set([...plainImageUrls, ...variantImageUrls])];
 
         if (!hasVariants && combinedImageUrls.length === 0) {
             toast({ variant: 'destructive', title: 'Validation Error', description: "A product must have at least one image if it has no variants." });
@@ -196,10 +195,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 <div className="space-y-4">
                     {imageUrlsFields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2">
-                        <Controller
-                            render={({ field }) => <Input {...field} placeholder="https://example.com/image.png" />}
-                            name={`imageUrls.${index}`}
-                            control={control}
+                        <Input 
+                            {...register(`imageUrls.${index}.value`)}
+                            placeholder="https://example.com/image.png"
                         />
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeImageUrl(index)}>
                         <X className="h-4 w-4 text-destructive" />
@@ -209,7 +207,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <Button
                     type="button"
                     variant="outline"
-                    onClick={() => appendImageUrl("")}
+                    onClick={() => appendImageUrl({ value: "" })}
                     >
                     Add Image URL
                     </Button>
