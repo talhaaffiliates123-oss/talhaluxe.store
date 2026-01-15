@@ -4,7 +4,7 @@
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
-import { Heart, Minus, Plus, Star } from 'lucide-react';
+import { Heart, Minus, Plus, Star, AlertTriangle } from 'lucide-react';
 import { useEffect, useState, useMemo, useCallback } from 'react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
@@ -21,7 +21,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onReviewSubmitted: () => void }) => {
@@ -238,15 +237,12 @@ export default function ProductDetailClient({ id }: { id: string }) {
   const imageUrls = useMemo(() => {
     if (!product) return [];
     
-    // Using a Set to avoid duplicate URLs
     const allImages = new Set<string>();
 
-    // Safely add product.imageUrls if it exists
     if (product.imageUrls && Array.isArray(product.imageUrls)) {
         product.imageUrls.forEach(url => allImages.add(url));
     }
     
-    // Safely add variant images
     if (product.variants && Array.isArray(product.variants)) {
       product.variants.forEach(v => {
         if (v.imageUrl) {

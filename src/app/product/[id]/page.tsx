@@ -1,6 +1,6 @@
 
-import { Suspense } from 'react';
-import ProductDetailClient from './product-detail-client';
+import { Suspense, use } from "react";
+import ProductDetailClient from "./product-detail-client";
 import { Skeleton } from '@/components/ui/skeleton';
 
 function ProductPageSkeleton() {
@@ -34,10 +34,12 @@ function ProductPageSkeleton() {
     )
 }
 
-export default function ProductDetailPage({ params }: { params: { id: string } }) {
+export default function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+
   return (
     <Suspense fallback={<ProductPageSkeleton />}>
-      <ProductDetailClient id={params.id} />
+      <ProductDetailClient id={resolvedParams.id} />
     </Suspense>
   );
 }
