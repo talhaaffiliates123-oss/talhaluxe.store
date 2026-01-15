@@ -1,3 +1,4 @@
+
 'use client';
 import {
   collection,
@@ -26,7 +27,14 @@ export async function getBlogPosts(db: Firestore): Promise<BlogPost[]> {
   const q = query(blogCollection, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
   return snapshot.docs.map(
-    (doc) => ({ ...doc.data(), id: doc.id } as BlogPost)
+    (doc) => {
+        const data = doc.data();
+        return { 
+            ...data, 
+            id: doc.id,
+            createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()
+        } as BlogPost;
+    }
   );
 }
 
@@ -41,7 +49,12 @@ export async function getBlogPostBySlug(
     return null;
   }
   const doc = snapshot.docs[0];
-  return { ...doc.data(), id: doc.id } as BlogPost;
+  const data = doc.data();
+  return { 
+      ...data, 
+      id: doc.id,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()
+    } as BlogPost;
 }
 
 export async function getBlogPost(
@@ -51,7 +64,12 @@ export async function getBlogPost(
     const docRef = doc(db, 'blog', id);
     const snapshot = await getDoc(docRef);
     if (snapshot.exists()) {
-      return { ...snapshot.data(), id: snapshot.id } as BlogPost;
+      const data = snapshot.data();
+      return { 
+          ...data, 
+          id: snapshot.id,
+          createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString()
+        } as BlogPost;
     }
     return null;
   }

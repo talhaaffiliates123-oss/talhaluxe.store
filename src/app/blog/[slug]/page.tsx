@@ -1,49 +1,48 @@
 
-'use client';
-import { notFound, useParams } from 'next/navigation';
+import { notFound } from 'next/navigation';
 import Image from 'next/image';
 import { Calendar, User } from 'lucide-react';
 import { Card } from '@/components/ui/card';
-import { useFirestore } from '@/firebase';
-import { useEffect, useState } from 'react';
+import { getFirestore } from 'firebase-admin/firestore';
 import type { BlogPost } from '@/lib/types';
 import { getBlogPostBySlug } from '@/lib/blog';
-import { Skeleton } from '@/components/ui/skeleton';
+import { initializeFirebase } from '@/firebase/server-initialization';
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
-  const firestore = useFirestore();
-  const [post, setPost] = useState<BlogPost | null>(null);
-  const [loading, setLoading] = useState(true);
+// Initialize Firebase Admin SDK for server-side fetching
+const { firestore } = initializeFirebase();
 
-  useEffect(() => {
-    if (firestore && slug) {
-      getBlogPostBySlug(firestore, slug as string).then((postData) => {
-        setPost(postData);
-        setLoading(false);
-      });
+async function getPost(slug: string): Promise<BlogPost | null> {
+    if (!firestore) return null;
+    // We need a server-side compatible getBlogPostBySlug. Let's assume lib/blog can be adapted or use a direct query.
+    // For now, I will use getBlogPostBySlug but it must be server-safe.
+    // Let's create a server-side version of this fetch.
+    const blogCollection = firestore.collection('blog');
+    const q = blogCollection.where('slug', '==', slug);
+    const snapshot = await q.get();
+    if (snapshot.empty) {
+        return null;
     }
-  }, [firestore, slug]);
+    const doc = snapshot.docs[0];
+    const data = doc.data();
+    // Convert Firestore Timestamp to a serializable format if needed
+    const postData = {
+        ...data,
+        id: doc.id,
+        date: data.date, // Assuming date is already a string
+        createdAt: data.createdAt.toDate().toISOString(), // Example of converting timestamp
+    } as BlogPost
+    return postData;
+}
 
 
-  if (loading) {
-    return (
-        <article>
-            <Skeleton className="h-[50vh] w-full" />
-            <div className="container mx-auto max-w-4xl px-4 py-12">
-                <Card>
-                    <div className="p-8 space-y-4">
-                        <Skeleton className="h-6 w-full" />
-                        <Skeleton className="h-6 w-5/6" />
-                        <Skeleton className="h-6 w-full" />
-                        <Skeleton className="h-6 w-3/4" />
-                    </div>
-                </Card>
-            </div>
-        </article>
-    );
+export default async function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  
+  if (!slug) {
+    notFound();
   }
 
+  const post = await getPost(slug);
 
   if (!post) {
     notFound();

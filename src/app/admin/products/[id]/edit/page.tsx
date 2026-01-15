@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useParams } from 'next/navigation';
@@ -7,6 +8,11 @@ import { useFirestore } from '@/firebase';
 import { getProduct } from '@/lib/products';
 import { Product } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
+
+// NOTE: This page still uses client-side fetching because it's in the admin area
+// and benefits from the immediate user-based auth checks and real-time updates.
+// Converting it to a full server component would require passing the firestore instance
+// differently and handling auth at the layout level.
 
 export default function EditProductPage() {
   const { id } = useParams();
