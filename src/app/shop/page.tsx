@@ -158,7 +158,7 @@ export default function ShopPage() {
                 <h3 className="font-medium">Price Range</h3>
                 <Slider 
                     value={priceRange} 
-                    onValueChange={setPriceRange} 
+                    onValueChange={(value) => setPriceRange(value as [number, number])} 
                     max={MAX_PRICE} 
                     step={1000}
                 />
