@@ -11,13 +11,13 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useCollection, useDoc, useFirestore, useUser } from '@/firebase';
-import { collection, query, where, doc, updateDoc, addDoc } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, addDoc, DocumentReference } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
-import type { Order } from '@/lib/types';
+import type { Order, UserProfile } from '@/lib/types';
 import { updateOrderStatus, clearUserOrderHistory } from '@/lib/orders';
 import {
     AlertDialog,
@@ -46,11 +46,6 @@ import { Textarea } from '@/components/ui/textarea';
 import { Trash } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
-type UserProfile = {
-  name: string;
-  email: string;
-};
-
 const cancellationReasonsList = [
     { id: 'mistake', label: 'Ordered by mistake' },
     { id: 'better_price', label: 'Found a better price elsewhere' },
@@ -76,7 +71,7 @@ export default function AccountPage() {
 
   const userProfileRef = useMemo(() => {
     if (!firestore || !user) return null;
-    return doc(firestore, 'users', user.uid);
+    return doc(firestore, 'users', user.uid) as DocumentReference<UserProfile>;
   }, [firestore, user]);
 
   const { data: userProfile, loading: profileLoading } = useDoc<UserProfile>(userProfileRef);
