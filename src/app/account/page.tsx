@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { useCollection, useDoc, useFirestore, useUser } from '@/firebase';
-import { collection, query, where, doc, updateDoc, addDoc, DocumentReference } from 'firebase/firestore';
+import { collection, query, where, doc, updateDoc, addDoc, DocumentReference, Query } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
@@ -87,7 +87,7 @@ export default function AccountPage() {
     return query(
       collection(firestore, 'orders'),
       where('userId', '==', user.uid)
-    );
+    ) as Query<Order>;
   }, [firestore, user]);
 
   const { data: rawOrders, loading: ordersLoading, error } = useCollection<Order>(ordersQuery);
