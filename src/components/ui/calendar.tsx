@@ -53,14 +53,8 @@ function Calendar({
         day_hidden: "invisible",
         ...classNames,
       }}
-      components={{
-        Icon: ({ ...props }) => {
-          if ((props as any).orientation === "left") {
-            return <ChevronLeft className="h-4 w-4" />;
-          }
-          return <ChevronRight className="h-4 w-4" />;
-        },
-      }}
+      // @ts-ignore
+      components={{} as any}
       {...props}
     />
   )
