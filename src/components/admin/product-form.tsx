@@ -211,7 +211,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     >
                     Add Image URL
                     </Button>
-                     {errors.imageUrls && <p className="text-destructive text-sm mt-1">{String(errors.imageUrls.message)}</p>}
+                     {(errors.imageUrls as any) && <p className="text-destructive text-sm mt-1">{String((errors.imageUrls as any).message)}</p>}
                 </div>
             </CardContent>
         </Card>

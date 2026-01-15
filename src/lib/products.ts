@@ -81,7 +81,8 @@ export function addProduct(db: Firestore, productData: Omit<Product, 'id'>) {
         : productData.stock ?? 0;
 
     const variantImageUrls = productData.variants?.map(v => v.imageUrl).filter(Boolean) as string[] || [];
-    const combinedImageUrls = [...new Set([...productData.imageUrls, ...variantImageUrls])];
+    const baseImageUrls = productData.imageUrls || [];
+    const combinedImageUrls = [...new Set([...baseImageUrls, ...variantImageUrls])];
 
     const finalProductData = { ...productData, stock: totalStock, imageUrls: combinedImageUrls };
 
@@ -107,7 +108,8 @@ export async function updateProduct(db: Firestore, id: string, productData: Part
       : productData.stock;
     
     const variantImageUrls = productData.variants?.map(v => v.imageUrl).filter(Boolean) as string[] || [];
-    const combinedImageUrls = [...new Set([...(productData.imageUrls || []), ...variantImageUrls])];
+    const baseImageUrls = productData.imageUrls || [];
+    const combinedImageUrls = [...new Set([...baseImageUrls, ...variantImageUrls])];
 
     const finalProductData = { ...productData, stock: totalStock, imageUrls: combinedImageUrls };
 

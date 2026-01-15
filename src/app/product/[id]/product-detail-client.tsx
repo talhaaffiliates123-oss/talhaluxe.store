@@ -181,6 +181,34 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
     }
   }, [product]);
 
+  const imageUrls = useMemo(() => {
+    const allImages = new Set<string>();
+
+    if (product?.imageUrls && Array.isArray(product.imageUrls)) {
+        product.imageUrls.forEach(url => allImages.add(url));
+    }
+    
+    if (product?.variants && Array.isArray(product.variants)) {
+      product.variants.forEach(v => {
+        if (v.imageUrl) {
+          allImages.add(v.imageUrl);
+        }
+      });
+    }
+
+    const imageArray = Array.from(allImages);
+    return imageArray.length > 0 ? imageArray : ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
+  }, [product]);
+
+
+  useEffect(() => {
+    // Reset active image index if selected variant's image is now out of bounds or product changes
+    if (activeImageIndex >= imageUrls.length) {
+        setActiveImageIndex(0);
+    }
+  }, [imageUrls, activeImageIndex]);
+
+
   if (!product) {
     return (
         <div className="container mx-auto px-4 py-16 text-center">
@@ -196,18 +224,6 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
     );
   }
 
-  const imageUrls = useMemo(() => {
-    if (product.imageUrls && product.imageUrls.length > 0) {
-      return product.imageUrls;
-    }
-    if (product.variants && product.variants.length > 0) {
-      const variantImages = product.variants.map(v => v.imageUrl).filter(Boolean) as string[];
-      if (variantImages.length > 0) {
-        return variantImages;
-      }
-    }
-    return ['https://placehold.co/600x600/EEE/31343C?text=No+Image'];
-  }, [product]);
 
   useEffect(() => {
     if (imageUrls && imageUrls.length > 1) {
