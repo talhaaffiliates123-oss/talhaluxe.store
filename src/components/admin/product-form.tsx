@@ -139,10 +139,10 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         };
 
         if (isEditMode) {
-            await updateProduct(firestore, initialData.id, productData);
+            await updateProduct(firestore, initialData.id, productData as any);
             toast({ title: 'Success', description: 'Product updated successfully.' });
         } else {
-            await addProduct(firestore, productData);
+            await addProduct(firestore, productData as any);
             toast({ title: 'Success', description: 'Product added successfully.' });
         }
         
