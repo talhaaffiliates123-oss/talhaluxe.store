@@ -20,6 +20,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { notFound } from 'next/navigation';
 
 
 const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onReviewSubmitted: () => void }) => {
@@ -181,11 +182,16 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
     }
   }, [product]);
 
+  // Early return if product is not available. This satisfies TypeScript's null check.
+  if (!product) {
+    return notFound();
+  }
+
   const imageUrls = useMemo(() => {
-    if (product?.imageUrls && product.imageUrls.length > 0) {
+    if (product.imageUrls && product.imageUrls.length > 0) {
       return product.imageUrls;
     }
-    if (product?.variants && product.variants.length > 0) {
+    if (product.variants && product.variants.length > 0) {
       const variantImages = product.variants.map(v => v.imageUrl).filter(Boolean) as string[];
       if (variantImages.length > 0) {
         return variantImages;
@@ -205,7 +211,7 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
 
   
   const handleVariantChange = (variantId: string) => {
-    const variant = product?.variants?.find(v => v.id === variantId);
+    const variant = product.variants?.find(v => v.id === variantId);
     if (variant) {
         setSelectedVariant(variant);
         const imageIndex = imageUrls.findIndex(url => url === variant.imageUrl);
@@ -220,7 +226,6 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
   const isReadyToPurchase = !hasVariants || !!selectedVariant;
 
   const currentStock = useMemo(() => {
-    if (!product) return 0;
     if (selectedVariant) return selectedVariant.stock;
     if (hasVariants) return product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
     return product.stock ?? 0;
@@ -228,7 +233,6 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
   
 
   const handleAddToCart = () => {
-    if (!product) return;
     if (hasVariants && !selectedVariant) {
         toast({ variant: 'destructive', title: 'Please select an option' });
         return;
@@ -241,7 +245,6 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
   };
 
   const handleBuyNow = () => {
-    if (!product) return;
     if (hasVariants && !selectedVariant) {
         toast({ variant: 'destructive', title: 'Please select an option' });
         return;
