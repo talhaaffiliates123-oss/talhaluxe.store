@@ -1,4 +1,5 @@
-import { Firestore, collection, writeBatch, getDocs, query } from 'firebase/firestore';
+
+import { Firestore, collection, writeBatch, getDocs, query, doc } from 'firebase/firestore';
 import { blogPosts as hardcodedBlogPosts } from './blog-data';
 
 /**
@@ -19,8 +20,8 @@ export async function seedBlogPosts(db: Firestore) {
   try {
     const batch = writeBatch(db);
     hardcodedBlogPosts.forEach((post) => {
-      // Create a new document reference in the blog collection
-      const docRef = collection(db, 'blog').doc();
+      // Create a new document reference with a random ID in the blog collection
+      const docRef = doc(collection(db, 'blog'));
       const postData = { ...post, createdAt: new Date() };
       batch.set(docRef, postData);
     });
