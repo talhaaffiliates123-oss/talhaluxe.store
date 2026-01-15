@@ -172,17 +172,17 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 <div>
                     <Label htmlFor="name">Product Name</Label>
                     <Input id="name" {...register('name')} />
-                    {errors.name && <p className="text-destructive text-sm mt-1">{errors.name.message}</p>}
+                    {errors.name && <p className="text-destructive text-sm mt-1">{String(errors.name.message)}</p>}
                 </div>
                 <div>
                     <Label htmlFor="shortDescription">Short Description</Label>
                     <Input id="shortDescription" {...register('shortDescription')} />
-                    {errors.shortDescription && <p className="text-destructive text-sm mt-1">{errors.shortDescription.message}</p>}
+                    {errors.shortDescription && <p className="text-destructive text-sm mt-1">{String(errors.shortDescription.message)}</p>}
                 </div>
                 <div>
                     <Label htmlFor="description">Full Description</Label>
                     <Textarea id="description" {...register('description')} rows={5} />
-                    {errors.description && <p className="text-destructive text-sm mt-1">{errors.description.message}</p>}
+                    {errors.description && <p className="text-destructive text-sm mt-1">{String(errors.description.message)}</p>}
                 </div>
             </CardContent>
         </Card>
@@ -211,7 +211,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     >
                     Add Image URL
                     </Button>
-                     {errors.imageUrls && <p className="text-destructive text-sm mt-1">{errors.imageUrls.message}</p>}
+                     {errors.imageUrls && <p className="text-destructive text-sm mt-1">{String(errors.imageUrls.message)}</p>}
                 </div>
             </CardContent>
         </Card>
@@ -240,9 +240,9 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                                 <Trash2 className="h-4 w-4" />
                             </Button>
                         </div>
-                         {errors.variants?.[index]?.name && <p className="text-destructive text-sm mt-1 col-span-full">{errors.variants[index]?.name?.message}</p>}
-                         {errors.variants?.[index]?.stock && <p className="text-destructive text-sm mt-1 col-span-full">{errors.variants[index]?.stock?.message}</p>}
-                         {errors.variants?.[index]?.imageUrl && <p className="text-destructive text-sm mt-1 col-span-full">{errors.variants[index]?.imageUrl?.message}</p>}
+                         {errors.variants?.[index]?.name && <p className="text-destructive text-sm mt-1 col-span-full">{String(errors.variants[index]?.name?.message)}</p>}
+                         {errors.variants?.[index]?.stock && <p className="text-destructive text-sm mt-1 col-span-full">{String(errors.variants[index]?.stock?.message)}</p>}
+                         {errors.variants?.[index]?.imageUrl && <p className="text-destructive text-sm mt-1 col-span-full">{String(errors.variants[index]?.imageUrl?.message)}</p>}
                     </div>
                 ))}
                 <Button type="button" variant="outline" onClick={() => appendVariant({ id: uuidv4(), name: '', stock: 0, imageUrl: '' })}>
@@ -263,18 +263,18 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     <div>
                         <Label htmlFor="price">Price (PKR)</Label>
                         <Input id="price" type="number" step="0.01" {...register('price')} />
-                        {errors.price && <p className="text-destructive text-sm mt-1">{errors.price.message}</p>}
+                        {errors.price && <p className="text-destructive text-sm mt-1">{String(errors.price.message)}</p>}
                     </div>
                     <div>
                         <Label htmlFor="discountedPrice">Discounted Price (PKR)</Label>
                         <Input id="discountedPrice" type="number" step="0.01" {...register('discountedPrice')} />
-                        {errors.discountedPrice && <p className="text-destructive text-sm mt-1">{errors.discountedPrice.message}</p>}
+                        {errors.discountedPrice && <p className="text-destructive text-sm mt-1">{String(errors.discountedPrice.message)}</p>}
                     </div>
                 </div>
                  <div>
                     <Label htmlFor="shippingCost">Shipping Cost (PKR)</Label>
                     <Input id="shippingCost" type="number" step="0.01" {...register('shippingCost')} />
-                    {errors.shippingCost && <p className="text-destructive text-sm mt-1">{errors.shippingCost.message}</p>}
+                    {errors.shippingCost && <p className="text-destructive text-sm mt-1">{String(errors.shippingCost.message)}</p>}
                 </div>
                 <div>
                     <Label htmlFor="stock">Stock Quantity</Label>
@@ -284,7 +284,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     ) : (
                         <p className="text-xs text-muted-foreground mt-1">Enter stock if product has no variants.</p>
                     )}
-                    {errors.stock && <p className="text-destructive text-sm mt-1">{errors.stock.message}</p>}
+                    {errors.stock && <p className="text-destructive text-sm mt-1">{String(errors.stock.message)}</p>}
                 </div>
             </CardContent>
         </Card>
@@ -314,7 +314,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                             </Select>
                         )}
                     />
-                    {errors.category && <p className="text-destructive text-sm mt-1">{errors.category.message}</p>}
+                    {errors.category && <p className="text-destructive text-sm mt-1">{String(errors.category.message)}</p>}
                 </div>
 
                 <div className="flex items-center space-x-2">
