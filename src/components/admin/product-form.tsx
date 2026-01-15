@@ -57,15 +57,6 @@ const productSchema = z.object({
   reviews: z.array(z.any()).optional(),
   variants: z.array(variantSchema).optional().default([]),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative').default(0),
-}).refine(data => {
-    // If there are no variants, at least one image URL is required.
-    if (!data.variants || data.variants.length === 0) {
-        return data.imageUrls && data.imageUrls.length > 0;
-    }
-    return true;
-}, {
-    message: "At least one product image is required when there are no variants.",
-    path: ["imageUrls"], // Specify the path to show the error
 });
 
 type ProductFormData = z.infer<typeof productSchema>;
@@ -133,6 +124,13 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         const variantImageUrls = data.variants?.map(v => v.imageUrl).filter(Boolean) as string[] || [];
         const combinedImageUrls = [...new Set([...(data.imageUrls || []), ...variantImageUrls])];
 
+        if (!hasVariants && combinedImageUrls.length === 0) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: "A product must have at least one image if it has no variants." });
+            setIsSubmitting(false);
+            return;
+        }
+
+
         const productData = {
             ...data,
             discountedPrice: data.discountedPrice || null,
@@ -198,9 +196,10 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 <div className="space-y-4">
                     {imageUrlsFields.map((field, index) => (
                     <div key={field.id} className="flex items-center gap-2">
-                        <Input
-                        {...register(`imageUrls.${index}`)}
-                        placeholder="https://example.com/image.png"
+                        <Controller
+                            render={({ field }) => <Input {...field} placeholder="https://example.com/image.png" />}
+                            name={`imageUrls.${index}`}
+                            control={control}
                         />
                         <Button type="button" variant="ghost" size="icon" onClick={() => removeImageUrl(index)}>
                         <X className="h-4 w-4 text-destructive" />
