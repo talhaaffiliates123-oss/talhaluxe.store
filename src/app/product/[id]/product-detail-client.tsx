@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import Image from 'next/image';
 import { Heart, Minus, Plus, Star, AlertTriangle } from 'lucide-react';
-import { useEffect, useState, useCallback, useMemo } from 'react';
+import { useEffect, useState, useCallback, useMemo, use } from 'react';
 import { useCart } from '@/hooks/use-cart';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
@@ -20,7 +20,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-
+import { getProduct } from '@/lib/products';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const ReviewForm = ({ productId, onReviewSubmitted }: { productId: string, onReviewSubmitted: () => void }) => {
   const { user } = useUser();
@@ -154,17 +155,42 @@ const ReviewList = ({ reviews }: { reviews: Review[] }) => {
 }
 
 
-export default function ProductDetailClient({ initialProduct, initialReviews }: { initialProduct: Product, initialReviews: Review[] }) {
+export default function ProductDetailClient({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
   const { addItem } = useCart();
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  const [product] = useState<Product | null>(initialProduct);
-  const [reviews, setReviews] = useState<Review[]>(initialReviews);
+  const [product, setProduct] = useState<Product | null>(null);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loading, setLoading] = useState(true);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null);
+  
+  const fetchProductData = useCallback(async () => {
+    if (!firestore || !id) return;
+    setLoading(true);
+    const productData = await getProduct(firestore, id);
+    if(productData) {
+        const reviewsData = await getReviews(firestore, id);
+        setProduct(productData);
+        setReviews(reviewsData);
+        if (productData.variants && productData.variants.length === 1) {
+          setSelectedVariant(productData.variants[0]);
+        } else {
+          setSelectedVariant(null);
+        }
+    } else {
+        setProduct(null);
+    }
+    setLoading(false);
+  }, [firestore, id]);
+
+  useEffect(() => {
+    fetchProductData();
+  }, [fetchProductData]);
 
   const fetchReviews = useCallback(async () => {
     if (firestore && product) {
@@ -172,23 +198,16 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
         setReviews(reviewsData);
     }
   }, [firestore, product]);
-  
-  useEffect(() => {
-    if (product && product.variants && product.variants.length === 1) {
-      setSelectedVariant(product.variants[0]);
-    } else {
-      setSelectedVariant(null);
-    }
-  }, [product]);
 
   const imageUrls = useMemo(() => {
+    if (!product) return [];
     const allImages = new Set<string>();
 
-    if (product?.imageUrls && Array.isArray(product.imageUrls)) {
+    if (product.imageUrls && Array.isArray(product.imageUrls)) {
         product.imageUrls.forEach(url => allImages.add(url));
     }
     
-    if (product?.variants && Array.isArray(product.variants)) {
+    if (product.variants && Array.isArray(product.variants)) {
       product.variants.forEach(v => {
         if (v.imageUrl) {
           allImages.add(v.imageUrl);
@@ -209,7 +228,7 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
   }, [imageUrls, activeImageIndex]);
 
 
-  if (!product) {
+  if (!loading && !product) {
     return (
         <div className="container mx-auto px-4 py-16 text-center">
             <AlertTriangle className="mx-auto h-16 w-16 text-destructive" />
@@ -236,7 +255,7 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
 
   
   const handleVariantChange = (variantId: string) => {
-    const variant = product.variants?.find(v => v.id === variantId);
+    const variant = product!.variants?.find(v => v.id === variantId);
     if (variant) {
         setSelectedVariant(variant);
         const imageIndex = imageUrls.findIndex(url => url === variant.imageUrl);
@@ -246,18 +265,19 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
     }
   };
 
-  const hasVariants = product.variants && product.variants.length > 0;
+  const hasVariants = product?.variants && product.variants.length > 0;
   
   const isReadyToPurchase = !hasVariants || !!selectedVariant;
 
   const currentStock = useMemo(() => {
     if (selectedVariant) return selectedVariant.stock;
-    if (hasVariants) return product.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
-    return product.stock ?? 0;
+    if (hasVariants) return product!.variants?.reduce((sum, v) => sum + v.stock, 0) ?? 0;
+    return product?.stock ?? 0;
   }, [product, hasVariants, selectedVariant]);
   
 
   const handleAddToCart = () => {
+    if (!product) return;
     if (hasVariants && !selectedVariant) {
         toast({ variant: 'destructive', title: 'Please select an option' });
         return;
@@ -270,6 +290,7 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
   };
 
   const handleBuyNow = () => {
+    if (!product) return;
     if (hasVariants && !selectedVariant) {
         toast({ variant: 'destructive', title: 'Please select an option' });
         return;
@@ -278,8 +299,8 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
     router.push('/checkout');
   };
   
-  const averageRating = product.rating ?? 0;
-  const reviewCount = product.reviewCount ?? 0;
+  const averageRating = product?.rating ?? 0;
+  const reviewCount = product?.reviewCount ?? 0;
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
@@ -289,7 +310,7 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
               {imageUrls.length > 0 ? (
                 <Image 
                   src={imageUrls[activeImageIndex]} 
-                  alt={product.name}
+                  alt={product?.name ?? 'Product Image'}
                   fill 
                   className="object-cover transition-opacity duration-500"
                   key={activeImageIndex}
@@ -312,7 +333,7 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
                                 activeImageIndex === index ? "ring-2 ring-primary ring-offset-2" : "opacity-75 hover:opacity-100"
                             )}
                         >
-                            <Image src={url} alt={`Thumbnail for ${product.name} ${index + 1}`} fill className="object-cover" sizes="10vw" />
+                            <Image src={url} alt={`Thumbnail for ${product?.name} ${index + 1}`} fill className="object-cover" sizes="10vw" />
                         </button>
                     ))}
                 </div>
@@ -322,7 +343,7 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
         {/* Product Details */}
         <div className="space-y-6">
           <div>
-            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight font-headline">{product.name}</h1>
+            <h1 className="text-3xl lg:text-4xl font-bold tracking-tight font-headline">{product?.name}</h1>
             <div className="mt-2 flex items-center gap-4">
                 <div className="flex items-center gap-1">
                     {[...Array(5)].map((_, i) => (
@@ -333,17 +354,17 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
             </div>
           </div>
           
-          <p className="text-lg text-muted-foreground">{product.shortDescription}</p>
+          <p className="text-lg text-muted-foreground">{product?.shortDescription}</p>
           
           <div className="flex items-baseline gap-2">
-            {product.discountedPrice ? (
+            {product?.discountedPrice ? (
               <>
                 <span className="text-3xl font-bold">PKR {product.discountedPrice}</span>
                 <span className="text-xl text-muted-foreground line-through">PKR {product.price}</span>
                 <span className="ml-2 inline-block bg-destructive text-destructive-foreground text-sm font-medium px-2 py-1 rounded-md">SALE</span>
               </>
             ) : (
-              <span className="text-3xl font-bold">PKR {product.price}</span>
+              <span className="text-3xl font-bold">PKR {product?.price}</span>
             )}
           </div>
 
@@ -368,7 +389,7 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
           )}
           
           <div className="space-y-4">
-            <p className="text-muted-foreground">{product.description}</p>
+            <p className="text-muted-foreground">{product?.description}</p>
           </div>
 
           <div className="flex items-center gap-4">
@@ -385,10 +406,10 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
           </div>
 
           <div className="flex flex-col sm:flex-row gap-4">
-            <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBuyNow} disabled={currentStock === 0}>
+            <Button size="lg" className="flex-1 bg-accent text-accent-foreground hover:bg-accent/90" onClick={handleBuyNow} disabled={currentStock === 0 || !isReadyToPurchase}>
               Buy Now
             </Button>
-            <Button size="lg" variant="secondary" className="flex-1" onClick={handleAddToCart} disabled={currentStock === 0}>
+            <Button size="lg" variant="secondary" className="flex-1" onClick={handleAddToCart} disabled={currentStock === 0 || !isReadyToPurchase}>
               Add to Cart
             </Button>
              <Button size="lg" variant="outline" className="px-4">
@@ -399,18 +420,20 @@ export default function ProductDetailClient({ initialProduct, initialReviews }: 
       </div>
       
       {/* Reviews Section */}
-      <div className="mt-16 md:mt-24">
-        <Separator />
-        <div className="grid md:grid-cols-2 gap-12 mt-12">
-            <div>
-                <h2 className="text-2xl font-bold tracking-tight mb-6">Customer Reviews</h2>
-                <ReviewList reviews={reviews} />
-            </div>
-             <div>
-                <ReviewForm productId={product.id} onReviewSubmitted={fetchReviews} />
+      {product && (
+        <div className="mt-16 md:mt-24">
+            <Separator />
+            <div className="grid md:grid-cols-2 gap-12 mt-12">
+                <div>
+                    <h2 className="text-2xl font-bold tracking-tight mb-6">Customer Reviews</h2>
+                    <ReviewList reviews={reviews} />
+                </div>
+                <div>
+                    <ReviewForm productId={product.id} onReviewSubmitted={fetchReviews} />
+                </div>
             </div>
         </div>
-      </div>
+      )}
     </div>
   );
 }

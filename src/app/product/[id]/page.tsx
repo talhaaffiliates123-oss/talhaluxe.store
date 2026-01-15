@@ -1,53 +1,43 @@
 
-import { notFound } from 'next/navigation';
-import { initializeFirebase } from '@/firebase/server-initialization';
-import { Product, Review } from '@/lib/types';
+import { Suspense } from 'react';
 import ProductDetailClient from './product-detail-client';
+import { Skeleton } from '@/components/ui/skeleton';
 
-async function getProductAndReviews(productId: string): Promise<{ product: Product | null; reviews: Review[] }> {
-  try {
-    const { firestore } = initializeFirebase();
-
-    const productRef = firestore.collection('products').doc(productId);
-    const productDoc = await productRef.get();
-
-    if (!productDoc.exists) {
-      return { product: null, reviews: [] };
-    }
-
-    const productData = { id: productDoc.id, ...productDoc.data() } as Product;
-
-    const reviewsRef = productRef.collection('reviews').orderBy('createdAt', 'desc');
-    const reviewsSnapshot = await reviewsRef.get();
-    const reviewsData = reviewsSnapshot.docs.map(doc => {
-        const data = doc.data();
-        return {
-            id: doc.id,
-            ...data,
-            createdAt: data.createdAt.toDate().toISOString(), // Convert Timestamp
-        } as Review;
-    });
-
-    return { product: productData, reviews: reviewsData };
-  } catch (error) {
-    console.error(`Error fetching product and reviews for ID "${productId}":`, error);
-    // If fetching fails, return nulls to trigger a notFound or error boundary
-    return { product: null, reviews: [] };
-  }
+function ProductPageSkeleton() {
+    return (
+        <div className="container mx-auto px-4 py-8 md:py-12">
+            <div className="grid md:grid-cols-2 gap-8 lg:gap-16">
+                <div>
+                    <Skeleton className="aspect-square w-full rounded-lg" />
+                    <div className="mt-4 grid grid-cols-5 gap-4">
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                        <Skeleton className="aspect-square w-full rounded-md" />
+                    </div>
+                </div>
+                <div className="space-y-6">
+                    <Skeleton className="h-10 w-3/4" />
+                    <Skeleton className="h-6 w-1/2" />
+                    <Skeleton className="h-8 w-1/4" />
+                    <div className="space-y-2">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                    </div>
+                    <Skeleton className="h-12 w-full" />
+                    <Skeleton className="h-12 w-full" />
+                </div>
+            </div>
+        </div>
+    )
 }
 
 export default async function ProductDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-
-  if (!id) {
-    notFound();
-  }
-
-  const { product, reviews } = await getProductAndReviews(id);
-
-  if (!product) {
-    notFound();
-  }
-
-  return <ProductDetailClient initialProduct={product} initialReviews={reviews} />;
+  return (
+    <Suspense fallback={<ProductPageSkeleton />}>
+      <ProductDetailClient params={params} />
+    </Suspense>
+  );
 }
