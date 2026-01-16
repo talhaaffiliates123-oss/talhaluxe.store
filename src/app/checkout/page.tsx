@@ -1,5 +1,4 @@
 
-
 'use client';
 import { useCart } from '@/hooks/use-cart';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -162,150 +161,155 @@ export default function CheckoutPage() {
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold tracking-tight font-headline">Checkout</h1>
         </div>
-        <form onSubmit={handlePlaceOrder} className="grid lg:grid-cols-2 gap-12">
-            <div className="order-2 lg:order-1 space-y-6">
-                <Card>
-                <CardHeader>
-                    <CardTitle>Shipping & Payment</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-8">
-                    <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Contact Information</h3>
-                    <Input id="email" type="email" defaultValue={user?.email ?? ''} disabled/>
-                    </div>
-    
-                    <div className="space-y-4">
-                    <h3 className="text-lg font-semibold">Shipping Address</h3>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                        <div className="sm:col-span-2 space-y-2">
-                        <Label htmlFor="full-name">Full Name</Label>
-                        <Input id="full-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+        <form onSubmit={handlePlaceOrder} className="space-y-8">
+            <div className="grid lg:grid-cols-2 gap-12">
+                <div className="order-2 lg:order-1 space-y-6">
+                    <Card>
+                    <CardHeader>
+                        <CardTitle>Shipping & Payment</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-8">
+                        <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Contact Information</h3>
+                        <Input id="email" type="email" defaultValue={user?.email ?? ''} disabled/>
                         </div>
-                        <div className="sm:col-span-2 space-y-2">
-                        <Label htmlFor="address">Address</Label>
-                        <Input id="address" required value={address} onChange={(e) => setAddress(e.target.value)} />
+        
+                        <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Shipping Address</h3>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div className="sm:col-span-2 space-y-2">
+                            <Label htmlFor="full-name">Full Name</Label>
+                            <Input id="full-name" required value={fullName} onChange={(e) => setFullName(e.target.value)} />
+                            </div>
+                            <div className="sm:col-span-2 space-y-2">
+                            <Label htmlFor="address">Address</Label>
+                            <Input id="address" required value={address} onChange={(e) => setAddress(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                            <Label htmlFor="city">City</Label>
+                            <Input id="city" required value={city} onChange={(e) => setCity(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                            <Label htmlFor="state">State / Province</Label>
+                            <Input id="state" required value={state} onChange={(e) => setState(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                            <Label htmlFor="zip">ZIP / Postal Code</Label>
+                            <Input id="zip" required value={zip} onChange={(e) => setZip(e.target.value)} />
+                            </div>
+                            <div className="space-y-2">
+                            <Label htmlFor="country">Country</Label>
+                            <Input id="country" value={country} disabled />
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                        <Label htmlFor="city">City</Label>
-                        <Input id="city" required value={city} onChange={(e) => setCity(e.target.value)} />
                         </div>
-                        <div className="space-y-2">
-                        <Label htmlFor="state">State / Province</Label>
-                        <Input id="state" required value={state} onChange={(e) => setState(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                        <Label htmlFor="zip">ZIP / Postal Code</Label>
-                        <Input id="zip" required value={zip} onChange={(e) => setZip(e.target.value)} />
-                        </div>
-                        <div className="space-y-2">
-                        <Label htmlFor="country">Country</Label>
-                        <Input id="country" value={country} disabled />
-                        </div>
-                    </div>
-                    </div>
-    
-                    <div className="space-y-4">
-                        <h3 className="text-lg font-semibold">Payment Method</h3>
-                        <RadioGroup defaultValue="cod" value={paymentMethod} onValueChange={setPaymentMethod}>
-                            <Label htmlFor="qr_transfer" className="flex flex-col gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent cursor-pointer">
-                                <div className="flex items-center gap-4">
-                                    <RadioGroupItem value="qr_transfer" id="qr_transfer" />
-                                    <CreditCard className="w-5 h-5"/>
-                                    <span className="font-medium">Bank Transfer / EasyPaisa / JazzCash</span>
-                                </div>
-                                {paymentMethod === 'qr_transfer' && (
-                                    <div className="pt-4 border-t space-y-6">
-                                        <h4 className="font-semibold text-center">Secure Mobile Payment</h4>
-                                        <p className="text-sm text-muted-foreground text-center">Scan this QR code to pay via your JazzCash, EasyPaisa, or any bank app.</p>
-                                        
-                                        {paymentSettings?.qrCodeUrl && (
-                                            <div className="flex justify-center">
-                                                <Image src={paymentSettings.qrCodeUrl} alt="Payment QR Code" width={200} height={200} className="rounded-md border p-1" />
-                                            </div>
-                                        )}
-                                        
-                                        <div className="text-center bg-background border p-4 rounded-md">
-                                            <h5 className="font-semibold">Account Details</h5>
-                                            <p className="text-muted-foreground mt-2">
-                                                Title: <span className="font-mono">{paymentSettings?.accountTitle || 'N/A'}</span>
-                                            </p>
-                                            <p className="text-muted-foreground">
-                                                Raast ID: <span className="font-mono">{paymentSettings?.raastId || 'N/A'}</span>
-                                            </p>
-                                        </div>
-
-                                        <div className="space-y-2">
-                                            <Label htmlFor="screenshot" className="font-semibold">Upload Payment Screenshot*</Label>
-                                            <Input 
-                                                id="screenshot" 
-                                                type="file" 
-                                                required={paymentMethod === 'qr_transfer'}
-                                                accept="image/png, image/jpeg, image/jpg"
-                                                onChange={(e) => setScreenshotFile(e.target.files ? e.target.files[0] : null)}
-                                            />
-                                            <Alert variant="destructive" className="mt-4">
-                                                <FileWarning className="h-4 w-4" />
-                                                <AlertTitle>Important!</AlertTitle>
-                                                <AlertDescription>
-                                                    Do not use edited screenshots. Our systems are very secure and will automatically reject tampered images.
-                                                </AlertDescription>
-                                            </Alert>
-                                        </div>
+        
+                        <div className="space-y-4">
+                            <h3 className="text-lg font-semibold">Payment Method</h3>
+                            <RadioGroup defaultValue="cod" value={paymentMethod} onValueChange={setPaymentMethod}>
+                                <Label htmlFor="qr_transfer" className="flex flex-col gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent cursor-pointer">
+                                    <div className="flex items-center gap-4">
+                                        <RadioGroupItem value="qr_transfer" id="qr_transfer" />
+                                        <CreditCard className="w-5 h-5"/>
+                                        <span className="font-medium">Bank Transfer / EasyPaisa / JazzCash</span>
                                     </div>
-                                )}
-                            </Label>
-                            <Label htmlFor="cod" className="flex items-center gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent cursor-pointer">
-                                <RadioGroupItem value="cod" id="cod" />
-                                <Truck className="w-5 h-5"/>
-                                <span className="font-medium">Cash on Delivery</span>
-                            </Label>
-                        </RadioGroup>
-                    </div>
-                </CardContent>
-                </Card>
-            </div>
-            
-            <div className="order-1 lg:order-2">
-                <Card>
-                <CardHeader>
-                    <CardTitle>Order Summary</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-4">
-                    {items.map(({ product, quantity, variant }) => (
-                        <div key={product.id + (variant?.id || '')} className="flex items-start gap-4">
-                            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
-                                <Image src={variant?.imageUrl || product.imageUrls?.[0] || 'https://placehold.co/64x64'} alt={product.name} width={64} height={64} className="h-full w-full object-cover"/>
-                                <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-muted text-sm">{quantity}</span>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm sm:text-base leading-tight">{product.name}</p>
-                                {variant && <p className="text-sm text-muted-foreground">{variant.name}</p>}
-                                <p className="font-medium sm:hidden mt-1">PKR {((product.discountedPrice ?? product.price) * quantity).toFixed(2)}</p>
-                            </div>
-                            <p className="font-medium hidden sm:block">PKR {((product.discountedPrice ?? product.price) * quantity).toFixed(2)}</p>
+                                    {paymentMethod === 'qr_transfer' && (
+                                        <div className="pt-4 border-t space-y-6">
+                                            <h4 className="font-semibold text-center">Secure Mobile Payment</h4>
+                                            <p className="text-sm text-muted-foreground text-center">Scan this QR code to pay via your JazzCash, EasyPaisa, or any bank app.</p>
+                                            
+                                            {paymentSettings?.qrCodeUrl && (
+                                                <div className="flex justify-center">
+                                                    <Image src={paymentSettings.qrCodeUrl} alt="Payment QR Code" width={200} height={200} className="rounded-md border p-1" />
+                                                </div>
+                                            )}
+                                            
+                                            <div className="text-center bg-background border p-4 rounded-md">
+                                                <h5 className="font-semibold">Account Details</h5>
+                                                <p className="text-muted-foreground mt-2">
+                                                    Title: <span className="font-mono">{paymentSettings?.accountTitle || 'N/A'}</span>
+                                                </p>
+                                                <p className="text-muted-foreground">
+                                                    Raast ID: <span className="font-mono">{paymentSettings?.raastId || 'N/A'}</span>
+                                                </p>
+                                            </div>
+
+                                            <div className="space-y-2">
+                                                <Label htmlFor="screenshot" className="font-semibold">Upload Payment Screenshot*</Label>
+                                                <Input 
+                                                    id="screenshot" 
+                                                    type="file" 
+                                                    required={paymentMethod === 'qr_transfer'}
+                                                    accept="image/png, image/jpeg, image/jpg"
+                                                    onChange={(e) => setScreenshotFile(e.target.files ? e.target.files[0] : null)}
+                                                />
+                                                <Alert variant="destructive" className="mt-4">
+                                                    <FileWarning className="h-4 w-4" />
+                                                    <AlertTitle>Important!</AlertTitle>
+                                                    <AlertDescription>
+                                                        Do not use edited screenshots. Our systems are very secure and will automatically reject tampered images.
+                                                    </AlertDescription>
+                                                </Alert>
+                                            </div>
+                                        </div>
+                                    )}
+                                </Label>
+                                <Label htmlFor="cod" className="flex items-center gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent cursor-pointer">
+                                    <RadioGroupItem value="cod" id="cod" />
+                                    <Truck className="w-5 h-5"/>
+                                    <span className="font-medium">Cash on Delivery</span>
+                                </Label>
+                            </RadioGroup>
                         </div>
-                    ))}
-                    </div>
-                    <Separator className="my-6" />
-                    <div className="space-y-2">
-                        <div className="flex justify-between"><span>Subtotal</span><span>PKR {subtotal.toFixed(2)}</span></div>
-                        <div className="flex justify-between"><span>Shipping</span><span>{shippingTotal > 0 ? `PKR ${shippingTotal.toFixed(2)}` : 'Free'}</span></div>
-                        <Separator className="my-2" />
-                        <div className="flex justify-between font-bold text-lg"><span>Total</span><span>PKR {totalPrice.toFixed(2)}</span></div>
-                    </div>
-                    <Button 
-                        size="lg" 
-                        className="w-full mt-6 bg-accent text-accent-foreground hover:bg-accent/90"
-                        type="submit"
-                        disabled={isProcessing}
-                    >
-                        {isProcessing ? 'Processing...' : 'Place Order'}
-                    </Button>
-                </CardContent>
-                </Card>
+                    </CardContent>
+                    </Card>
+                </div>
+                
+                <div className="order-1 lg:order-2">
+                    <Card>
+                    <CardHeader>
+                        <CardTitle>Order Summary</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="space-y-4">
+                        {items.map(({ product, quantity, variant }) => (
+                            <div key={product.id + (variant?.id || '')} className="flex items-start gap-4">
+                                <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
+                                    <Image src={variant?.imageUrl || product.imageUrls?.[0] || 'https://placehold.co/64x64'} alt={product.name} width={64} height={64} className="h-full w-full object-cover"/>
+                                    <span className="absolute -top-2 -right-2 flex h-6 w-6 items-center justify-center rounded-full bg-muted text-sm">{quantity}</span>
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm sm:text-base leading-tight">{product.name}</p>
+                                    {variant && <p className="text-sm text-muted-foreground">{variant.name}</p>}
+                                    <p className="font-medium sm:hidden mt-1">PKR {((product.discountedPrice ?? product.price) * quantity).toFixed(2)}</p>
+                                </div>
+                                <p className="font-medium hidden sm:block">PKR {((product.discountedPrice ?? product.price) * quantity).toFixed(2)}</p>
+                            </div>
+                        ))}
+                        </div>
+                        <Separator className="my-6" />
+                        <div className="space-y-2">
+                            <div className="flex justify-between"><span>Subtotal</span><span>PKR {subtotal.toFixed(2)}</span></div>
+                            <div className="flex justify-between"><span>Shipping</span><span>{shippingTotal > 0 ? `PKR ${shippingTotal.toFixed(2)}` : 'Free'}</span></div>
+                            <Separator className="my-2" />
+                            <div className="flex justify-between font-bold text-lg"><span>Total</span><span>PKR {totalPrice.toFixed(2)}</span></div>
+                        </div>
+                    </CardContent>
+                    </Card>
+                </div>
+            </div>
+            <div className="flex justify-end pt-4">
+                 <Button 
+                    size="lg" 
+                    className="w-full lg:w-auto bg-accent text-accent-foreground hover:bg-accent/90"
+                    type="submit"
+                    disabled={isProcessing}
+                >
+                    {isProcessing ? 'Processing...' : 'Place Order'}
+                </Button>
             </div>
         </form>
       </div>
     );
 }
+
