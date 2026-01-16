@@ -56,7 +56,8 @@ import type { Order } from '@/lib/types';
 import { updateOrderStatus } from '@/lib/orders';
 import { MoreHorizontal } from 'lucide-react';
 import { useIsMobile } from '@/hooks/use-mobile';
-
+import Image from 'next/image';
+import Link from 'next/link';
 
 interface OrdersTableProps {
     searchTerm: string;
@@ -160,6 +161,17 @@ export default function OrdersTable({ searchTerm }: OrdersTableProps) {
         }
     }
 
+    const getStatusVariant = (status: Order['status']) => {
+        switch (status) {
+            case 'Delivered': return 'default';
+            case 'Cancelled': return 'destructive';
+            case 'Shipped':
+            case 'Awaiting Confirmation':
+                 return 'secondary';
+            default: return 'outline';
+        }
+    }
+
     const cancellationEmailBody = orderToCancel ? `
 Subject: Regarding your Talha Luxe Order #${orderToCancel.id}
 
@@ -187,7 +199,7 @@ The Talha Luxe Team
                         <DrawerTitle>Order Details</DrawerTitle>
                         <DrawerDescription>Order ID: <Highlight text={order.id} highlight={searchTerm} /></DrawerDescription>
                     </DrawerHeader>
-                    <div className="p-4 space-y-4">
+                    <div className="p-4 grid gap-6">
                         <div className="space-y-1">
                             <h4 className="font-medium">Shipping Address</h4>
                             <p className="text-sm text-muted-foreground">
@@ -205,6 +217,14 @@ The Talha Luxe Team
                                 ))}
                             </ul>
                         </div>
+                        {order.paymentScreenshotUrl && (
+                             <div className="space-y-2">
+                                <h4 className="font-medium">Payment Screenshot</h4>
+                                <Link href={order.paymentScreenshotUrl} target="_blank" rel="noopener noreferrer">
+                                    <Image src={order.paymentScreenshotUrl} alt="Payment Screenshot" width={200} height={300} className="rounded-md border object-contain"/>
+                                </Link>
+                            </div>
+                        )}
                     </div>
                     <DrawerFooter className="pt-4">
                         <DrawerClose asChild>
@@ -238,7 +258,7 @@ The Talha Luxe Team
                         </TableCell>
                         <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
                         <TableCell>
-                            <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline'}>{order.status}</Badge>
+                            <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge>
                         </TableCell>
                         <TableCell className="text-right">PKR {order.totalPrice.toFixed(2)}</TableCell>
                         <TableCell className="text-right">
@@ -255,6 +275,7 @@ The Talha Luxe Team
                                         <DropdownMenuLabel>Actions</DropdownMenuLabel>
                                         <DropdownMenuItem onClick={() => navigator.clipboard.writeText(order.id)}>Copy order ID</DropdownMenuItem>
                                         <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Awaiting Confirmation')}>Mark as Awaiting Confirmation</DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Processing')}>Mark as Processing</DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Shipped')}>Mark as Shipped</DropdownMenuItem>
                                         <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Delivered')}>Mark as Delivered</DropdownMenuItem>
@@ -286,7 +307,7 @@ The Talha Luxe Team
                                 <p className="font-semibold"><Highlight text={order.shippingInfo?.name ?? 'N/A'} highlight={searchTerm} /></p>
                                 <p className="text-sm text-muted-foreground">{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</p>
                             </div>
-                            <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline'}>{order.status}</Badge>
+                            <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge>
                         </div>
                         <div className="flex justify-between items-center font-semibold">
                             <span>Total</span>
@@ -303,6 +324,7 @@ The Talha Luxe Team
                                 </DropdownMenuTrigger>
                                 <DropdownMenuContent align="end">
                                     <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                    <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Awaiting Confirmation')}>Mark as Awaiting Confirmation</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Processing')}>Mark as Processing</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Shipped')}>Mark as Shipped</DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleStatusChange(order.id, 'Delivered')}>Mark as Delivered</DropdownMenuItem>

@@ -203,6 +203,17 @@ export default function AccountPage() {
     );
   }
 
+  const getStatusVariant = (status: Order['status']) => {
+    switch (status) {
+        case 'Delivered': return 'default';
+        case 'Cancelled': return 'destructive';
+        case 'Shipped':
+        case 'Awaiting Confirmation':
+             return 'secondary';
+        default: return 'outline';
+    }
+  }
+
   const OrderDetailsDrawer = ({ order }: { order: Order }) => (
     <Drawer>
         <DrawerTrigger asChild>
@@ -243,7 +254,7 @@ export default function AccountPage() {
                     <div className="grid gap-2">
                         <h4 className="font-medium">Payment & Status</h4>
                         <div className="text-muted-foreground">Paid via {order.paymentMethod}</div>
-                        <div className="flex items-center gap-2 text-muted-foreground">Status: <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge></div>
+                        <div className="flex items-center gap-2 text-muted-foreground">Status: <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge></div>
                     </div>
                 </div>
                 <DrawerFooter className="pt-4">
@@ -320,7 +331,7 @@ export default function AccountPage() {
                                             <p className="font-semibold">Order #{order.id.substring(0,8)}...</p>
                                             <p className="text-sm text-muted-foreground">{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</p>
                                         </div>
-                                        <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
+                                        <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge>
                                     </div>
                                     <div className="flex justify-between items-center font-semibold">
                                         <span>Total</span>
@@ -363,7 +374,7 @@ export default function AccountPage() {
                                 <TableCell className="font-medium">{order.id.substring(0,8)}...</TableCell>
                                 <TableCell>{order.createdAt ? format(order.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
                                 <TableCell>
-                                <Badge variant={order.status === 'Delivered' ? 'default' : order.status === 'Cancelled' ? 'destructive' : order.status === 'Shipped' ? 'secondary' : 'outline' }>{order.status}</Badge>
+                                <Badge variant={getStatusVariant(order.status)}>{order.status}</Badge>
                                 </TableCell>
                                 <TableCell>PKR {order.totalPrice.toFixed(2)}</TableCell>
                                 <TableCell className="text-right space-x-2">

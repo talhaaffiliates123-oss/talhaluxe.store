@@ -43,8 +43,8 @@ export type Order = {
   totalPrice: number;
   shippingInfo: ShippingInfo;
   paymentMethod: string;
-
-  status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled';
+  paymentScreenshotUrl?: string;
+  status: 'Processing' | 'Shipped' | 'Delivered' | 'Cancelled' | 'Awaiting Confirmation';
   createdAt: any; // Firestore Timestamp
 };
 
@@ -126,4 +126,10 @@ export type BlogPost = {
 
 export type SiteSettings = {
     logoUrl?: string;
-}
+};
+
+export type PaymentSettings = {
+    qrCodeUrl?: string;
+    accountTitle?: string;
+    raastId?: string;
+};

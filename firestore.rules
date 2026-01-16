@@ -39,6 +39,11 @@ service cloud.firestore {
         allow write: if isAdmin();
     }
 
+    match /settings/payment {
+        allow read: if true;
+        allow write: if isAdmin();
+    }
+
     match /orders/{orderId} {
       allow read: if isOwner(resource.data.userId) || isAdmin();
       allow list: if isAdmin();

@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useFirestore } from '@/firebase';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { getSiteSettings, saveSiteSettings } from '@/lib/settings';
 import type { SiteSettings } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -22,10 +22,8 @@ export default function AdminSettingsPage() {
 
   useEffect(() => {
     if (firestore) {
-      const settingsRef = doc(firestore, 'settings', 'site');
-      getDoc(settingsRef).then(docSnap => {
-        if (docSnap.exists()) {
-          const settings = docSnap.data() as SiteSettings;
+      getSiteSettings(firestore).then(settings => {
+        if (settings) {
           setLogoUrl(settings.logoUrl || '');
         }
       }).finally(() => setLoadingSettings(false));
@@ -36,8 +34,7 @@ export default function AdminSettingsPage() {
     if (!firestore) return;
     setIsSaving(true);
     try {
-        const settingsRef = doc(firestore, 'settings', 'site');
-        await setDoc(settingsRef, { logoUrl }, { merge: true });
+        await saveSiteSettings(firestore, { logoUrl });
         toast({
             title: 'Settings Saved',
             description: 'Your site settings have been updated.',

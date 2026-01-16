@@ -8,17 +8,22 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
-import { CreditCard, Truck } from 'lucide-react';
+import { CreditCard, Truck, FileWarning } from 'lucide-react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { useFirestore, useUser } from '@/firebase';
+import { useFirestore, useUser, useStorage } from '@/firebase';
 import { addDoc, collection, serverTimestamp, doc, setDoc } from 'firebase/firestore';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
+import { getPaymentSettings } from '@/lib/settings';
+import type { PaymentSettings } from '@/lib/types';
+import { ref as storageRef, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { v4 as uuidv4 } from 'uuid';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 function CheckoutPageSkeleton() {
     return (
@@ -40,6 +45,7 @@ export default function CheckoutPage() {
     const router = useRouter();
     const { toast } = useToast();
     const firestore = useFirestore();
+    const storage = useStorage();
 
     const [paymentMethod, setPaymentMethod] = useState('cod');
     const [isProcessing, setIsProcessing] = useState(false);
@@ -52,11 +58,21 @@ export default function CheckoutPage() {
     const [zip, setZip] = useState('');
     const [country, setCountry] = useState('Pakistan');
     
+    const [paymentSettings, setPaymentSettings] = useState<PaymentSettings | null>(null);
+    const [screenshotFile, setScreenshotFile] = useState<File | null>(null);
+    
     useEffect(() => {
         if (!userLoading && !user) {
             router.replace('/login?redirect=/checkout');
         }
     }, [user, userLoading, router]);
+
+    useEffect(() => {
+        if (firestore) {
+            getPaymentSettings(firestore).then(setPaymentSettings);
+        }
+    }, [firestore]);
+
 
     const handlePlaceOrder = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -65,14 +81,25 @@ export default function CheckoutPage() {
             return;
         }
 
-        if (paymentMethod !== 'cod') {
-            toast({ variant: 'destructive', title: 'Payment Method Unavailable', description: 'Please select Cash on Delivery.' });
+        if (paymentMethod === 'qr_transfer' && !screenshotFile) {
+            toast({ variant: 'destructive', title: 'Screenshot Required', description: 'Please upload a payment screenshot to proceed.' });
             return;
         }
 
         setIsProcessing(true);
 
         try {
+            let screenshotUrl: string | undefined = undefined;
+
+            if (paymentMethod === 'qr_transfer' && screenshotFile && storage) {
+                const fileExtension = screenshotFile.name.split('.').pop();
+                const fileName = `payment_screenshots/${user.uid}/${uuidv4()}.${fileExtension}`;
+                const fileRef = storageRef(storage, fileName);
+
+                await uploadBytes(fileRef, screenshotFile);
+                screenshotUrl = await getDownloadURL(fileRef);
+            }
+
             const ordersCollection = collection(firestore, 'orders');
             const newOrderRef = doc(ordersCollection);
 
@@ -88,7 +115,8 @@ export default function CheckoutPage() {
                 })),
                 totalPrice,
                 paymentMethod,
-                status: 'Processing' as const,
+                paymentScreenshotUrl: screenshotUrl,
+                status: paymentMethod === 'qr_transfer' ? 'Awaiting Confirmation' as const : 'Processing' as const,
                 createdAt: serverTimestamp(),
             };
 
@@ -179,11 +207,52 @@ export default function CheckoutPage() {
                     <div className="space-y-4">
                         <h3 className="text-lg font-semibold">Payment Method</h3>
                         <RadioGroup defaultValue="cod" value={paymentMethod} onValueChange={setPaymentMethod}>
-                            <Label htmlFor="card" className="flex items-center gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent cursor-not-allowed opacity-50">
-                                <RadioGroupItem value="card" id="card" disabled />
-                                <CreditCard className="w-5 h-5"/>
-                                <span className="font-medium">Credit/Debit Card</span>
-                                <span className="ml-auto text-xs text-muted-foreground">(Coming Soon)</span>
+                            <Label htmlFor="qr_transfer" className="flex flex-col gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent cursor-pointer">
+                                <div className="flex items-center gap-4">
+                                    <RadioGroupItem value="qr_transfer" id="qr_transfer" />
+                                    <CreditCard className="w-5 h-5"/>
+                                    <span className="font-medium">Bank Transfer / EasyPaisa / JazzCash</span>
+                                </div>
+                                {paymentMethod === 'qr_transfer' && (
+                                    <div className="pt-4 border-t space-y-6">
+                                        <h4 className="font-semibold text-center">Secure Mobile Payment</h4>
+                                        <p className="text-sm text-muted-foreground text-center">Scan this QR code to pay via your JazzCash, EasyPaisa, or any bank app.</p>
+                                        
+                                        {paymentSettings?.qrCodeUrl && (
+                                            <div className="flex justify-center">
+                                                <Image src={paymentSettings.qrCodeUrl} alt="Payment QR Code" width={200} height={200} className="rounded-md border p-1" />
+                                            </div>
+                                        )}
+                                        
+                                        <div className="text-center bg-background border p-4 rounded-md">
+                                            <h5 className="font-semibold">Account Details</h5>
+                                            <p className="text-muted-foreground mt-2">
+                                                Title: <span className="font-mono">{paymentSettings?.accountTitle || 'N/A'}</span>
+                                            </p>
+                                            <p className="text-muted-foreground">
+                                                Raast ID: <span className="font-mono">{paymentSettings?.raastId || 'N/A'}</span>
+                                            </p>
+                                        </div>
+
+                                        <div className="space-y-2">
+                                            <Label htmlFor="screenshot" className="font-semibold">Upload Payment Screenshot*</Label>
+                                            <Input 
+                                                id="screenshot" 
+                                                type="file" 
+                                                required={paymentMethod === 'qr_transfer'}
+                                                accept="image/png, image/jpeg, image/jpg"
+                                                onChange={(e) => setScreenshotFile(e.target.files ? e.target.files[0] : null)}
+                                            />
+                                            <Alert variant="destructive" className="mt-4">
+                                                <FileWarning className="h-4 w-4" />
+                                                <AlertTitle>Important!</AlertTitle>
+                                                <AlertDescription>
+                                                    Do not use edited screenshots. Our systems are very secure and will automatically reject tampered images.
+                                                </AlertDescription>
+                                            </Alert>
+                                        </div>
+                                    </div>
+                                )}
                             </Label>
                             <Label htmlFor="cod" className="flex items-center gap-4 border rounded-md p-4 has-[:checked]:bg-muted has-[:checked]:border-accent cursor-pointer">
                                 <RadioGroupItem value="cod" id="cod" />
@@ -240,5 +309,6 @@ export default function CheckoutPage() {
       </div>
     );
 }
+
 
 
