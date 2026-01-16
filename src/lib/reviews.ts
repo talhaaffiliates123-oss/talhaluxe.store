@@ -29,7 +29,14 @@ export async function getReviews(
   const reviewsCollection = collection(db, 'products', productId, 'reviews');
   const q = query(reviewsCollection, orderBy('createdAt', 'desc'));
   const snapshot = await getDocs(q);
-  return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() } as Review));
+  return snapshot.docs.map((doc) => {
+    const data = doc.data();
+    return {
+      id: doc.id,
+      ...data,
+      createdAt: data.createdAt?.toDate ? data.createdAt.toDate().toISOString() : new Date().toISOString(),
+    } as Review;
+  });
 }
 
 // Submit a new review
