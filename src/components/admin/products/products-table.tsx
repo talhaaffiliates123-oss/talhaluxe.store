@@ -1,3 +1,4 @@
+
 'use client';
 import {
   Table,
@@ -36,12 +37,14 @@ import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { DocumentData, DocumentSnapshot, collection, getDocs, limit, orderBy, query, startAfter } from 'firebase/firestore';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const PAGE_SIZE = 10;
 
 export default function ProductsTable() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,9 +105,11 @@ export default function ProductsTable() {
     }, [firestore]);
   
   useEffect(() => {
-    fetchTotalCount();
-    fetchProducts('initial');
-  }, [fetchProducts, fetchTotalCount]);
+    if (firestore) {
+      fetchTotalCount();
+      fetchProducts('initial');
+    }
+  }, [firestore, fetchTotalCount]); // Removed fetchProducts from dependency array
 
   const handleDeleteProduct = async (productId: string) => {
     if (!firestore) return;
@@ -140,6 +145,114 @@ export default function ProductsTable() {
     fetchProducts('initial');
   }
 
+  const renderMobileCards = () => (
+    <div className="space-y-4">
+        {products.map(product => (
+            <Card key={product.id}>
+                <CardContent className="p-4 space-y-3">
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <p className="font-semibold">{product.name}</p>
+                            <p className="text-sm text-muted-foreground">PKR {product.price.toFixed(2)}</p>
+                        </div>
+                        {product.stock > 0 ? <Badge variant="outline">In stock</Badge> : <Badge variant="destructive">Out of stock</Badge>}
+                    </div>
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                        <Link href={`/admin/products/${product.id}/edit`}>
+                            <Button variant="outline" size="sm">Edit</Button>
+                        </Link>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                    Delete
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete the product
+                                    from your database.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={() => handleDeleteProduct(product.id)}
+                                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                                >
+                                    Continue
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </CardContent>
+            </Card>
+        ))}
+    </div>
+  );
+
+  const renderDesktopTable = () => (
+    <Table>
+        <TableHeader>
+        <TableRow>
+            <TableHead>Name</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Price</TableHead>
+            <TableHead className="hidden md:table-cell">Stock</TableHead>
+            <TableHead>
+            <span className="sr-only">Actions</span>
+            </TableHead>
+        </TableRow>
+        </TableHeader>
+        <TableBody>
+            {products.map((product) => {
+                return (
+                    <TableRow key={product.id}>
+                        <TableCell className="font-medium">{product.name}</TableCell>
+                        <TableCell>
+                            {product.stock > 0 ? <Badge variant="outline">In stock</Badge> : <Badge variant="destructive">Out of stock</Badge>}
+                        </TableCell>
+                        <TableCell>PKR {product.price.toFixed(2)}</TableCell>
+                        <TableCell className="hidden md:table-cell">{product.stock}</TableCell>
+                        <TableCell className="text-right">
+                            <Link href={`/admin/products/${product.id}/edit`}>
+                                <Button variant="ghost" size="sm">Edit</Button>
+                            </Link>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive/80">
+                                        Delete
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete the product
+                                        from your database.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={() => handleDeleteProduct(product.id)}
+                                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                                    >
+                                        Continue
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </TableCell>
+                    </TableRow>
+                )
+            })}
+        </TableBody>
+    </Table>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -147,80 +260,20 @@ export default function ProductsTable() {
           <CardDescription>{!loading ? `Showing ${products.length} of ${totalProducts} products.` : 'Loading...'}</CardDescription>
       </CardHeader>
       <CardContent>
-          <Table>
-              <TableHeader>
-              <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Price</TableHead>
-                  <TableHead className="hidden md:table-cell">Stock</TableHead>
-                  <TableHead>
-                  <span className="sr-only">Actions</span>
-                  </TableHead>
-              </TableRow>
-              </TableHeader>
-              <TableBody>
-              {loading && products.length === 0 ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell><Skeleton className="h-6 w-48" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-20" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-16" /></TableCell>
-                        <TableCell className="hidden md:table-cell"><Skeleton className="h-6 w-12" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-8 w-24" /></TableCell>
-                    </TableRow>
-                  ))
-              ) : products.length === 0 ? (
-                  <TableRow>
-                      <TableCell colSpan={5} className="text-center py-10">
-                          <p>No products found.</p>
-                          <p className="text-muted-foreground text-sm">Try seeding the database from the main admin page.</p>
-                      </TableCell>
-                  </TableRow>
-              ) : products.map((product) => {
-                  return (
-                      <TableRow key={product.id}>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>
-                              {product.stock > 0 ? <Badge variant="outline">In stock</Badge> : <Badge variant="destructive">Out of stock</Badge>}
-                          </TableCell>
-                          <TableCell>PKR {product.price.toFixed(2)}</TableCell>
-                          <TableCell className="hidden md:table-cell">{product.stock}</TableCell>
-                          <TableCell className="text-right">
-                              <Link href={`/admin/products/${product.id}/edit`}>
-                                  <Button variant="ghost" size="sm">Edit</Button>
-                              </Link>
-                              <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive/80">
-                                          Delete
-                                      </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                          This action cannot be undone. This will permanently delete the product
-                                          from your database.
-                                      </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                          onClick={() => handleDeleteProduct(product.id)}
-                                          className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                                      >
-                                          Continue
-                                      </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                  </AlertDialogContent>
-                              </AlertDialog>
-                          </TableCell>
-                      </TableRow>
-                  )
-              })}
-              </TableBody>
-          </Table>
+          {loading || isMobile === undefined ? (
+              <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <Skeleton key={i} className="h-24 w-full md:h-12" />
+                  ))}
+              </div>
+          ) : products.length === 0 ? (
+              <div className="text-center py-10">
+                  <p>No products found.</p>
+                  <p className="text-muted-foreground text-sm">Try adding a new product.</p>
+              </div>
+          ) : (
+              isMobile ? renderMobileCards() : renderDesktopTable()
+          )}
       </CardContent>
       <CardFooter>
         <div className="text-xs text-muted-foreground">

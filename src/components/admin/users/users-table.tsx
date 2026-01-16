@@ -24,6 +24,7 @@ import { DocumentData, DocumentSnapshot, collection, getDocs, limit, orderBy, qu
 import { Skeleton } from '@/components/ui/skeleton';
 import { format } from 'date-fns';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const PAGE_SIZE = 10;
 
@@ -38,6 +39,7 @@ type UserProfile = {
 export default function UsersTable() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,9 +92,13 @@ export default function UsersTable() {
 
     const fetchTotalCount = useCallback(async () => {
          if(!firestore) return;
-         const coll = collection(firestore, 'users');
-         const snap = await getDocs(coll);
-         setTotalUsers(snap.size);
+         try {
+            const coll = collection(firestore, 'users');
+            const snap = await getDocs(coll);
+            setTotalUsers(snap.size);
+         } catch (e) {
+            console.error("Could not fetch user count", e);
+         }
     }, [firestore]);
   
   useEffect(() => {
@@ -115,6 +121,61 @@ export default function UsersTable() {
     fetchUsers('initial');
   }
 
+  const renderMobileCards = () => (
+    <div className="space-y-4">
+        {users.map(user => (
+            <Card key={user.id}>
+                <CardContent className="p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                        <Avatar className="h-10 w-10">
+                            <AvatarImage src={`https://picsum.photos/seed/${user.id}/100/100`} alt={user.name}/>
+                            <AvatarFallback>{user.name?.charAt(0) ?? 'U'}</AvatarFallback>
+                        </Avatar>
+                        <div>
+                            <p className="font-semibold">{user.name}</p>
+                            <p className="text-sm text-muted-foreground">{user.email}</p>
+                        </div>
+                    </div>
+                    <p className="text-xs text-muted-foreground text-right">
+                        {user.createdAt ? format(user.createdAt.toDate(), 'MMM d, yyyy') : 'N/A'}
+                    </p>
+                </CardContent>
+            </Card>
+        ))}
+    </div>
+    );
+
+    const renderDesktopTable = () => (
+        <Table>
+            <TableHeader>
+            <TableRow>
+                <TableHead>User</TableHead>
+                <TableHead>Email</TableHead>
+                <TableHead>Date Joined</TableHead>
+            </TableRow>
+            </TableHeader>
+            <TableBody>
+                {users.map((user) => {
+                    return (
+                        <TableRow key={user.id}>
+                            <TableCell>
+                                <div className="flex items-center gap-3">
+                                    <Avatar className="h-8 w-8">
+                                        <AvatarImage src={`https://picsum.photos/seed/${user.id}/100/100`} alt={user.name}/>
+                                        <AvatarFallback>{user.name?.charAt(0) ?? 'U'}</AvatarFallback>
+                                    </Avatar>
+                                    <span className="font-medium">{user.name}</span>
+                                </div>
+                            </TableCell>
+                            <TableCell>{user.email}</TableCell>
+                            <TableCell>{user.createdAt ? format(user.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
+                        </TableRow>
+                    )
+                })}
+            </TableBody>
+        </Table>
+    );
+
   return (
     <Card>
       <CardHeader>
@@ -122,48 +183,19 @@ export default function UsersTable() {
           <CardDescription>{!loading ? `Showing ${users.length} of ${totalUsers} users.` : 'Loading...'}</CardDescription>
       </CardHeader>
       <CardContent>
-          <Table>
-              <TableHeader>
-              <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Date Joined</TableHead>
-              </TableRow>
-              </TableHeader>
-              <TableBody>
-              {loading && users.length === 0 ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell><Skeleton className="h-6 w-48" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-48" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                    </TableRow>
-                  ))
-              ) : users.length === 0 ? (
-                  <TableRow>
-                      <TableCell colSpan={3} className="text-center py-10">
-                          <p>No users found.</p>
-                      </TableCell>
-                  </TableRow>
-              ) : users.map((user) => {
-                  return (
-                      <TableRow key={user.id}>
-                          <TableCell>
-                            <div className="flex items-center gap-3">
-                                <Avatar className="h-8 w-8">
-                                    <AvatarImage src={`https://picsum.photos/seed/${user.id}/100/100`} alt={user.name}/>
-                                    <AvatarFallback>{user.name?.charAt(0) ?? 'U'}</AvatarFallback>
-                                </Avatar>
-                                <span className="font-medium">{user.name}</span>
-                            </div>
-                          </TableCell>
-                          <TableCell>{user.email}</TableCell>
-                          <TableCell>{user.createdAt ? format(user.createdAt.toDate(), 'PPP') : 'N/A'}</TableCell>
-                      </TableRow>
-                  )
-              })}
-              </TableBody>
-          </Table>
+          {loading || isMobile === undefined ? (
+              <div className="space-y-4">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                      <Skeleton key={i} className="h-16 w-full md:h-12" />
+                  ))}
+              </div>
+          ) : users.length === 0 ? (
+              <div className="text-center py-10">
+                  <p>No users found.</p>
+              </div>
+          ) : (
+              isMobile ? renderMobileCards() : renderDesktopTable()
+          )}
       </CardContent>
       <CardFooter>
         <div className="text-xs text-muted-foreground">

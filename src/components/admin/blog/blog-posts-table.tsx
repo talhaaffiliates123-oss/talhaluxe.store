@@ -34,11 +34,12 @@ import { deleteBlogPost, getBlogPosts } from '@/lib/blog';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
 import { Skeleton } from '@/components/ui/skeleton';
-import { format } from 'date-fns';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 export default function BlogPostsTable() {
   const firestore = useFirestore();
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
   const [posts, setPosts] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
@@ -86,6 +87,105 @@ export default function BlogPostsTable() {
     }
   }
 
+  const renderMobileCards = () => (
+    <div className="space-y-4">
+        {posts.map(post => (
+             <Card key={post.id}>
+                <CardContent className="p-4 space-y-3">
+                    <div>
+                        <p className="font-semibold">{post.title}</p>
+                        <p className="text-sm text-muted-foreground">by {post.author} on {post.date}</p>
+                    </div>
+                    <div className="flex items-center justify-end gap-2 pt-2">
+                        <Link href={`/admin/blog/${post.id}/edit`}>
+                            <Button variant="outline" size="sm">Edit</Button>
+                        </Link>
+                        <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                                <Button variant="destructive" size="sm">
+                                    Delete
+                                </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                                <AlertDialogHeader>
+                                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                    This action cannot be undone. This will permanently delete this blog post.
+                                </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                    onClick={() => handleDeletePost(post.id)}
+                                    className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                                >
+                                    Continue
+                                </AlertDialogAction>
+                                </AlertDialogFooter>
+                            </AlertDialogContent>
+                        </AlertDialog>
+                    </div>
+                </CardContent>
+            </Card>
+        ))}
+    </div>
+  );
+
+  const renderDesktopTable = () => (
+     <Table>
+        <TableHeader>
+        <TableRow>
+            <TableHead>Title</TableHead>
+            <TableHead>Author</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead>
+                <span className="sr-only">Actions</span>
+            </TableHead>
+        </TableRow>
+        </TableHeader>
+        <TableBody>
+            {posts.map((post) => {
+                return (
+                    <TableRow key={post.id}>
+                        <TableCell className="font-medium">{post.title}</TableCell>
+                        <TableCell>{post.author}</TableCell>
+                        <TableCell>{post.date}</TableCell>
+                        <TableCell className="text-right">
+                            <Link href={`/admin/blog/${post.id}/edit`}>
+                                <Button variant="ghost" size="sm">Edit</Button>
+                            </Link>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive/80">
+                                        Delete
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This action cannot be undone. This will permanently delete this blog post.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction
+                                        onClick={() => handleDeletePost(post.id)}
+                                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                                    >
+                                        Continue
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </TableCell>
+                    </TableRow>
+                )
+            })}
+        </TableBody>
+    </Table>
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -93,74 +193,22 @@ export default function BlogPostsTable() {
           <CardDescription>{!loading ? `Showing ${posts.length} posts.` : 'Loading...'}</CardDescription>
       </CardHeader>
       <CardContent>
-          <Table>
-              <TableHeader>
+          {loading || isMobile === undefined ? (
+              <div className="space-y-4">
+                  {Array.from({ length: 3 }).map((_, i) => (
+                      <Skeleton key={i} className="h-24 md:h-12 w-full" />
+                  ))}
+              </div>
+          ) : posts.length === 0 ? (
               <TableRow>
-                  <TableHead>Title</TableHead>
-                  <TableHead>Author</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead>
-                    <span className="sr-only">Actions</span>
-                  </TableHead>
+                  <TableCell colSpan={4} className="text-center py-10">
+                      <p>No blog posts found.</p>
+                      <p className="text-muted-foreground text-sm">Try adding a new post or seeding the initial posts.</p>
+                  </TableCell>
               </TableRow>
-              </TableHeader>
-              <TableBody>
-              {loading ? (
-                  Array.from({ length: 3 }).map((_, i) => (
-                    <TableRow key={i}>
-                        <TableCell><Skeleton className="h-6 w-72" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-32" /></TableCell>
-                        <TableCell><Skeleton className="h-6 w-24" /></TableCell>
-                        <TableCell className="text-right"><Skeleton className="h-8 w-24" /></TableCell>
-                    </TableRow>
-                  ))
-              ) : posts.length === 0 ? (
-                  <TableRow>
-                      <TableCell colSpan={4} className="text-center py-10">
-                          <p>No blog posts found.</p>
-                          <p className="text-muted-foreground text-sm">Try adding a new post or seeding the initial posts.</p>
-                      </TableCell>
-                  </TableRow>
-              ) : posts.map((post) => {
-                  return (
-                      <TableRow key={post.id}>
-                          <TableCell className="font-medium">{post.title}</TableCell>
-                          <TableCell>{post.author}</TableCell>
-                          <TableCell>{post.date}</TableCell>
-                          <TableCell className="text-right">
-                              <Link href={`/admin/blog/${post.id}/edit`}>
-                                  <Button variant="ghost" size="sm">Edit</Button>
-                              </Link>
-                              <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                      <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive/80">
-                                          Delete
-                                      </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                          This action cannot be undone. This will permanently delete this blog post.
-                                      </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction
-                                          onClick={() => handleDeletePost(post.id)}
-                                          className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                                      >
-                                          Continue
-                                      </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                  </AlertDialogContent>
-                              </AlertDialog>
-                          </TableCell>
-                      </TableRow>
-                  )
-              })}
-              </TableBody>
-          </Table>
+          ) : (
+              isMobile ? renderMobileCards() : renderDesktopTable()
+          )}
       </CardContent>
     </Card>
   );
