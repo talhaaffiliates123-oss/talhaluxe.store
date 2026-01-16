@@ -227,12 +227,15 @@ export default function ProductDetailClient({ id }: { id: string }) {
   }, [fetchProductData]);
   
   useEffect(() => {
-      if (product?.variants && product.variants.length === 1) {
-        setSelectedVariant(product.variants[0]);
-      } else {
-        setSelectedVariant(null);
+    // If variants exist and no variant is selected yet, select the first one in stock.
+    if (product?.variants && product.variants.length > 0 && !selectedVariant) {
+      const firstAvailableVariant = product.variants.find(v => v.stock > 0);
+      // If an available variant is found, set it as selected.
+      if (firstAvailableVariant) {
+        setSelectedVariant(firstAvailableVariant);
       }
-  }, [product]);
+    }
+  }, [product, selectedVariant]);
 
   const imageUrls = useMemo(() => {
     if (!product) return [];
