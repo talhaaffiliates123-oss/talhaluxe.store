@@ -1,3 +1,4 @@
+
 import { Gem, Target, Award } from 'lucide-react';
 import Image from 'next/image';
 
@@ -28,10 +29,10 @@ export default function AboutPage() {
           <div className="space-y-6">
             <h2 className="text-3xl font-bold font-headline">Our Story</h2>
             <p className="text-muted-foreground">
-              Talha Luxe was born from a passion for exquisite craftsmanship and a belief that true style is timeless. Founded in 2023, our journey began with a simple idea: to create a curated collection of fashion accessories that blend classic elegance with contemporary design. We travel the world to source the finest materials and partner with skilled artisans who share our dedication to quality.
+              Talha Luxe was born from a passion for exquisite craftsmanship and a desire to bring a curated, boutique experience to the vast world of online shopping. While large marketplaces offer endless choice, we focus on selection. We meticulously source the best items from both global suppliers and local artisans, ensuring every piece meets our high standards for quality and style.
             </p>
             <p className="text-muted-foreground">
-              Every piece in our collection tells a story of artistry and attention to detail. From the intricate mechanics of our timepieces to the supple feel of our hand-stitched leather bags, we are committed to delivering not just a product, but an experience of luxury.
+              Our commitment extends beyond the product. We provide priority customer service and a rigorous quality check for every item, ensuring your experience is as flawless as the pieces you purchase. We are your trusted partner in finding accessories that tell a story of artistry and attention to detail.
             </p>
           </div>
         </div>

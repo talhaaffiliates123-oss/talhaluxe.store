@@ -29,6 +29,14 @@ export default function ShippingPolicyPage() {
             Please note that delivery times are estimates and may vary due to carrier delays or other circumstances outside of our control.
           </p>
 
+          <h2 className="text-xl font-semibold text-foreground">A Note on Packaging & Invoices</h2>
+          <p>
+            To streamline our logistics, some of our packaging may include internal receipts from our marketplace partners, such as Daraz. <strong>Please disregard these slips</strong>, as they are used for our internal tracking purposes only.
+          </p>
+          <p>
+            Your official professional invoice is the one you receive from Talha Luxe via email and in your account dashboard on our site. This is the document to be used for any customer service inquiries or warranty claims. We appreciate your understanding as we work to deliver your products efficiently.
+          </p>
+
           <h2 className="text-xl font-semibold text-foreground">Shipment Confirmation & Order Tracking</h2>
           <p>
             You will receive a shipment confirmation email once your order has shipped containing your tracking number(s). The tracking number will be active within 24 hours.
