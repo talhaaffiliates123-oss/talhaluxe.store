@@ -14,12 +14,11 @@ export async function POST(req: NextRequest) {
     if (!darazUrl) {
       return NextResponse.json({ error: 'Daraz URL is required.' }, { status: 400 });
     }
-
     if (!process.env.GEMINI_API_KEY) {
-        return NextResponse.json({ error: 'Gemini API key not configured. Please add it to your .env.local file.' }, { status: 500 });
+        return NextResponse.json({ error: 'Gemini API key not configured.' }, { status: 500 });
     }
     if (!process.env.FIRECRAWL_API_KEY) {
-        return NextResponse.json({ error: 'Firecrawl API key not configured. Please add it to your .env.local file.' }, { status: 500 });
+        return NextResponse.json({ error: 'Firecrawl API key not configured.' }, { status: 500 });
     }
 
     // 1. Fetch content from Firecrawl
@@ -42,8 +41,8 @@ export async function POST(req: NextRequest) {
     const webText = scrapeData.data.markdown;
 
     // 2. Process with Gemini
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro"});
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
+    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001"});
 
     const prompt = `
         You are an expert e-commerce data extractor for a luxury brand named 'Talha Luxe'.
