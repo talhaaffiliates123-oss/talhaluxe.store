@@ -11,6 +11,7 @@ export type ShippingInfo = {
 
 export type Variant = {
   id:string;
+  type: string;
   name: string;
   stock: number;
   imageUrl: string;

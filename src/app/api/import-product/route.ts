@@ -73,16 +73,19 @@ export async function POST(req: NextRequest) {
         {
           "name": "string",
           "price": number,
-          "imageUrl": "string",
-          "description": "string"
+          "description": "string",
+          "images": ["string"],
+          "variants": [
+              {"type": "string", "value": "string", "variantImage": "string"}
+          ]
         }
-        
+
         RULES:
-        1. IMPORTANT: NEVER mention the word "Daraz" in the name or description.
-        2. "name": Rewrite the product title to sound 'Premium' and 'Luxe'.
-        3. "price": Extract the product price in PKR. It must be a number. If you find a price range, take the lowest price. Do NOT add any profit here.
-        4. "imageUrl": Find the highest quality main product image URL available in the text.
-        5. "description": Write a compelling, one-sentence luxury description.
+        1. "name": Rewrite the product title to sound 'Premium' and 'Luxe'. NEVER mention "Daraz".
+        2. "price": Extract the product price in PKR. It must be a number. Do NOT add any profit here. We will add profit later.
+        3. "description": Write a compelling, one-sentence luxury description. NEVER mention "Daraz".
+        4. "images": Extract ALL available unique product image URLs. It must be an array of strings. This should be a comprehensive list of all high-quality images.
+        5. "variants": Find all product variations like 'Color' or 'Size'. For each variant, find its corresponding image URL from the webpage content and add it to the 'variantImage' field. The 'value' is the specific option (e.g., 'Black', 'Large'). The 'type' is the category of option (e.g., 'Color', 'Size'). If no variants exist, return an empty array [].
     `;
 
     const userPrompt = `
@@ -112,25 +115,42 @@ export async function POST(req: NextRequest) {
     // 3. Apply business logic and add default values
     const finalPrice = (productData.price || 0) + 400;
 
+    const finalVariants = productData.variants?.map((v: any) => ({
+        id: uuidv4(),
+        type: v.type || 'Option',
+        name: v.value || 'Default',
+        stock: 10, // Default stock
+        imageUrl: v.variantImage || productData.images?.[0] || '',
+    })) || [];
+
+    const allVariantImages = finalVariants.map((v: any) => v.imageUrl).filter(Boolean);
+    const allBaseImages = productData.images || (productData.imageUrl ? [productData.imageUrl] : []);
+    const combinedImageUrls = [...new Set([...allBaseImages, ...allVariantImages])];
+
+
     // 4. Save to Firestore
     const productsCollection = firestore.collection('products');
-    const newProduct = {
+    const newProduct: any = {
         name: productData.name || 'Untitled Product',
         shortDescription: productData.description || 'Exquisite new arrival.',
         description: productData.description || 'A stunning piece from our latest collection.',
         price: finalPrice,
         discountedPrice: null,
         category: 'uncategorized',
-        imageUrls: productData.imageUrl ? [productData.imageUrl] : [],
-        stock: 100,
+        imageUrls: combinedImageUrls,
+        stock: 100, // Default stock, will be overridden by variants
         rating: 0,
         reviewCount: 0,
         isNewArrival: true,
         isBestSeller: false,
         onSale: false,
-        variants: [],
+        variants: finalVariants,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
+
+    if (newProduct.variants.length > 0) {
+        newProduct.stock = newProduct.variants.reduce((acc: number, v: any) => acc + v.stock, 0);
+    }
 
     const docRef = await productsCollection.add(newProduct);
 

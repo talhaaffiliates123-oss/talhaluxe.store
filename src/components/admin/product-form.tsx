@@ -35,6 +35,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 const variantSchema = z.object({
   id: z.string().default(() => uuidv4()),
+  type: z.string().min(1, 'Variant type is required'),
   name: z.string().min(1, 'Variant name is required'),
   stock: z.coerce.number().int().min(0, 'Stock cannot be negative'),
   imageUrl: z.string().url("Image URL must be a valid URL"),
@@ -221,43 +222,54 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                 <CardDescription>Add product variants like different colors or sizes. Each variant requires an image URL.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                {variantsFields.map((field, index) => (
-                    <div key={field.id} className="grid grid-cols-1 md:grid-cols-2 gap-4 items-end p-4 border rounded-lg">
-                        <div className="col-span-full">
-                            <Label htmlFor={`variants.${index}.name`}>Variant Name (e.g., Black, Large)</Label>
-                            <Input {...register(`variants.${index}.name`)} id={`variants.${index}.name`} />
-                        </div>
-                        <div className="col-span-full">
-                            <Label htmlFor={`variants.${index}.imageUrl`}>Variant Image URL</Label>
-                            <Input {...register(`variants.${index}.imageUrl`)} id={`variants.${index}.imageUrl`} />
-                        </div>
-                        <div className="flex items-end gap-2 col-span-full">
-                            <div>
-                                <Label htmlFor={`variants.${index}.stock`}>Stock</Label>
-                                <Input type="number" {...register(`variants.${index}.stock`)} id={`variants.${index}.stock`} />
+                {variantsFields.map((field, index) => {
+                    const imageUrl = watch(`variants.${index}.imageUrl`);
+                    return (
+                        <div key={field.id} className="p-4 border rounded-lg space-y-3">
+                            <div className="flex items-center gap-4">
+                                {imageUrl && (
+                                    <img src={imageUrl} alt="Variant" className="w-16 h-16 object-cover rounded-md border" />
+                                )}
+                                <div className="grid grid-cols-2 gap-4 flex-1">
+                                    <div>
+                                        <Label htmlFor={`variants.${index}.type`}>Type</Label>
+                                        <Input {...register(`variants.${index}.type`)} id={`variants.${index}.type`} placeholder="e.g. Color" />
+                                    </div>
+                                    <div>
+                                        <Label htmlFor={`variants.${index}.name`}>Value</Label>
+                                        <Input {...register(`variants.${index}.name`)} id={`variants.${index}.name`} placeholder="e.g. Black" />
+                                    </div>
+                                </div>
                             </div>
-                            <Button type="button" variant="destructive" size="icon" onClick={() => removeVariant(index)}>
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
+                            <div>
+                                <Label htmlFor={`variants.${index}.imageUrl`}>Variant Image URL</Label>
+                                <Input {...register(`variants.${index}.imageUrl`)} id={`variants.${index}.imageUrl`} />
+                            </div>
+                            <div className="flex justify-between items-end">
+                                <div>
+                                    <Label htmlFor={`variants.${index}.stock`}>Stock</Label>
+                                    <Input type="number" {...register(`variants.${index}.stock`)} id={`variants.${index}.stock`} />
+                                </div>
+                                <Button type="button" variant="destructive" size="icon" onClick={() => removeVariant(index)}>
+                                    <Trash2 className="h-4 w-4" />
+                                </Button>
+                            </div>
+                            {(errors.variants as any)?.[index]?.type && (
+                                <p className="text-destructive text-sm">{String((errors.variants as any)[index]?.type?.message)}</p>
+                            )}
+                            {(errors.variants as any)?.[index]?.name && (
+                                <p className="text-destructive text-sm">{String((errors.variants as any)[index]?.name?.message)}</p>
+                            )}
+                            {(errors.variants as any)?.[index]?.imageUrl && (
+                                <p className="text-destructive text-sm">{String((errors.variants as any)[index]?.imageUrl?.message)}</p>
+                            )}
+                            {(errors.variants as any)?.[index]?.stock && (
+                                <p className="text-destructive text-sm">{String((errors.variants as any)[index]?.stock?.message)}</p>
+                            )}
                         </div>
-                        {(errors.variants as any)?.[index]?.name && (
-                            <p className="text-destructive text-sm mt-1 col-span-full">
-                                {String((errors.variants as any)[index]?.name?.message)}
-                            </p>
-                        )}
-                        {(errors.variants as any)?.[index]?.stock && (
-                            <p className="text-destructive text-sm mt-1 col-span-full">
-                                {String((errors.variants as any)[index]?.stock?.message)}
-                            </p>
-                        )}
-                        {(errors.variants as any)?.[index]?.imageUrl && (
-                            <p className="text-destructive text-sm mt-1 col-span-full">
-                                {String((errors.variants as any)[index]?.imageUrl?.message)}
-                            </p>
-                        )}
-                    </div>
-                ))}
-                <Button type="button" variant="outline" onClick={() => appendVariant({ id: uuidv4(), name: '', stock: 0, imageUrl: '' })}>
+                    );
+                })}
+                <Button type="button" variant="outline" onClick={() => appendVariant({ id: uuidv4(), type: '', name: '', stock: 0, imageUrl: '' })}>
                     <PlusCircle className="mr-2 h-4 w-4" />
                     Add Variant
                 </Button>
