@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import * as admin from 'firebase-admin';
 import { v4 as uuidv4 } from 'uuid';
+import ImageKit from 'imagekit';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -24,6 +25,13 @@ if (!admin.apps.length) {
     }
 }
 
+// Initialize ImageKit
+const imagekit = new ImageKit({
+    publicKey: process.env.IMAGEKIT_PUBLIC_KEY!,
+    privateKey: process.env.IMAGEKIT_PRIVATE_KEY!,
+    urlEndpoint: process.env.IMAGEKIT_URL_ENDPOINT!
+});
+
 
 export async function POST(req: NextRequest) {
     // Check for API Keys
@@ -32,6 +40,9 @@ export async function POST(req: NextRequest) {
     }
     if (!process.env.FIRECRAWL_API_KEY) {
         return NextResponse.json({ error: 'Firecrawl API key not configured.' }, { status: 500 });
+    }
+    if (!process.env.IMAGEKIT_PUBLIC_KEY || !process.env.IMAGEKIT_PRIVATE_KEY || !process.env.IMAGEKIT_URL_ENDPOINT) {
+        return NextResponse.json({ error: 'ImageKit credentials not configured.' }, { status: 500 });
     }
 
   try {
@@ -112,23 +123,57 @@ export async function POST(req: NextRequest) {
     
     const productData = JSON.parse(aiResponseText);
 
-    // 3. Apply business logic and add default values
+    // 3. Upload images to ImageKit
+    const allSourceImageUrls = new Set<string>();
+    if (productData.images && Array.isArray(productData.images)) {
+        productData.images.forEach((img: string) => img && allSourceImageUrls.add(img));
+    }
+    if (productData.variants && Array.isArray(productData.variants)) {
+        productData.variants.forEach((v: any) => v.variantImage && allSourceImageUrls.add(v.variantImage));
+    }
+
+    const imageUrlsToUpload = Array.from(allSourceImageUrls);
+    const urlMap = new Map<string, string>();
+
+    if (imageUrlsToUpload.length > 0) {
+        const uploadPromises = imageUrlsToUpload.map(url =>
+            imagekit.upload({
+                file: url,
+                fileName: `product-${uuidv4()}`,
+                folder: '/talhaluxe-products/',
+                useUniqueFileName: true,
+            }).catch(err => {
+                console.warn(`Failed to upload image from ${url}:`, err.message);
+                return null; // Return null on failure
+            })
+        );
+        const uploadResults = await Promise.all(uploadPromises);
+
+        imageUrlsToUpload.forEach((originalUrl, index) => {
+            if (uploadResults[index]) {
+                urlMap.set(originalUrl, (uploadResults[index] as any).url);
+            }
+        });
+    }
+
+    // 4. Apply business logic and add default values
     const finalPrice = (productData.price || 0) + 400;
+
+    const uploadedBaseImages = productData.images?.map((url: string) => urlMap.get(url)).filter(Boolean) as string[] || [];
 
     const finalVariants = productData.variants?.map((v: any) => ({
         id: uuidv4(),
         type: v.type || 'Option',
         name: v.value || 'Default',
-        stock: 10, // Default stock
-        imageUrl: v.variantImage || productData.images?.[0] || '',
+        stock: 10,
+        imageUrl: urlMap.get(v.variantImage) || uploadedBaseImages[0] || '',
     })) || [];
 
     const allVariantImages = finalVariants.map((v: any) => v.imageUrl).filter(Boolean);
-    const allBaseImages = productData.images || (productData.imageUrl ? [productData.imageUrl] : []);
-    const combinedImageUrls = [...new Set([...allBaseImages, ...allVariantImages])];
+    const combinedImageUrls = [...new Set([...uploadedBaseImages, ...allVariantImages])];
 
 
-    // 4. Save to Firestore
+    // 5. Save to Firestore
     const productsCollection = firestore.collection('products');
     const newProduct: any = {
         name: productData.name || 'Untitled Product',
@@ -154,7 +199,7 @@ export async function POST(req: NextRequest) {
 
     const docRef = await productsCollection.add(newProduct);
 
-    // 5. Return success response
+    // 6. Return success response
     return NextResponse.json({ 
         message: 'Product imported successfully!', 
         productId: docRef.id,
@@ -166,7 +211,7 @@ export async function POST(req: NextRequest) {
     // Custom error messages for better user feedback
     let errorMessage = error.message || 'An unknown error occurred.';
     if (error.status === 404) {
-        errorMessage = `The AI model ('llama-3.1-8b-instant') was not found. Please ensure the 'Generative Language API' is enabled in your Google Cloud project and that the model is available in your project's region.`;
+        errorMessage = `The AI model was not found. Please ensure the 'Generative Language API' is enabled in your Google Cloud project and that the model is available in your project's region.`;
     } else if (error.code === 'insufficient_quota') {
         errorMessage = `Your Groq API quota has been exceeded. Please check your account.`;
     } else if (error.status === 401) {
