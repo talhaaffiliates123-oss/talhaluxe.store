@@ -40,6 +40,12 @@ const nextConfig: NextConfig = {
         hostname: '*.slatic.net',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'gw.alicdn.com',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
