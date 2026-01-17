@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { categories } from '@/lib/data';
 import type { Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useFirestore, useStorage } from '@/firebase';
+import { useFirestore } from '@/firebase';
 import { addProduct, updateProduct } from '@/lib/products';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -29,9 +29,12 @@ import {
     CardTitle,
     CardDescription,
   } from '@/components/ui/card';
-import { useState } from 'react';
-import { PlusCircle, Trash2, X } from 'lucide-react';
+import { useState, useRef } from 'react';
+import { PlusCircle, Trash2, X, UploadCloud } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
+import { cn } from '@/lib/utils';
+import { buttonVariants } from '@/components/ui/button';
+
 
 const variantSchema = z.object({
   id: z.string().default(() => uuidv4()),
@@ -71,6 +74,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
   const firestore = useFirestore();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   const {
     register,
@@ -78,6 +82,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     control,
     formState: { errors },
     watch,
+    setValue,
   } = useForm<any>({
     resolver: zodResolver(productSchema),
     defaultValues: {
@@ -106,6 +111,88 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
   const isEditMode = !!initialData;
 
+  const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files) return;
+
+    setIsUploading(true);
+    let uploadedCount = 0;
+    
+    for (const file of Array.from(files)) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const response = await fetch('/api/upload-image', {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const result = await response.json();
+                throw new Error(result.error || 'Upload failed');
+            }
+
+            const result = await response.json();
+            appendImageUrl({ value: result.url });
+            uploadedCount++;
+
+        } catch (error: any) {
+            toast({
+                variant: 'destructive',
+                title: 'Upload Failed',
+                description: `Could not upload ${file.name}: ${error.message}`,
+            });
+        }
+    }
+    
+    setIsUploading(false);
+    toast({
+        title: 'Upload Complete',
+        description: `${uploadedCount} of ${files.length} images uploaded successfully.`,
+    });
+    event.target.value = '';
+  };
+
+  const handleVariantImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append('file', file);
+
+    try {
+        const response = await fetch('/api/upload-image', {
+            method: 'POST',
+            body: formData,
+        });
+
+        if (!response.ok) {
+            const result = await response.json();
+            throw new Error(result.error || 'Upload failed');
+        }
+
+        const result = await response.json();
+        setValue(`variants.${index}.imageUrl`, result.url, { shouldValidate: true });
+
+        toast({
+            title: 'Variant Image Uploaded',
+            description: 'The image has been linked to the variant.',
+        });
+
+    } catch (error: any) {
+        toast({
+            variant: 'destructive',
+            title: 'Upload Failed',
+            description: error.message,
+        });
+    } finally {
+        setIsUploading(false);
+        event.target.value = '';
+    }
+};
+
   const onSubmit = async (data: ProductFormData) => {
     if (!firestore) {
         toast({ variant: 'destructive', title: 'Error', description: 'Firebase services not available.' });
@@ -124,8 +211,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         const variantImageUrls = data.variants?.map(v => v.imageUrl).filter(Boolean) as string[] || [];
         const combinedImageUrls = [...new Set([...plainImageUrls, ...variantImageUrls])];
 
-        if (!hasVariants && combinedImageUrls.length === 0) {
-            toast({ variant: 'destructive', title: 'Validation Error', description: "A product must have at least one image if it has no variants." });
+        if (combinedImageUrls.length === 0) {
+            toast({ variant: 'destructive', title: 'Validation Error', description: "A product must have at least one image." });
             setIsSubmitting(false);
             return;
         }
@@ -189,8 +276,28 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         </Card>
         <Card>
             <CardHeader>
+                <CardTitle>Image Upload</CardTitle>
+                <CardDescription>Upload JPG or PNG files. They will be added to the image URL list below.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <Label htmlFor="image-upload">Upload Main Images</Label>
+                    <Input 
+                        id="image-upload" 
+                        type="file" 
+                        multiple 
+                        accept="image/jpeg, image/png, image/webp"
+                        onChange={handleImageUpload}
+                        disabled={isUploading}
+                    />
+                </div>
+                {isUploading && <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2"><UploadCloud className="animate-pulse" />Uploading images...</p>}
+            </CardContent>
+        </Card>
+        <Card>
+            <CardHeader>
                 <CardTitle>Product Images</CardTitle>
-                <CardDescription>Add URLs for the product images. If product has no variants, at least one image is required.</CardDescription>
+                <CardDescription>Add or remove image URLs for this product.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="space-y-4">
@@ -226,7 +333,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                     const imageUrl = watch(`variants.${index}.imageUrl`);
                     return (
                         <div key={field.id} className="p-4 border rounded-lg space-y-3">
-                            <div className="flex items-center gap-4">
+                            <div className="flex items-start gap-4">
                                 {imageUrl && (
                                     <img src={imageUrl} alt="Variant" className="w-16 h-16 object-cover rounded-md border" />
                                 )}
@@ -243,7 +350,21 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                             </div>
                             <div>
                                 <Label htmlFor={`variants.${index}.imageUrl`}>Variant Image URL</Label>
-                                <Input {...register(`variants.${index}.imageUrl`)} id={`variants.${index}.imageUrl`} />
+                                <div className="flex items-center gap-2">
+                                    <Input {...register(`variants.${index}.imageUrl`)} id={`variants.${index}.imageUrl`} />
+                                    <Label htmlFor={`variant-upload-${index}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }), "cursor-pointer")}>
+                                        <UploadCloud className="h-4 w-4" />
+                                        <span className="sr-only">Upload variant image</span>
+                                    </Label>
+                                    <Input 
+                                        id={`variant-upload-${index}`}
+                                        type="file" 
+                                        className="hidden"
+                                        accept="image/jpeg, image/png, image/webp"
+                                        onChange={(e) => handleVariantImageUpload(e, index)}
+                                        disabled={isUploading}
+                                    />
+                                </div>
                             </div>
                             <div className="flex justify-between items-end">
                                 <div>
@@ -260,8 +381,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                             {(errors.variants as any)?.[index]?.name && (
                                 <p className="text-destructive text-sm">{String((errors.variants as any)[index]?.name?.message)}</p>
                             )}
-                            {(errors.variants as any)?.[index]?.imageUrl && (
-                                <p className="text-destructive text-sm">{String((errors.variants as any)[index]?.imageUrl?.message)}</p>
+                             {(errors.variants as any)?.[index]?.imageUrl && (
+                                <p className="text-destructive text-sm mt-1">{String((errors.variants as any)[index]?.imageUrl?.message)}</p>
                             )}
                             {(errors.variants as any)?.[index]?.stock && (
                                 <p className="text-destructive text-sm">{String((errors.variants as any)[index]?.stock?.message)}</p>
@@ -374,8 +495,8 @@ export default function ProductForm({ initialData }: ProductFormProps) {
             </CardContent>
         </Card>
         
-        <Button type="submit" size="lg" disabled={isSubmitting || !firestore} className="w-full">
-          {isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Product')}
+        <Button type="submit" size="lg" disabled={isSubmitting || isUploading || !firestore} className="w-full">
+          {isUploading ? 'Uploading...' : isSubmitting ? 'Saving...' : (isEditMode ? 'Save Changes' : 'Add Product')}
         </Button>
       </div>
     </form>
