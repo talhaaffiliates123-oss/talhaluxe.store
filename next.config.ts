@@ -45,6 +45,7 @@ const nextConfig: NextConfig = {
   },
   env: {
     NEXT_PUBLIC_ADMIN_EMAIL: process.env.ADMIN_EMAIL,
+    NEXT_PUBLIC_FIREBASE_PROJECT_ID: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
   }
 };
 
