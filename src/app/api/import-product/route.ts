@@ -4,6 +4,7 @@ export const runtime = 'nodejs';
 import { NextRequest, NextResponse } from 'next/server';
 import Groq from 'groq-sdk';
 import * as admin from 'firebase-admin';
+import { v4 as uuidv4 } from 'uuid';
 
 // Initialize Firebase Admin
 if (!admin.apps.length) {
@@ -74,7 +75,10 @@ export async function POST(req: NextRequest) {
           "price": number,
           "imageUrl": "string",
           "shortDescription": "string",
-          "description": "string"
+          "description": "string",
+          "variants": [
+            {"type": "Color", "value": "string"}
+          ]
         }
         
         RULES:
@@ -83,6 +87,7 @@ export async function POST(req: NextRequest) {
         3. "imageUrl": Find the highest quality main product image URL available in the text.
         4. "shortDescription": Write a very brief, one-sentence tagline for the product that is luxurious and enticing.
         5. "description": Write a compelling product description (2-3 paragraphs). Rewrite the original description to be more luxurious and elegant, suitable for our premium brand. Focus on the feeling, craftsmanship, and premium materials.
+        6. "variants": Look for color or style options mentioned in the text (like "Black", "Brown", "Style A"). For each one, create an object with "type": "Color" and "value": "[The Color Name]". If no variants are found, return an empty array [].
     `;
 
     const userPrompt = `
@@ -109,6 +114,13 @@ export async function POST(req: NextRequest) {
     
     const productData = JSON.parse(aiResponseText);
 
+    const transformedVariants = (productData.variants || []).map((v: { type: string; value: string }) => ({
+        id: uuidv4(),
+        name: v.value,
+        stock: 100, // Default stock for new variants
+        imageUrl: '', // No specific image URL from this simplified import
+    }));
+
     // 3. Apply business logic and add default values
     const finalPrice = (productData.price || 0) + 800;
 
@@ -128,6 +140,7 @@ export async function POST(req: NextRequest) {
         isNewArrival: true,
         isBestSeller: false,
         onSale: false,
+        variants: transformedVariants,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
@@ -144,7 +157,9 @@ export async function POST(req: NextRequest) {
     console.error('API Error:', error.stack);
     // Custom error messages for better user feedback
     let errorMessage = error.message || 'An unknown error occurred.';
-    if (error.code === 'insufficient_quota') {
+    if (error.status === 404) {
+        errorMessage = `The AI model ('llama-3.1-8b-instant') was not found. Please ensure the 'Generative Language API' is enabled in your Google Cloud project and that the model is available in your project's region.`;
+    } else if (error.code === 'insufficient_quota') {
         errorMessage = `Your Groq API quota has been exceeded. Please check your account.`;
     } else if (error.status === 401) {
         errorMessage = `Your Groq API key is invalid. Please double-check the GROQ_API_KEY in your environment variables.`;
