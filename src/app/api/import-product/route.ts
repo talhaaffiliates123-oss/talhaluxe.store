@@ -16,12 +16,22 @@ export async function POST(req: NextRequest) {
     if (!process.env.GEMINI_API_KEY) {
         return NextResponse.json({ error: 'Gemini API key not configured.' }, { status: 500 });
     }
+    if (!process.env.JINA_API_KEY) {
+        return NextResponse.json({ error: 'Jina API key not configured.' }, { status: 500 });
+    }
 
     // 1. Fetch content from Jina AI Reader
     const jinaUrl = `https://r.jina.ai/${darazUrl}`;
-    const response = await fetch(jinaUrl);
+    const response = await fetch(jinaUrl, {
+        headers: {
+            "Authorization": `Bearer ${process.env.JINA_API_KEY}`,
+            "X-Return-Format": "markdown"
+        }
+    });
+
     if (!response.ok) {
-        throw new Error(`Failed to fetch from Jina AI Reader: ${response.statusText}`);
+        const errorBody = await response.text();
+        throw new Error(`Failed to fetch from Jina AI Reader: ${response.status} ${response.statusText} - ${errorBody}`);
     }
     const pageContent = await response.text();
 
@@ -31,7 +41,7 @@ export async function POST(req: NextRequest) {
 
     const prompt = `
         You are an expert e-commerce data extractor for a luxury brand named 'Talha Luxe'.
-        Given the text content from a product page, your task is to extract the following information and return it as a single, valid JSON object.
+        Given the markdown content from a product page, your task is to extract the following information and return it as a single, valid JSON object.
         Do not include any text, markdown, or formatting outside of the raw JSON object.
 
         1. "name": The product title. Rewrite this title to sound more luxurious, premium, and appealing for our brand.
@@ -40,7 +50,7 @@ export async function POST(req: NextRequest) {
         4. "shortDescription": A very brief, one-sentence tagline for the product that is luxurious and enticing.
         5. "description": A compelling product description (2-3 paragraphs). Rewrite the original description to be more luxurious and elegant, suitable for our premium brand. Focus on the feeling, craftsmanship, and premium materials.
 
-        Here is the text content:
+        Here is the markdown content:
         ---
         ${pageContent}
         ---
