@@ -62,6 +62,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           url: darazUrl,
+          pageOptions: { onlyMainContent: true }
         })
     });
     
@@ -95,7 +96,10 @@ export async function POST(req: NextRequest) {
         1. "name": Rewrite the product title to sound 'Premium' and 'Luxe'. NEVER mention "Daraz".
         2. "price": Extract the product price in PKR. It must be a number. Do NOT add any profit here. We will add profit later.
         3. "description": Write a compelling, one-sentence luxury description. NEVER mention "Daraz".
-        4. "images": Extract ALL available unique product image URLs. It must be an array of strings. This should be a comprehensive list of all high-quality images.
+        4. "images": Extract ALL available unique product image URLs.
+           - IMPORTANT: This should be a comprehensive list of all high-quality product photos ONLY.
+           - DO NOT include any images that are logos, QR codes, app store badges, or promotional graphics.
+           - IGNORE URLs that contain words like "qrcode", "app-download", "logo", or "icon".
         5. "variants": Find all product variations like 'Color' or 'Size'. For each variant, find its corresponding image URL from the webpage content and add it to the 'variantImage' field. The 'value' is the specific option (e.g., 'Black', 'Large'). The 'type' is the category of option (e.g., 'Color', 'Size'). If no variants exist, return an empty array [].
     `;
 
@@ -123,10 +127,23 @@ export async function POST(req: NextRequest) {
     
     const productData = JSON.parse(aiResponseText);
 
-    // 3. Upload images to ImageKit
+    // 3. Filter and Upload images to ImageKit
     const allSourceImageUrls = new Set<string>();
-    if (productData.images && Array.isArray(productData.images)) {
-        productData.images.forEach((img: string) => img && allSourceImageUrls.add(img));
+    
+    // Filter out common QR code and icon URLs from base images
+    const cleanBaseImages = (productData.images || []).filter((img: string) => {
+        const lowerImg = img.toLowerCase();
+        return (
+            !lowerImg.includes("qrcode") && 
+            !lowerImg.includes("qr-code") &&
+            !lowerImg.includes("logo") &&
+            !lowerImg.includes("icon") &&
+            !lowerImg.includes("app-store")
+        );
+    });
+
+    if (cleanBaseImages && Array.isArray(cleanBaseImages)) {
+        cleanBaseImages.forEach((img: string) => img && allSourceImageUrls.add(img));
     }
     if (productData.variants && Array.isArray(productData.variants)) {
         productData.variants.forEach((v: any) => v.variantImage && allSourceImageUrls.add(v.variantImage));
@@ -159,7 +176,7 @@ export async function POST(req: NextRequest) {
     // 4. Apply business logic and add default values
     const finalPrice = (productData.price || 0) + 400;
 
-    const uploadedBaseImages = productData.images?.map((url: string) => urlMap.get(url)).filter(Boolean) as string[] || [];
+    const uploadedBaseImages = cleanBaseImages.map((url: string) => urlMap.get(url)).filter(Boolean) as string[] || [];
 
     const finalVariants = productData.variants?.map((v: any) => ({
         id: uuidv4(),
