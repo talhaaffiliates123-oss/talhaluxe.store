@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
         },
         body: JSON.stringify({
           url: darazUrl,
-          pageOptions: { onlyMainContent: true }
+          onlyMainContent: true
         })
     });
     
