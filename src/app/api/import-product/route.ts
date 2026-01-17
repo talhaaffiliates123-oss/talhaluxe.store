@@ -15,11 +15,12 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Daraz URL is required.' }, { status: 400 });
     }
 
+    // Explicitly check for API keys and return a clear error if they are missing
     if (!process.env.GEMINI_API_KEY) {
-        return NextResponse.json({ error: 'Gemini API key not configured.' }, { status: 500 });
+        return NextResponse.json({ error: 'Gemini API key not configured. Please add it to your .env.local file.' }, { status: 500 });
     }
     if (!process.env.FIRECRAWL_API_KEY) {
-        return NextResponse.json({ error: 'Firecrawl API key not configured.' }, { status: 500 });
+        return NextResponse.json({ error: 'Firecrawl API key not configured. Please add it to your .env.local file.' }, { status: 500 });
     }
 
     // 1. Fetch content from Firecrawl
