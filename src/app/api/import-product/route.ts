@@ -2,7 +2,7 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import Groq from 'groq-sdk';
 import * as admin from 'firebase-admin';
 
 // Initialize Firebase Admin
@@ -26,8 +26,8 @@ if (!admin.apps.length) {
 
 export async function POST(req: NextRequest) {
     // Check for API Keys
-    if (!process.env.GEMINI_API_KEY) {
-        return NextResponse.json({ error: 'Gemini API key not configured.' }, { status: 500 });
+    if (!process.env.GROQ_API_KEY) {
+        return NextResponse.json({ error: 'Groq API key not configured.' }, { status: 500 });
     }
     if (!process.env.FIRECRAWL_API_KEY) {
         return NextResponse.json({ error: 'Firecrawl API key not configured.' }, { status: 500 });
@@ -60,11 +60,10 @@ export async function POST(req: NextRequest) {
     const scrapeData = await firecrawlRes.json();
     const webText = scrapeData.data.markdown;
 
-    // 2. Process with Gemini
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+    // 2. Process with Groq
+    const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
-    const prompt = `
+    const systemPrompt = `
         You are an expert e-commerce data extractor for a luxury brand named 'Talha Luxe'.
         Given the markdown content from a product page, your task is to extract the following information and return it as a single, valid JSON object.
         Do not include any text, markdown, or formatting outside of the raw JSON object.
@@ -84,15 +83,30 @@ export async function POST(req: NextRequest) {
         3. "imageUrl": Find the highest quality main product image URL available in the text.
         4. "shortDescription": Write a very brief, one-sentence tagline for the product that is luxurious and enticing.
         5. "description": Write a compelling product description (2-3 paragraphs). Rewrite the original description to be more luxurious and elegant, suitable for our premium brand. Focus on the feeling, craftsmanship, and premium materials.
+    `;
 
+    const userPrompt = `
         Here is the markdown content:
         ---
         ${webText.substring(0, 15000)}
         ---
     `;
 
-    const result = await model.generateContent(prompt);
-    const aiResponseText = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
+    const chatCompletion = await groq.chat.completions.create({
+        messages: [
+            { role: 'system', content: systemPrompt },
+            { role: 'user', content: userPrompt }
+        ],
+        model: 'llama3-8b-8192',
+        temperature: 0.2,
+        response_format: { type: 'json_object' },
+    });
+
+    const aiResponseText = chatCompletion.choices[0]?.message?.content;
+    if (!aiResponseText) {
+        throw new Error('AI did not return a valid response.');
+    }
+    
     const productData = JSON.parse(aiResponseText);
 
     // 3. Apply business logic and add default values
@@ -130,10 +144,10 @@ export async function POST(req: NextRequest) {
     console.error('API Error:', error.stack);
     // Custom error messages for better user feedback
     let errorMessage = error.message || 'An unknown error occurred.';
-    if (error.message.includes("404 Not Found") && error.message.includes("is not found for API version")) {
-        errorMessage = `The AI model ('gemini-1.5-flash') was not found. Please ensure the 'Generative Language API' is enabled in your Google Cloud project and that the model is available in your project's region.`;
-    } else if (error.message.includes("API key not valid")) {
-        errorMessage = `Your Gemini API key is invalid. Please double-check the GEMINI_API_KEY in your .env.local file.`;
+    if (error.code === 'insufficient_quota') {
+        errorMessage = `Your Groq API quota has been exceeded. Please check your account.`;
+    } else if (error.status === 401) {
+        errorMessage = `Your Groq API key is invalid. Please double-check the GROQ_API_KEY in your environment variables.`;
     }
 
     return NextResponse.json({ error: errorMessage }, { status: 500 });
