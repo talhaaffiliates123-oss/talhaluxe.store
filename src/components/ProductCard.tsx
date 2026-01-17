@@ -22,16 +22,6 @@ export default function ProductCard({ product }: { product: Product }) {
         <h3 className="font-bold text-lg text-card-foreground leading-tight">{product.name}</h3>
         <p className="text-primary font-bold mt-2 text-xl">PKR {product.price}</p>
         
-        {product.variants && product.variants.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-2">
-            {(product.variants as Variant[]).map((v, index) => (
-              <span key={v.id || index} className="text-xs bg-muted px-2 py-1 rounded-md border text-muted-foreground">
-                {v.name}
-              </span>
-            ))}
-          </div>
-        )}
-
         <p className="text-sm text-muted-foreground mt-2 line-clamp-2 italic">"{product.shortDescription || product.description}"</p> 
       </Link>
       <Button asChild className="w-full mt-4">

@@ -74,20 +74,15 @@ export async function POST(req: NextRequest) {
           "name": "string",
           "price": number,
           "imageUrl": "string",
-          "shortDescription": "string",
-          "description": "string",
-          "variants": [
-            {"type": "Color", "value": "string"}
-          ]
+          "description": "string"
         }
         
         RULES:
-        1. "name": Rewrite the product title to sound more luxurious, premium, and appealing for our brand.
-        2. "price": Extract the product price in PKR. It must be a number. If you find a price range, take the lowest price. Do NOT add any profit here.
-        3. "imageUrl": Find the highest quality main product image URL available in the text.
-        4. "shortDescription": Write a very brief, one-sentence tagline for the product that is luxurious and enticing.
-        5. "description": Write a compelling product description (2-3 paragraphs). Rewrite the original description to be more luxurious and elegant, suitable for our premium brand. Focus on the feeling, craftsmanship, and premium materials.
-        6. "variants": Look for color or style options mentioned in the text (like "Black", "Brown", "Style A"). For each one, create an object with "type": "Color" and "value": "[The Color Name]". If no variants are found, return an empty array [].
+        1. IMPORTANT: NEVER mention the word "Daraz" in the name or description.
+        2. "name": Rewrite the product title to sound 'Premium' and 'Luxe'.
+        3. "price": Extract the product price in PKR. It must be a number. If you find a price range, take the lowest price. Do NOT add any profit here.
+        4. "imageUrl": Find the highest quality main product image URL available in the text.
+        5. "description": Write a compelling, one-sentence luxury description.
     `;
 
     const userPrompt = `
@@ -114,21 +109,14 @@ export async function POST(req: NextRequest) {
     
     const productData = JSON.parse(aiResponseText);
 
-    const transformedVariants = (productData.variants || []).map((v: { type: string; value: string }) => ({
-        id: uuidv4(),
-        name: v.value,
-        stock: 100, // Default stock for new variants
-        imageUrl: '', // No specific image URL from this simplified import
-    }));
-
     // 3. Apply business logic and add default values
-    const finalPrice = (productData.price || 0) + 800;
+    const finalPrice = (productData.price || 0) + 400;
 
     // 4. Save to Firestore
     const productsCollection = firestore.collection('products');
     const newProduct = {
         name: productData.name || 'Untitled Product',
-        shortDescription: productData.shortDescription || 'Exquisite new arrival.',
+        shortDescription: productData.description || 'Exquisite new arrival.',
         description: productData.description || 'A stunning piece from our latest collection.',
         price: finalPrice,
         discountedPrice: null,
@@ -140,7 +128,7 @@ export async function POST(req: NextRequest) {
         isNewArrival: true,
         isBestSeller: false,
         onSale: false,
-        variants: transformedVariants,
+        variants: [],
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
     };
 
