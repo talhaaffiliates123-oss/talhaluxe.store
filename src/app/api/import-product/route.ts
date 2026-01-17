@@ -17,24 +17,29 @@ export async function POST(req: NextRequest) {
     if (!process.env.GEMINI_API_KEY) {
         return NextResponse.json({ error: 'Gemini API key not configured.' }, { status: 500 });
     }
-    if (!process.env.JINA_API_KEY) {
-        return NextResponse.json({ error: 'Jina API key not configured.' }, { status: 500 });
+    if (!process.env.FIRECRAWL_API_KEY) {
+        return NextResponse.json({ error: 'Firecrawl API key not configured.' }, { status: 500 });
     }
 
-    // 1. Fetch content from Jina AI Reader
-    const jinaUrl = `https://r.jina.ai/${darazUrl}`;
-    const response = await fetch(jinaUrl, {
+    // 1. Fetch content from Firecrawl
+    const firecrawlRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
+        method: "POST",
         headers: {
-            "Authorization": `Bearer ${process.env.JINA_API_KEY}`,
-            "X-Return-Format": "markdown"
-        }
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${process.env.FIRECRAWL_API_KEY}`
+        },
+        body: JSON.stringify({
+          url: darazUrl,
+          pageOptions: { onlyMainContent: true }
+        })
     });
-
-    if (!response.ok) {
-        const errorBody = await response.text();
-        throw new Error(`Failed to fetch from Jina AI Reader: ${response.status} ${response.statusText} - ${errorBody}`);
+    
+    if (!firecrawlRes.ok) {
+        const errorBody = await firecrawlRes.text();
+        throw new Error(`Failed to fetch from Firecrawl: ${firecrawlRes.status} ${firecrawlRes.statusText} - ${errorBody}`);
     }
-    const pageContent = await response.text();
+    const scrapeData = await firecrawlRes.json();
+    const webText = scrapeData.data.markdown;
 
     // 2. Process with Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
@@ -45,24 +50,34 @@ export async function POST(req: NextRequest) {
         Given the markdown content from a product page, your task is to extract the following information and return it as a single, valid JSON object.
         Do not include any text, markdown, or formatting outside of the raw JSON object.
 
-        1. "name": The product title. Rewrite this title to sound more luxurious, premium, and appealing for our brand.
-        2. "price": The product price as a number. Extract only the numerical value, removing any currency symbols or commas. If you find a price range, take the lowest price.
-        3. "imageUrl": The main product image URL. Find the highest quality image URL available in the text.
-        4. "shortDescription": A very brief, one-sentence tagline for the product that is luxurious and enticing.
-        5. "description": A compelling product description (2-3 paragraphs). Rewrite the original description to be more luxurious and elegant, suitable for our premium brand. Focus on the feeling, craftsmanship, and premium materials.
+        The JSON object must have these keys:
+        {
+          "name": "string",
+          "price": number,
+          "imageUrl": "string",
+          "shortDescription": "string",
+          "description": "string"
+        }
+        
+        RULES:
+        1. "name": Rewrite the product title to sound more luxurious, premium, and appealing for our brand.
+        2. "price": Extract the product price in PKR. It must be a number. If you find a price range, take the lowest price. Do NOT add any profit here.
+        3. "imageUrl": Find the highest quality main product image URL available in the text.
+        4. "shortDescription": Write a very brief, one-sentence tagline for the product that is luxurious and enticing.
+        5. "description": Write a compelling product description (2-3 paragraphs). Rewrite the original description to be more luxurious and elegant, suitable for our premium brand. Focus on the feeling, craftsmanship, and premium materials.
 
         Here is the markdown content:
         ---
-        ${pageContent}
+        ${webText.substring(0, 15000)}
         ---
     `;
 
     const result = await model.generateContent(prompt);
-    const aiResponseText = result.response.text();
+    const aiResponseText = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
     const productData = JSON.parse(aiResponseText);
 
     // 3. Apply business logic
-    const finalPrice = productData.price + 800;
+    const finalPrice = (productData.price || 0) + 800;
 
     // 4. Save to Firestore
     const productsCollection = firestore.collection('products');
@@ -72,9 +87,9 @@ export async function POST(req: NextRequest) {
         description: productData.description,
         price: finalPrice,
         discountedPrice: null,
-        category: 'uncategorized', // Default category
+        category: 'uncategorized',
         imageUrls: [productData.imageUrl],
-        stock: 100, // Default stock
+        stock: 100,
         rating: 0,
         reviewCount: 0,
         isNewArrival: true,
@@ -93,7 +108,7 @@ export async function POST(req: NextRequest) {
     }, { status: 200 });
 
   } catch (error: any) {
-    console.error('API Error:', error);
+    console.error('API Error:', error.stack);
     return NextResponse.json({ error: error.message || 'An unknown error occurred.' }, { status: 500 });
   }
 }
