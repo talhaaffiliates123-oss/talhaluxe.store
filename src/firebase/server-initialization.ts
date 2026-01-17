@@ -15,22 +15,6 @@ export function initializeFirebase() {
     };
   }
 
-  try {
-    if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-      throw new Error('Firebase Admin SDK service account JSON is not set in environment variables.');
-    }
-
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
-
-    const app = admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-    const firestore = admin.firestore();
-    console.log('Firebase Admin SDK initialized successfully.');
-    return { app, firestore };
-  } catch (error: any) {
-    console.error('Firebase Admin SDK initialization error:', error.stack);
-    // Re-throw the error to ensure the calling code knows initialization failed.
-    throw new Error(`Firebase Admin SDK failed to initialize: ${error.message}`);
-  }
+  // This functionality is disabled because environment keys were removed.
+  throw new Error('Firebase Admin SDK is not configured. Please add FIREBASE_SERVICE_ACCOUNT to your environment variables to enable server-side rendering.');
 }
