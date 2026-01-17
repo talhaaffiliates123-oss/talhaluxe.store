@@ -1,3 +1,4 @@
+
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -29,8 +30,7 @@ export async function POST(req: NextRequest) {
           "Authorization": `Bearer ${process.env.FIRECRAWL_API_KEY}`
         },
         body: JSON.stringify({
-          url: darazUrl,
-          pageOptions: { onlyMainContent: true }
+          url: darazUrl
         })
     });
     
