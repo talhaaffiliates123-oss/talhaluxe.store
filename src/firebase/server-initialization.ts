@@ -7,7 +7,7 @@ export function initializeFirebase() {
     throw new Error('This function should only be called on the server.');
   }
 
-  // Check if the app is already initialized
+  // Check if the app is already initialized to prevent errors
   if (admin.apps.length > 0) {
     return { 
         app: admin.app(), 
@@ -15,18 +15,13 @@ export function initializeFirebase() {
     };
   }
 
-  // Check for necessary environment variables
-  const serviceAccount = {
-    projectId: process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
-  };
-
-  if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-    throw new Error('Firebase Admin SDK service account credentials are not set in environment variables. Please check FIREBASE_PRIVATE_KEY, FIREBASE_CLIENT_EMAIL, and NEXT_PUBLIC_FIREBASE_PROJECT_ID.');
-  }
-
   try {
+    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
+    if (!serviceAccountJson) {
+      throw new Error('The FIREBASE_SERVICE_ACCOUNT environment variable is not set. This is required for server-side operations.');
+    }
+    const serviceAccount = JSON.parse(serviceAccountJson);
+
     const app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
