@@ -42,7 +42,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Process with Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.0-pro-001"});
+    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
 
     const prompt = `
         You are an expert e-commerce data extractor for a luxury brand named 'Talha Luxe'.
@@ -75,19 +75,19 @@ export async function POST(req: NextRequest) {
     const aiResponseText = result.response.text().replace(/```json/g, '').replace(/```/g, '').trim();
     const productData = JSON.parse(aiResponseText);
 
-    // 3. Apply business logic
+    // 3. Apply business logic and add default values
     const finalPrice = (productData.price || 0) + 800;
 
     // 4. Save to Firestore
     const productsCollection = firestore.collection('products');
     const newProduct = {
-        name: productData.name,
-        shortDescription: productData.shortDescription,
-        description: productData.description,
+        name: productData.name || 'Untitled Product',
+        shortDescription: productData.shortDescription || 'Exquisite new arrival.',
+        description: productData.description || 'A stunning piece from our latest collection.',
         price: finalPrice,
         discountedPrice: null,
         category: 'uncategorized',
-        imageUrls: [productData.imageUrl],
+        imageUrls: productData.imageUrl ? [productData.imageUrl] : [],
         stock: 100,
         rating: 0,
         reviewCount: 0,
