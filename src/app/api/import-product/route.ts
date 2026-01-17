@@ -15,7 +15,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Daraz URL is required.' }, { status: 400 });
     }
 
-    // Explicitly check for API keys and return a clear error if they are missing
     if (!process.env.GEMINI_API_KEY) {
         return NextResponse.json({ error: 'Gemini API key not configured. Please add it to your .env.local file.' }, { status: 500 });
     }
@@ -31,7 +30,7 @@ export async function POST(req: NextRequest) {
           "Authorization": `Bearer ${process.env.FIRECRAWL_API_KEY}`
         },
         body: JSON.stringify({
-          url: darazUrl
+          url: darazUrl,
         })
     });
     
@@ -44,7 +43,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Process with Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
+    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
 
     const prompt = `
         You are an expert e-commerce data extractor for a luxury brand named 'Talha Luxe'.
