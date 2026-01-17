@@ -16,11 +16,16 @@ export function initializeFirebase() {
   }
 
   try {
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-    if (!serviceAccountJson) {
-      throw new Error('The FIREBASE_SERVICE_ACCOUNT environment variable is not set. This is required for server-side operations.');
+    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !process.env.FIREBASE_PRIVATE_KEY) {
+      throw new Error('Firebase Admin SDK environment variables are not set. This is required for server-side operations.');
     }
-    const serviceAccount = JSON.parse(serviceAccountJson);
+
+    const serviceAccount: admin.ServiceAccount = {
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      // Replace escaped newlines with actual newlines
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+    };
 
     const app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
