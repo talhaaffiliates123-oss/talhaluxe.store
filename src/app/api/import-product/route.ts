@@ -97,7 +97,7 @@ export async function POST(req: NextRequest) {
             { role: 'system', content: systemPrompt },
             { role: 'user', content: userPrompt }
         ],
-        model: 'llama3-8b-8192',
+        model: 'llama-3.1-8b-instant',
         temperature: 0.2,
         response_format: { type: 'json_object' },
     });
