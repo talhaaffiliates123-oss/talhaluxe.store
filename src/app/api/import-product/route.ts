@@ -2,18 +2,23 @@
 export const runtime = 'nodejs';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { initializeFirebase } from '@/firebase/server-initialization';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import * as admin from 'firebase-admin';
 
-export async function POST(req: NextRequest) {
-  try {
-    const { firestore } = initializeFirebase();
-    const { url: darazUrl } = await req.json();
-
-    if (!darazUrl) {
-      return NextResponse.json({ error: 'Daraz URL is required.' }, { status: 400 });
+// Initialize Firebase Admin
+if (!admin.apps.length) {
+    try {
+        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT as string);
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+        });
+    } catch (error: any) {
+        console.error('Firebase Admin SDK initialization error:', error.stack);
     }
+}
+
+export async function POST(req: NextRequest) {
+    // Check for API Keys
     if (!process.env.GEMINI_API_KEY) {
         return NextResponse.json({ error: 'Gemini API key not configured.' }, { status: 500 });
     }
@@ -21,6 +26,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'Firecrawl API key not configured.' }, { status: 500 });
     }
 
+  try {
+    const firestore = admin.firestore();
+    const { url: darazUrl } = await req.json();
+
+    if (!darazUrl) {
+      return NextResponse.json({ error: 'Daraz URL is required.' }, { status: 400 });
+    }
+    
     // 1. Fetch content from Firecrawl
     const firecrawlRes = await fetch("https://api.firecrawl.dev/v1/scrape", {
         method: "POST",
@@ -108,6 +121,14 @@ export async function POST(req: NextRequest) {
 
   } catch (error: any) {
     console.error('API Error:', error.stack);
-    return NextResponse.json({ error: error.message || 'An unknown error occurred.' }, { status: 500 });
+    // Custom error messages for better user feedback
+    let errorMessage = error.message || 'An unknown error occurred.';
+    if (error.message.includes("404 Not Found") && error.message.includes("is not found for API version")) {
+        errorMessage = `The AI model ('gemini-pro') was not found. Please ensure the 'Generative Language API' is enabled in your Google Cloud project and that the model is available in your project's region.`;
+    } else if (error.message.includes("API key not valid")) {
+        errorMessage = `Your Gemini API key is invalid. Please double-check the GEMINI_API_KEY in your .env.local file.`;
+    }
+
+    return NextResponse.json({ error: errorMessage }, { status: 500 });
   }
 }
