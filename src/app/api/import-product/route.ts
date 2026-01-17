@@ -55,7 +55,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Process with Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-    const model = genAI.getGenerativeModel({ model: "gemini-pro"});
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest"});
 
     const prompt = `
         You are an expert e-commerce data extractor for a luxury brand named 'Talha Luxe'.
@@ -124,7 +124,7 @@ export async function POST(req: NextRequest) {
     // Custom error messages for better user feedback
     let errorMessage = error.message || 'An unknown error occurred.';
     if (error.message.includes("404 Not Found") && error.message.includes("is not found for API version")) {
-        errorMessage = `The AI model ('gemini-pro') was not found. Please ensure the 'Generative Language API' is enabled in your Google Cloud project and that the model is available in your project's region.`;
+        errorMessage = `The AI model ('gemini-1.5-pro-latest') was not found. Please ensure the 'Generative Language API' is enabled in your Google Cloud project and that the model is available in your project's region.`;
     } else if (error.message.includes("API key not valid")) {
         errorMessage = `Your Gemini API key is invalid. Please double-check the GEMINI_API_KEY in your .env.local file.`;
     }
