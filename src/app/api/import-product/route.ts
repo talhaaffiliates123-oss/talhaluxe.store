@@ -8,14 +8,21 @@ import * as admin from 'firebase-admin';
 // Initialize Firebase Admin
 if (!admin.apps.length) {
     try {
-        const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT as string);
+        const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+        if (!serviceAccountString) {
+            throw new Error('FIREBASE_SERVICE_ACCOUNT environment variable is not set.');
+        }
+        const serviceAccount = JSON.parse(serviceAccountString);
         admin.initializeApp({
             credential: admin.credential.cert(serviceAccount),
         });
     } catch (error: any) {
         console.error('Firebase Admin SDK initialization error:', error.stack);
+        // We throw a specific error here to be caught by the outer try/catch
+        throw new Error(`Firebase Admin SDK failed to initialize: ${error.message}`);
     }
 }
+
 
 export async function POST(req: NextRequest) {
     // Check for API Keys
@@ -55,7 +62,7 @@ export async function POST(req: NextRequest) {
 
     // 2. Process with Gemini
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY as string);
-    const model = genAI.getGenerativeModel({ model: "gemini-1.5-pro-latest"});
+    const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"});
 
     const prompt = `
         You are an expert e-commerce data extractor for a luxury brand named 'Talha Luxe'.
@@ -124,7 +131,7 @@ export async function POST(req: NextRequest) {
     // Custom error messages for better user feedback
     let errorMessage = error.message || 'An unknown error occurred.';
     if (error.message.includes("404 Not Found") && error.message.includes("is not found for API version")) {
-        errorMessage = `The AI model ('gemini-1.5-pro-latest') was not found. Please ensure the 'Generative Language API' is enabled in your Google Cloud project and that the model is available in your project's region.`;
+        errorMessage = `The AI model ('gemini-1.5-flash') was not found. Please ensure the 'Generative Language API' is enabled in your Google Cloud project and that the model is available in your project's region.`;
     } else if (error.message.includes("API key not valid")) {
         errorMessage = `Your Gemini API key is invalid. Please double-check the GEMINI_API_KEY in your .env.local file.`;
     }
