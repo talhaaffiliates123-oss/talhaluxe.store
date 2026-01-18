@@ -14,8 +14,8 @@ type DealCardProps = {
 };
 
 export default function DealCard({ deal }: DealCardProps) {
-  const allImages = deal.products
-    .flatMap(p => p.imageUrls || [])
+  const allImages = (deal.products || [])
+    .flatMap(p => p?.imageUrls || [])
     .map((urlOrObj: any) => (typeof urlOrObj === 'string' ? urlOrObj : urlOrObj?.value))
     .filter(Boolean) as string[];
     
@@ -53,7 +53,7 @@ export default function DealCard({ deal }: DealCardProps) {
                 <Badge variant="secondary">Bundle Deal</Badge>
                 <div className="flex items-center gap-2 text-sm text-muted-foreground">
                     <Package className="h-4 w-4"/>
-                    <span>{deal.products.length} Products</span>
+                    <span>{deal.products?.length || 0} Products</span>
                 </div>
             </div>
           <h3 className="mt-2 font-semibold truncate text-lg">
@@ -61,7 +61,7 @@ export default function DealCard({ deal }: DealCardProps) {
           </h3>
           <p className="text-sm text-muted-foreground line-clamp-2 h-10">{deal.description}</p>
           <div className="mt-2 flex items-baseline gap-2">
-            <p className="text-xl font-bold">PKR {deal.dealPrice.toFixed(2)}</p>
+            <p className="text-xl font-bold">PKR {(Number(deal.dealPrice) || 0).toFixed(2)}</p>
           </div>
           <Button
             asChild

@@ -83,15 +83,15 @@ export default function DealDetailClient({ id }: DealDetailClientProps) {
   const handleAddToCart = () => {
     if (!deal) return;
     
-    const dealImageUrls = deal.products
-      .flatMap(p => p.imageUrls || [])
+    const dealImageUrls = (deal.products || [])
+      .flatMap(p => p?.imageUrls || [])
       .map((urlOrObj: any) => (typeof urlOrObj === 'string' ? urlOrObj : urlOrObj?.value))
       .filter(Boolean) as string[];
 
     const dealAsProduct: Product = {
       id: `deal_${deal.id}`, // Unique ID for cart
       name: deal.name,
-      shortDescription: `Bundle of ${deal.products.length} products.`,
+      shortDescription: `Bundle of ${deal.products?.length || 0} products.`,
       description: deal.description,
       price: deal.dealPrice,
       category: 'deals',
@@ -135,7 +135,7 @@ export default function DealDetailClient({ id }: DealDetailClientProps) {
             <p className="mt-4 text-lg text-muted-foreground">{deal.description}</p>
             <div className="mt-6">
                 <p className="text-sm text-muted-foreground">Total Deal Price</p>
-                <p className="text-4xl font-bold">PKR {deal.dealPrice.toFixed(2)}</p>
+                <p className="text-4xl font-bold">PKR {(Number(deal.dealPrice) || 0).toFixed(2)}</p>
             </div>
             <Button size="lg" className="mt-6 w-full sm:w-auto" onClick={handleAddToCart}>
                 <ShoppingCart className="mr-2 h-5 w-5" />
@@ -145,10 +145,12 @@ export default function DealDetailClient({ id }: DealDetailClientProps) {
         
         <Card>
             <CardHeader>
-                <CardTitle>Products in this Deal ({deal.products.length})</CardTitle>
+                <CardTitle>Products in this Deal ({deal.products?.length || 0})</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {deal.products.map((product, index) => {
+                {(deal.products || []).map((product, index) => {
+                    if (!product) return null; // Defensive check
+                    
                     const imageUrl = product.imageUrls?.[0];
                     const displayUrl = (typeof imageUrl === 'string' ? imageUrl : (imageUrl as any)?.value) || 'https://placehold.co/100x100';
 
@@ -158,7 +160,7 @@ export default function DealDetailClient({ id }: DealDetailClientProps) {
                             <Link href={`/product/${product.id}`} className="block flex-shrink-0">
                                 <Image 
                                     src={displayUrl}
-                                    alt={product.name} 
+                                    alt={product.name || 'Product Image'} 
                                     width={80} 
                                     height={80} 
                                     className="rounded-md border object-cover"
@@ -168,10 +170,10 @@ export default function DealDetailClient({ id }: DealDetailClientProps) {
                                 <Link href={`/product/${product.id}`} className="block">
                                     <p className="font-semibold hover:underline">{product.name}</p>
                                 </Link>
-                                <p className="text-sm text-muted-foreground line-through">PKR {product.price.toFixed(2)}</p>
+                                <p className="text-sm text-muted-foreground line-through">PKR {(Number(product.price) || 0).toFixed(2)}</p>
                             </div>
                         </div>
-                        {index < deal.products.length - 1 && <Separator className="my-4" />}
+                        {index < (deal.products?.length || 0) - 1 && <Separator className="my-4" />}
                     </div>
                 )})}
             </CardContent>
