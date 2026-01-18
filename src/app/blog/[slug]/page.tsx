@@ -1,5 +1,5 @@
 
-import { Suspense } from 'react';
+import { Suspense, use } from 'react';
 import BlogPostClient from './blog-post-client';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card } from '@/components/ui/card';
@@ -31,8 +31,9 @@ function BlogPostSkeleton() {
     )
 }
 
-export default function BlogPostPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
+export default function BlogPostPage({ params }: { params: Promise<{ slug: string }> }) {
+  const resolvedParams = use(params);
+  const { slug } = resolvedParams;
 
   if (!slug) {
     return null;
