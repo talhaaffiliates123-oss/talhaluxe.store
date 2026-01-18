@@ -29,7 +29,8 @@ service cloud.firestore {
     }
 
     match /deals/{dealId} {
-        allow read, write: if isAdmin();
+        allow read: if true;
+        allow write: if isAdmin();
     }
     
     match /blog/{postId} {
