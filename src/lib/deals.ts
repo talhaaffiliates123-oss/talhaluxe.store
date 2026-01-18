@@ -12,6 +12,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
+  where,
 } from 'firebase/firestore';
 import type { Deal } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
@@ -28,6 +29,15 @@ export async function getDeals(db: Firestore): Promise<Deal[]> {
   return snapshot.docs.map(
     (doc) => ({ ...doc.data(), id: doc.id } as Deal)
   );
+}
+
+export async function getActiveDeals(db: Firestore): Promise<Deal[]> {
+    const dealsCollection = getDealsCollection(db);
+    const q = query(dealsCollection, where('isActive', '==', true), orderBy('createdAt', 'desc'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(
+      (doc) => ({ ...doc.data(), id: doc.id } as Deal)
+    );
 }
 
 export async function getDeal(

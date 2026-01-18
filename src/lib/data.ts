@@ -10,6 +10,7 @@ export const categories: Category[] = [
   { id: '6', name: 'New Arrivals', slug: 'new-arrivals' },
   { id: '7', name: 'Best Sellers', slug: 'best-sellers' },
   { id: '8', name: 'Sale', slug: 'sale' },
+  { id: '9', name: 'Deals', slug: 'deals' },
 ];
 
 // Product data is now managed in Firestore.

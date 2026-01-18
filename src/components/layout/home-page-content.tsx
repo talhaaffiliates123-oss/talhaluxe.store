@@ -6,19 +6,22 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowRight, Mail } from 'lucide-react';
 import ProductCard from '@/components/products/product-card';
-import type { Product } from '@/lib/types';
+import type { Product, Deal } from '@/lib/types';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useMemo } from 'react';
+import DealCard from '@/components/deals/deal-card';
 
 interface HomePageContentProps {
   products: Product[];
+  deals: Deal[];
 }
 
-export default function HomePageContent({ products: initialProducts }: HomePageContentProps) {
+export default function HomePageContent({ products: initialProducts, deals: initialDeals }: HomePageContentProps) {
   const heroImageUrl = "https://images.unsplash.com/photo-1614208194190-5bf690ad8a98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYXNoaW9uJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
   
   const products = initialProducts || [];
-  const loading = !initialProducts;
+  const deals = initialDeals || [];
+  const loading = !initialProducts || !initialDeals;
 
   const { newArrivals, bestSellers, saleProducts } = useMemo(() => {
     const newArrivals = products.filter((p) => p.isNewArrival).slice(0, 4);
@@ -26,6 +29,10 @@ export default function HomePageContent({ products: initialProducts }: HomePageC
     const saleProducts = products.filter(p => p.onSale).slice(0, 2);
     return { newArrivals, bestSellers, saleProducts };
   }, [products]);
+
+  const featuredDeals = useMemo(() => {
+    return deals.slice(0, 2); // Show up to 2 deals
+  }, [deals]);
 
 
   return (
@@ -87,6 +94,28 @@ export default function HomePageContent({ products: initialProducts }: HomePageC
           ))}
         </div>
       </section>
+
+       {/* Deals Section */}
+       {deals.length > 0 && (
+          <section className="container mx-auto px-4">
+            <div className="flex justify-between items-baseline mb-8">
+              <h2 className="text-3xl font-bold tracking-tight font-headline">
+                Today's Deals
+              </h2>
+              <Link
+                href="/deals"
+                className="text-sm font-medium text-accent hover:text-accent/80 flex items-center gap-1"
+              >
+                View All <ArrowRight className="h-4 w-4" />
+              </Link>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
+              {loading ? Array.from({length: 2}).map((_,i) => <Skeleton key={i} className='h-96 w-full'/>) : featuredDeals.map((deal) => (
+                <DealCard key={deal.id} deal={deal} />
+              ))}
+            </div>
+          </section>
+      )}
 
       {/* Limited Time Offer */}
       <section className="bg-muted">

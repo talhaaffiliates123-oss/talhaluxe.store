@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -47,6 +48,7 @@ export function Header() {
 
   const navLinks = [
     { href: '/shop', label: 'Shop' },
+    { href: '/deals', label: 'Deals' },
     { href: '/blog', label: 'Blog' },
     { href: '/shop?category=new-arrivals', label: 'New Arrivals' },
     { href: '/shop?category=sale', label: 'Sale' },

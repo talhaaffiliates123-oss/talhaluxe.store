@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Minus, Plus, ShoppingCart, Trash2, X } from 'lucide-react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
+import { Badge } from '@/components/ui/badge';
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, subtotal, shippingTotal, totalPrice, clearCart } = useCart();
@@ -36,6 +37,10 @@ export default function CartPage() {
           {items.map(({ product, quantity }) => {
             const imageUrl = product.imageUrls?.[0] || 'https://placehold.co/128x128/EEE/31343C?text=No+Image';
             const price = product.discountedPrice ?? product.price;
+            
+            const isDeal = product.id.startsWith('deal_');
+            const itemLink = isDeal ? `/deals/${product.id.replace('deal_', '')}` : `/product/${product.id}`;
+
             return (
               <Card key={product.id} className="overflow-hidden">
                 <CardContent className="p-4 flex gap-4">
@@ -51,8 +56,9 @@ export default function CartPage() {
                   <div className="flex flex-1 flex-col justify-between gap-2">
                     <div>
                       <h3 className="font-semibold leading-tight">
-                        <Link href={`/product/${product.id}`}>{product.name}</Link>
+                        <Link href={itemLink}>{product.name}</Link>
                       </h3>
+                      {isDeal && <Badge variant="secondary" className="mt-1">Bundle Deal</Badge>}
                       <p className="text-sm text-muted-foreground hidden sm:block">{product.shortDescription}</p>
                       <p className="sm:hidden mt-1 font-bold">PKR {price.toFixed(2)}</p>
                     </div>

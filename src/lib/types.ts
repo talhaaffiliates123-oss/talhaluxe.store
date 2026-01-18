@@ -63,7 +63,7 @@ export type Order = {
 export type Category = {
   id: string;
   name: string;
-  slug: 'watches' | 'bags' | 'jewelry' | 'sunglasses' | 'wallets' | 'new-arrivals' | 'best-sellers' | 'sale';
+  slug: 'watches' | 'bags' | 'jewelry' | 'sunglasses' | 'wallets' | 'new-arrivals' | 'best-sellers' | 'sale' | 'deals';
 };
 
 export type Review = {
