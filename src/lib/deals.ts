@@ -33,11 +33,22 @@ export async function getDeals(db: Firestore): Promise<Deal[]> {
 
 export async function getActiveDeals(db: Firestore): Promise<Deal[]> {
     const dealsCollection = getDealsCollection(db);
-    const q = query(dealsCollection, where('isActive', '==', true), orderBy('createdAt', 'desc'));
+    // Removed orderBy from the query to prevent issues with missing composite indexes.
+    // Sorting will be handled client-side.
+    const q = query(dealsCollection, where('isActive', '==', true));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(
+    const deals = snapshot.docs.map(
       (doc) => ({ ...doc.data(), id: doc.id } as Deal)
     );
+
+    // Sort deals by creation date on the client, newest first.
+    deals.sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : 0;
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : 0;
+        return dateB - dateA;
+    });
+
+    return deals;
 }
 
 export async function getDeal(
