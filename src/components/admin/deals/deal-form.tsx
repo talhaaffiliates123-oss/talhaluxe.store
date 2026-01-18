@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useForm, Controller, useFieldArray } from 'react-hook-form';
@@ -16,7 +17,7 @@ import { addDeal, updateDeal } from '@/lib/deals';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useState, useEffect, useMemo } from 'react';
-import { PlusCircle, Search, Trash2 } from 'lucide-react';
+import { PlusCircle, Search, Trash2, X } from 'lucide-react';
 import { Drawer, DrawerContent, DrawerHeader, DrawerTitle, DrawerTrigger, DrawerClose } from '@/components/ui/drawer';
 import { Checkbox } from '@/components/ui/checkbox';
 import Image from 'next/image';
@@ -71,7 +72,7 @@ const ProductSelector = ({ onProductSelect }: { onProductSelect: (product: Produ
                     filteredProducts.map(product => (
                         <div key={product.id} className="flex items-center justify-between p-2 border rounded-md">
                             <div className="flex items-center gap-3">
-                                <Image src={product.imageUrls[0]} alt={product.name} width={40} height={40} className="rounded-md object-cover"/>
+                                <Image src={(product.imageUrls && product.imageUrls[0]) || 'https://placehold.co/40x40'} alt={product.name} width={40} height={40} className="rounded-md object-cover"/>
                                 <div>
                                     <p className="font-medium">{product.name}</p>
                                     <p className="text-sm text-muted-foreground">PKR {product.price}</p>
@@ -88,6 +89,49 @@ const ProductSelector = ({ onProductSelect }: { onProductSelect: (product: Produ
     );
 };
 
+const DealProductCard = ({ control, register, index, removeProduct }: { control: any, register: any, index: number, removeProduct: (index: number) => void }) => {
+    const { fields, append, remove } = useFieldArray({
+      control,
+      name: `products.${index}.imageUrls`
+    });
+  
+    return (
+      <Card className="p-4 space-y-4">
+        <div className="flex justify-between items-start">
+          <div className="flex-1">
+            <Label>Product Name</Label>
+            <Input {...register(`products.${index}.name`)} />
+          </div>
+          <Button type="button" variant="destructive" size="icon" onClick={() => removeProduct(index)}>
+            <Trash2 className="h-4 w-4"/>
+          </Button>
+        </div>
+        <div>
+          <Label>Price in Deal (PKR)</Label>
+          <Input type="number" {...register(`products.${index}.price`)} />
+        </div>
+        
+        <div>
+          <Label>Image URLs</Label>
+          <div className="space-y-2">
+            {fields.map((field, imageIndex) => (
+              <div key={field.id} className="flex items-center gap-2">
+                <Input {...register(`products.${index}.imageUrls.${imageIndex}.value`)} />
+                <Button type="button" variant="ghost" size="icon" onClick={() => remove(imageIndex)}>
+                  <X className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={() => append({ value: '' })}>
+              <PlusCircle className="mr-2 h-4 w-4" /> Add Image URL
+            </Button>
+          </div>
+        </div>
+      </Card>
+    );
+  };
+
+
 export default function DealForm({ initialData }: DealFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
@@ -103,9 +147,12 @@ export default function DealForm({ initialData }: DealFormProps) {
     formState: { errors },
   } = useForm<DealFormData>({
     resolver: zodResolver(dealSchema),
-    defaultValues: initialData ? {
+    defaultValues: isEditMode && initialData ? {
         ...initialData,
-        products: initialData.products.map(p => ({ ...p, imageUrlsRaw: (p.imageUrls || []).join('\n') }))
+        products: initialData.products.map(p => ({ 
+            ...p, 
+            imageUrls: (p.imageUrls || []).map(url => ({ value: url }))
+        }))
     } : {
       name: '',
       description: '',
@@ -122,10 +169,14 @@ export default function DealForm({ initialData }: DealFormProps) {
 
   const handleProductSelect = (product: Product) => {
     const productCopy = JSON.parse(JSON.stringify(product));
-    append({ ...productCopy, imageUrlsRaw: (productCopy.imageUrls || []).join('\n') });
+    const transformedProduct = {
+      ...productCopy,
+      imageUrls: (productCopy.imageUrls || []).map((url: string) => ({ value: url }))
+    };
+    append(transformedProduct);
   };
   
-  const onSubmit = async (data: any) => { // Use 'any' to handle the temporary 'imageUrlsRaw' field
+  const onSubmit = async (data: any) => { 
     if (!firestore) {
       toast({ variant: 'destructive', title: 'Error', description: 'Firebase services not available.' });
       return;
@@ -135,18 +186,15 @@ export default function DealForm({ initialData }: DealFormProps) {
     try {
         const dealToSave = {
             ...data,
-            products: data.products.map((p: any) => {
-                const { imageUrlsRaw, ...rest } = p;
-                return {
-                    ...rest,
-                    imageUrls: imageUrlsRaw ? imageUrlsRaw.split('\n').filter(Boolean) : []
-                };
-            })
+            products: data.products.map((p: any) => ({
+                ...p,
+                imageUrls: (p.imageUrls || []).map((img: { value: string }) => img.value).filter(Boolean)
+            }))
         };
 
 
-      if (isEditMode) {
-        await updateDeal(firestore, initialData!.id, dealToSave);
+      if (isEditMode && initialData) {
+        await updateDeal(firestore, initialData.id, dealToSave);
         toast({ title: 'Success', description: 'Deal updated successfully.' });
       } else {
         await addDeal(firestore, dealToSave);
@@ -192,25 +240,13 @@ export default function DealForm({ initialData }: DealFormProps) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {fields.map((field, index) => (
-                           <Card key={field.id} className="p-4 space-y-4">
-                             <div className="flex justify-between items-start">
-                                <div>
-                                    <Label>Product Name</Label>
-                                    <Input {...register(`products.${index}.name`)} />
-                                </div>
-                                <Button type="button" variant="destructive" size="icon" onClick={() => remove(index)}>
-                                    <Trash2 className="h-4 w-4"/>
-                                </Button>
-                             </div>
-                             <div>
-                                <Label>Price in Deal (PKR)</Label>
-                                <Input type="number" {...register(`products.${index}.price`)} />
-                             </div>
-                             <div>
-                                <Label htmlFor={`products.${index}.imageUrlsRaw`}>Image URLs (one per line)</Label>
-                                <Textarea id={`products.${index}.imageUrlsRaw`} {...register(`products.${index}.imageUrlsRaw` as const)} rows={3} />
-                             </div>
-                           </Card>
+                           <DealProductCard 
+                             key={field.id} 
+                             control={control} 
+                             register={register} 
+                             index={index} 
+                             removeProduct={remove} 
+                           />
                         ))}
                          <Drawer>
                             <DrawerTrigger asChild>
