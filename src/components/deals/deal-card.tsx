@@ -14,7 +14,7 @@ type DealCardProps = {
 };
 
 export default function DealCard({ deal }: DealCardProps) {
-  const allImages = deal.products.flatMap(p => p.imageUrls).filter(Boolean);
+  const allImages = deal.products.flatMap(p => p.imageUrls || []).filter(Boolean);
   const displayImages = allImages.length > 0 ? allImages : ['https://placehold.co/600x600/EEE/31343C?text=Deal'];
 
   return (

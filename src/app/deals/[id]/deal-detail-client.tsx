@@ -90,7 +90,7 @@ export default function DealDetailClient({ id }: DealDetailClientProps) {
       description: deal.description,
       price: deal.dealPrice,
       category: 'deals', // Use a special category
-      imageUrls: deal.products.flatMap(p => p.imageUrls),
+      imageUrls: deal.products.flatMap(p => p.imageUrls || []),
       stock: 1, // Deals are generally "in stock" if active, let's just say 1
       rating: 0,
       isNewArrival: false,
@@ -148,7 +148,7 @@ export default function DealDetailClient({ id }: DealDetailClientProps) {
                         <div className="flex items-start gap-4">
                             <Link href={`/product/${product.id}`} className="block flex-shrink-0">
                                 <Image 
-                                    src={product.imageUrls[0] || 'https://placehold.co/100x100'} 
+                                    src={product.imageUrls?.[0] || 'https://placehold.co/100x100'} 
                                     alt={product.name} 
                                     width={80} 
                                     height={80} 

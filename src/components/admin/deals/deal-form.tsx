@@ -103,7 +103,10 @@ export default function DealForm({ initialData }: DealFormProps) {
     formState: { errors },
   } = useForm<DealFormData>({
     resolver: zodResolver(dealSchema),
-    defaultValues: initialData || {
+    defaultValues: initialData ? {
+        ...initialData,
+        products: initialData.products.map(p => ({ ...p, imageUrlsRaw: (p.imageUrls || []).join('\n') }))
+    } : {
       name: '',
       description: '',
       dealPrice: 0,
@@ -118,12 +121,11 @@ export default function DealForm({ initialData }: DealFormProps) {
   });
 
   const handleProductSelect = (product: Product) => {
-    // Create a deep copy to prevent modifying the original product object
     const productCopy = JSON.parse(JSON.stringify(product));
-    append(productCopy);
+    append({ ...productCopy, imageUrlsRaw: (productCopy.imageUrls || []).join('\n') });
   };
   
-  const onSubmit = async (data: DealFormData) => {
+  const onSubmit = async (data: any) => { // Use 'any' to handle the temporary 'imageUrlsRaw' field
     if (!firestore) {
       toast({ variant: 'destructive', title: 'Error', description: 'Firebase services not available.' });
       return;
@@ -131,11 +133,23 @@ export default function DealForm({ initialData }: DealFormProps) {
     
     setIsSubmitting(true);
     try {
+        const dealToSave = {
+            ...data,
+            products: data.products.map((p: any) => {
+                const { imageUrlsRaw, ...rest } = p;
+                return {
+                    ...rest,
+                    imageUrls: imageUrlsRaw ? imageUrlsRaw.split('\n').filter(Boolean) : []
+                };
+            })
+        };
+
+
       if (isEditMode) {
-        await updateDeal(firestore, initialData.id, data);
+        await updateDeal(firestore, initialData!.id, dealToSave);
         toast({ title: 'Success', description: 'Deal updated successfully.' });
       } else {
-        await addDeal(firestore, data);
+        await addDeal(firestore, dealToSave);
         toast({ title: 'Success', description: 'Deal created successfully.' });
       }
       
@@ -178,7 +192,7 @@ export default function DealForm({ initialData }: DealFormProps) {
                     </CardHeader>
                     <CardContent className="space-y-4">
                         {fields.map((field, index) => (
-                           <Card key={field.id} className="p-4">
+                           <Card key={field.id} className="p-4 space-y-4">
                              <div className="flex justify-between items-start">
                                 <div>
                                     <Label>Product Name</Label>
@@ -188,11 +202,14 @@ export default function DealForm({ initialData }: DealFormProps) {
                                     <Trash2 className="h-4 w-4"/>
                                 </Button>
                              </div>
-                             <div className="mt-2">
+                             <div>
                                 <Label>Price in Deal (PKR)</Label>
                                 <Input type="number" {...register(`products.${index}.price`)} />
                              </div>
-                             {/* Simplified image and variant editor can be added here if needed */}
+                             <div>
+                                <Label htmlFor={`products.${index}.imageUrlsRaw`}>Image URLs (one per line)</Label>
+                                <Textarea id={`products.${index}.imageUrlsRaw`} {...register(`products.${index}.imageUrlsRaw` as const)} rows={3} />
+                             </div>
                            </Card>
                         ))}
                          <Drawer>
