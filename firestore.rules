@@ -27,6 +27,10 @@ service cloud.firestore {
          allow create: if request.auth != null && request.resource.data.userId == request.auth.uid;
        }
     }
+
+    match /deals/{dealId} {
+        allow read, write: if isAdmin();
+    }
     
     match /blog/{postId} {
       allow read: if true;

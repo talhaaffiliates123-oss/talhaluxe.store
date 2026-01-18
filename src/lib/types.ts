@@ -37,6 +37,16 @@ export type Product = {
   shippingCost?: number;
 };
 
+export type Deal = {
+    id: string;
+    name: string;
+    description: string;
+    dealPrice: number;
+    products: Product[];
+    isActive: boolean;
+    createdAt: any; // Firestore Timestamp
+};
+
 export type Order = {
   id: string;
   userId: string;

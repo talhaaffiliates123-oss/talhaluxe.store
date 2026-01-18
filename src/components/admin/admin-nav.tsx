@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Home, Package, Settings, ShoppingCart, Users, Newspaper, Landmark, Upload } from 'lucide-react';
+import { Home, Package, Settings, ShoppingCart, Users, Newspaper, Landmark, Upload, Tags } from 'lucide-react';
 
 export function AdminNav() {
   const pathname = usePathname();
@@ -13,6 +13,7 @@ export function AdminNav() {
     { href: '/admin', label: 'Dashboard', icon: Home, exact: true },
     { href: '/admin/products', label: 'Products', icon: Package },
     { href: '/admin/orders', label: 'Orders', icon: ShoppingCart },
+    { href: '/admin/deals', label: 'Deals', icon: Tags },
     { href: '/admin/blog', label: 'Blog', icon: Newspaper },
     { href: '/admin/users', label: 'Users', icon: Users },
     { href: '/admin/payment', label: 'Payment', icon: Landmark },

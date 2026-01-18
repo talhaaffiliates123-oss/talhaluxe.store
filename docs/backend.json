@@ -32,6 +32,23 @@
         "isBestSeller"
       ]
     },
+    "Deal": {
+      "title": "Deal",
+      "description": "Represents a product bundle or deal containing multiple products.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "dealPrice": { "type": "number" },
+        "products": {
+          "type": "array",
+          "items": { "$ref": "#/entities/Product" }
+        },
+        "isActive": { "type": "boolean" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["name", "dealPrice", "products", "isActive"]
+    },
     "Order": {
       "title": "Order",
       "description": "Represents a customer's order.",
@@ -138,6 +155,10 @@
     "/products/{productId}/reviews/{reviewId}": {
         "schema": { "$ref": "#/entities/Review" },
         "description": "Stores all reviews for a specific product."
+    },
+    "/deals/{dealId}": {
+      "schema": { "$ref": "#/entities/Deal" },
+      "description": "Stores product bundles and special deals."
     },
     "/orders/{orderId}": {
       "schema": { "$ref": "#/entities/Order" },
