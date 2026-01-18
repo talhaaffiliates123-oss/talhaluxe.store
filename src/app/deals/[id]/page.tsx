@@ -1,58 +1,40 @@
 
-import { notFound } from 'next/navigation';
-import { getDeal } from '@/lib/deals';
+import { Suspense } from 'react';
 import DealDetailClient from './deal-detail-client';
-import { initializeFirebase } from '@/firebase/server-initialization';
-import type { Deal } from '@/lib/types';
+import { Skeleton } from '@/components/ui/skeleton';
 
-
-async function getDealOnServer(id: string): Promise<Deal | null> {
-    try {
-      const { firestore } = initializeFirebase();
-      const dealDoc = await firestore.collection('deals').doc(id).get();
-  
-      if (!dealDoc.exists) {
-        return null;
-      }
-      const data = dealDoc.data();
-      
-      const serializedProducts = data?.products.map((product: any) => {
-        return {
-            ...product,
-            createdAt: product.createdAt?.toDate ? product.createdAt.toDate().toISOString() : null,
-        }
-      });
-      
-      const serializableData = {
-          ...data,
-          products: serializedProducts,
-          createdAt: data?.createdAt?.toDate ? data.createdAt.toDate().toISOString() : null,
-      }
-      
-      return { id: dealDoc.id, ...serializableData } as Deal;
-    } catch (error) {
-      console.error(`Failed to fetch deal with id "${id}":`, error);
-      // In a real app, you might want to log this error to a service
-      return null;
-    }
+function DealPageSkeleton() {
+    return (
+        <div className="container mx-auto px-4 py-8 md:py-12">
+            <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+                <div>
+                    <Skeleton className="h-10 w-3/4" />
+                    <Skeleton className="h-20 w-full mt-4" />
+                    <Skeleton className="h-12 w-1/4 mt-6" />
+                    <Skeleton className="h-12 w-48 mt-6" />
+                </div>
+                <div className='space-y-4'>
+                    <Skeleton className="h-8 w-1/2" />
+                    <Skeleton className="h-24 w-full" />
+                    <Skeleton className="h-24 w-full" />
+                </div>
+            </div>
+        </div>
+    );
 }
 
-
-export default async function DealDetailPage({ params }: { params: { id: string } }) {
+export default function DealDetailPage({ params }: { params: { id: string } }) {
   const { id } = params;
-  if (!id) {
-    notFound();
-  }
 
-  const deal = await getDealOnServer(id);
-  
-  if (!deal || !deal.isActive) {
-    notFound();
+  if (!id) {
+    return null;
   }
 
   return (
     <div className="container mx-auto px-4 py-8 md:py-12">
-        <DealDetailClient deal={deal} />
+        <Suspense fallback={<DealPageSkeleton />}>
+          <DealDetailClient id={id} />
+        </Suspense>
     </div>
   );
 }
