@@ -40,6 +40,12 @@ const nextConfig: NextConfig = {
         hostname: 'gw.alicdn.com',
         port: '',
         pathname: '/**',
+      },
+      {
+        protocol: 'https',
+        hostname: 'ik.imagekit.io',
+        port: '',
+        pathname: '/**',
       }
     ],
   },
