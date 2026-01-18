@@ -16,13 +16,44 @@ Your `git push` is failing because a secret API key was found in your project's 
 
 ---
 
-### Previous README Content
-
 # Firebase Studio
 
-This is a NextJS starter in Firebase Studio.
+This is a NextJS starter project for Firebase Studio.
 
-## Resolving Git Push Errors Due to Secrets
+## Development Guide
+
+### Getting Started
+To get started with development, take a look at `src/app/page.tsx`.
+
+### Working with Git
+
+**Syncing Changes**
+
+Before pushing your changes, it's a good practice to sync with the remote repository. You can do this by running the following command in your terminal:
+```bash
+git pull --rebase
+```
+
+**Committing Changes Manually**
+
+If you encounter an error like `git.sync not found` when trying to commit your changes using the UI, you can bypass this by committing your changes manually through the terminal. Follow these steps:
+
+1.  **Stage your changes:** This prepares all your modified files for the commit.
+    ```bash
+    git add .
+    ```
+
+2.  **Commit your changes:** This saves a snapshot of your staged files. Replace `"A message describing your changes"` with a brief description of the work you've done.
+    ```bash
+    git commit -m "A message describing your changes"
+    ```
+
+3.  **Push your changes:** This uploads your commit to the remote repository on GitHub.
+    ```bash
+    git push
+    ```
+
+**Resolving Git Push Errors Due to Secrets**
 
 If your `git push` is blocked by an error message mentioning "GH013: Repository rule violations" and "Push cannot contain secrets", it's because a secret key (like an API key) was accidentally included in your project's past commit history.
 
@@ -35,9 +66,3 @@ To fix this, you must **follow the unique link provided in the error message**. 
 3.  Once you have allowed it on the GitHub website, try to push your changes again from your terminal. It should now succeed.
 
 A `.gitignore` file has been added to this project to prevent this from happening in the future.
-
----
-
-To get started with development, take a look at `src/app/page.tsx`.
-
-Please run `git pull --rebase` in the terminal to fix other potential git commit issues.
