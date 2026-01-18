@@ -87,51 +87,67 @@ export default function CheckoutPage() {
 
         setIsProcessing(true);
 
-        try {
-            let screenshotUrl: string | undefined = undefined;
+        let screenshotUrl: string | undefined = undefined;
 
-            if (paymentMethod === 'qr_transfer' && screenshotFile && storage) {
+        // Use a try-catch for the async image upload part
+        if (paymentMethod === 'qr_transfer' && screenshotFile && storage) {
+            try {
                 const fileExtension = screenshotFile.name.split('.').pop();
                 const fileName = `payment_screenshots/${user.uid}/${uuidv4()}.${fileExtension}`;
                 const fileRef = storageRef(storage, fileName);
 
                 await uploadBytes(fileRef, screenshotFile);
                 screenshotUrl = await getDownloadURL(fileRef);
+            } catch (storageError: any) {
+                console.error("Image upload failed:", storageError);
+                toast({ variant: "destructive", title: "Image Upload Failed", description: storageError.message || "Could not upload your screenshot." });
+                setIsProcessing(false);
+                return; // Stop if image upload fails
             }
-
-            const ordersCollection = collection(firestore, 'orders');
-            const newOrderRef = doc(ordersCollection);
-
-            const orderData = {
-                userId: user.uid,
-                shippingInfo: { name: fullName, email: user.email!, address, city, state, zip, country },
-                items: items.map(item => ({
-                    productId: item.product.id,
-                    name: item.product.name,
-                    quantity: item.quantity,
-                    price: item.product.discountedPrice ?? item.product.price,
-                    variant: item.variant ? { id: item.variant.id, name: item.variant.name } : undefined,
-                })),
-                totalPrice,
-                paymentMethod,
-                paymentScreenshotUrl: screenshotUrl,
-                status: paymentMethod === 'qr_transfer' ? 'Awaiting Confirmation' as const : 'Processing' as const,
-                createdAt: serverTimestamp(),
-            };
-
-            await setDoc(newOrderRef, orderData);
-
-            toast({ title: 'Order Placed!', description: 'Thank you for your purchase!' });
-            clearCart();
-            router.push('/account');
-
-        } catch (e: any) {
-            if (!(e instanceof FirestorePermissionError)) {
-                toast({ variant: "destructive", title: "Uh oh! Something went wrong.", description: e.message || "Could not place order." });
-            }
-        } finally {
-            setIsProcessing(false);
         }
+        
+        // Use promise chain for Firestore operation
+        const ordersCollection = collection(firestore, 'orders');
+        const newOrderRef = doc(ordersCollection);
+
+        const orderData = {
+            userId: user.uid,
+            shippingInfo: { name: fullName, email: user.email!, address, city, state, zip, country },
+            items: items.map(item => ({
+                productId: item.product.id,
+                name: item.product.name,
+                quantity: item.quantity,
+                price: item.product.discountedPrice ?? item.product.price,
+                variant: item.variant ? { id: item.variant.id, name: item.variant.name } : undefined,
+            })),
+            totalPrice,
+            paymentMethod,
+            paymentScreenshotUrl: screenshotUrl,
+            status: paymentMethod === 'qr_transfer' ? 'Awaiting Confirmation' as const : 'Processing' as const,
+            createdAt: serverTimestamp(),
+        };
+
+        setDoc(newOrderRef, orderData)
+            .then(() => {
+                toast({ title: 'Order Placed!', description: 'Thank you for your purchase!' });
+                clearCart();
+                router.push('/account');
+            })
+            .catch((serverError) => {
+                // Emit contextual error for developer overlay
+                const permissionError = new FirestorePermissionError({
+                  path: newOrderRef.path,
+                  operation: 'create',
+                  requestResourceData: orderData,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+                
+                // Also show a generic error toast to the user
+                toast({ variant: "destructive", title: "Order Failed", description: "There was a problem placing your order. Please try again." });
+            })
+            .finally(() => {
+                setIsProcessing(false);
+            });
     };
 
 
@@ -240,7 +256,7 @@ export default function CheckoutPage() {
                                                     id="screenshot" 
                                                     type="file" 
                                                     required={paymentMethod === 'qr_transfer'}
-                                                    accept="image/png, image/jpeg, image/jpg"
+                                                    accept="image/png, image/jpeg, image/jpg, image/webp"
                                                     onChange={(e) => setScreenshotFile(e.target.files ? e.target.files[0] : null)}
                                                 />
                                                 <Alert variant="destructive" className="mt-4">
