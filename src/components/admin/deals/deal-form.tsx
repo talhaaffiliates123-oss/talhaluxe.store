@@ -25,7 +25,7 @@ const dealSchema = z.object({
   name: z.string().min(1, 'Deal name is required'),
   description: z.string().min(1, 'Description is required'),
   dealPrice: z.coerce.number().positive('Deal price must be a positive number'),
-  isActive: z.boolean().default(false),
+  isActive: z.boolean().default(true),
   products: z.array(z.any()).min(1, 'A deal must have at least one product.'),
 });
 
@@ -107,7 +107,7 @@ export default function DealForm({ initialData }: DealFormProps) {
       name: '',
       description: '',
       dealPrice: 0,
-      isActive: false,
+      isActive: true,
       products: [],
     },
   });

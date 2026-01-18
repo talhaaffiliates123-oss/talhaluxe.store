@@ -29,7 +29,7 @@ service cloud.firestore {
     }
 
     match /deals/{dealId} {
-        allow read: if true;
+        allow read, list: if true;
         allow write: if isAdmin();
     }
     
