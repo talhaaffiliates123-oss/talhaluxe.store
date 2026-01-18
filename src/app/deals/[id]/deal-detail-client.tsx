@@ -82,16 +82,21 @@ export default function DealDetailClient({ id }: DealDetailClientProps) {
 
   const handleAddToCart = () => {
     if (!deal) return;
-    // Create a "dummy" product representing the deal bundle
+    
+    const dealImageUrls = deal.products
+      .flatMap(p => p.imageUrls || [])
+      .map((urlOrObj: any) => (typeof urlOrObj === 'string' ? urlOrObj : urlOrObj?.value))
+      .filter(Boolean) as string[];
+
     const dealAsProduct: Product = {
       id: `deal_${deal.id}`, // Unique ID for cart
       name: deal.name,
       shortDescription: `Bundle of ${deal.products.length} products.`,
       description: deal.description,
       price: deal.dealPrice,
-      category: 'deals', // Use a special category
-      imageUrls: deal.products.flatMap(p => p.imageUrls || []),
-      stock: 1, // Deals are generally "in stock" if active, let's just say 1
+      category: 'deals',
+      imageUrls: dealImageUrls,
+      stock: 1, 
       rating: 0,
       isNewArrival: false,
       isBestSeller: false,
@@ -143,12 +148,16 @@ export default function DealDetailClient({ id }: DealDetailClientProps) {
                 <CardTitle>Products in this Deal ({deal.products.length})</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-                {deal.products.map((product, index) => (
+                {deal.products.map((product, index) => {
+                    const imageUrl = product.imageUrls?.[0];
+                    const displayUrl = (typeof imageUrl === 'string' ? imageUrl : (imageUrl as any)?.value) || 'https://placehold.co/100x100';
+
+                    return (
                     <div key={product.id || index}>
                         <div className="flex items-start gap-4">
                             <Link href={`/product/${product.id}`} className="block flex-shrink-0">
                                 <Image 
-                                    src={product.imageUrls?.[0] || 'https://placehold.co/100x100'} 
+                                    src={displayUrl}
                                     alt={product.name} 
                                     width={80} 
                                     height={80} 
@@ -164,7 +173,7 @@ export default function DealDetailClient({ id }: DealDetailClientProps) {
                         </div>
                         {index < deal.products.length - 1 && <Separator className="my-4" />}
                     </div>
-                ))}
+                )})}
             </CardContent>
         </Card>
     </div>
