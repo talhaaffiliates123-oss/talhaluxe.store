@@ -1,5 +1,5 @@
 
-import { Suspense } from 'react';
+import { Suspense, use } from 'react';
 import DealDetailClient from './deal-detail-client';
 import { Skeleton } from '@/components/ui/skeleton';
 
@@ -23,8 +23,9 @@ function DealPageSkeleton() {
     );
 }
 
-export default function DealDetailPage({ params }: { params: { id: string } }) {
-  const { id } = params;
+export default function DealDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
+  const { id } = resolvedParams;
 
   if (!id) {
     return null;
