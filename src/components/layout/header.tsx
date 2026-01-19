@@ -1,9 +1,7 @@
-
 'use client';
 
 import Link from 'next/link';
 import {
-  Bell,
   Heart,
   Menu,
   Search,
@@ -16,6 +14,7 @@ import {
   SheetHeader,
   SheetTitle,
   SheetTrigger,
+  SheetClose,
 } from '@/components/ui/sheet';
 import { UserNav } from './user-nav';
 import { useCart } from '@/hooks/use-cart';
@@ -100,20 +99,23 @@ export function Header() {
                 <SheetTitle className="sr-only">Mobile Menu</SheetTitle>
             </SheetHeader>
             <nav className="grid gap-6 text-lg font-medium">
-              <Link
-                href="/"
-                className="flex items-center gap-2 text-lg font-semibold"
-              >
-                 <SiteLogo />
-              </Link>
-              {navLinks.map((link) => (
+              <SheetClose asChild>
                 <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-muted-foreground hover:text-foreground"
+                  href="/"
+                  className="flex items-center gap-2 text-lg font-semibold"
                 >
-                  {link.label}
+                  <SiteLogo />
                 </Link>
+              </SheetClose>
+              {navLinks.map((link) => (
+                <SheetClose asChild key={link.href}>
+                    <Link
+                    href={link.href}
+                    className="text-muted-foreground hover:text-foreground"
+                    >
+                    {link.label}
+                    </Link>
+                </SheetClose>
               ))}
             </nav>
           </SheetContent>
