@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Product, Variant, CartItem as CartItemType } from '@/lib/types';
@@ -82,14 +83,26 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const totalItems = items.reduce((total, item) => total + item.quantity, 0);
 
   const shippingTotal = useMemo(() => {
-    if (totalItems === 0) {
+    if (items.length === 0) {
       return 0;
     }
-    if (totalItems === 1) {
-      return 150;
+
+    const dealItems = items.filter(item => item.product.id.startsWith('deal_'));
+    const regularItems = items.filter(item => !item.product.id.startsWith('deal_'));
+
+    const dealShippingCost = dealItems.reduce((total, item) => total + (200 * item.quantity), 0);
+
+    const regularItemsCount = regularItems.reduce((total, item) => total + item.quantity, 0);
+    let regularShippingCost = 0;
+
+    if (regularItemsCount === 1) {
+        regularShippingCost = 150;
+    } else if (regularItemsCount >= 2) {
+        regularShippingCost = regularItemsCount * 100;
     }
-    return totalItems * 100;
-  }, [totalItems]);
+
+    return dealShippingCost + regularShippingCost;
+  }, [items]);
 
   const totalPrice = subtotal + shippingTotal;
 
