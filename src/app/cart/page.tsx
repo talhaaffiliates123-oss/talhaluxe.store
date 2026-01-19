@@ -107,9 +107,12 @@ export default function CartPage() {
                 <span>Subtotal</span>
                 <span>PKR {subtotal.toFixed(2)}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Shipping</span>
-                <span>{shippingTotal > 0 ? `PKR ${shippingTotal.toFixed(2)}` : 'Free'}</span>
+              <div>
+                <div className="flex justify-between">
+                  <span>Shipping</span>
+                  <span>{shippingTotal > 0 ? `PKR ${shippingTotal.toFixed(2)}` : 'Free'}</span>
+                </div>
+                <p className="text-xs text-muted-foreground text-right">Delivery in 4-7 business days.</p>
               </div>
               <Separator />
               <div className="flex justify-between font-bold text-lg">

@@ -306,7 +306,13 @@ export default function CheckoutPage() {
                         <Separator className="my-6" />
                         <div className="space-y-2">
                             <div className="flex justify-between"><span>Subtotal</span><span>PKR {subtotal.toFixed(2)}</span></div>
-                            <div className="flex justify-between"><span>Shipping</span><span>{shippingTotal > 0 ? `PKR ${shippingTotal.toFixed(2)}` : 'Free'}</span></div>
+                            <div>
+                                <div className="flex justify-between">
+                                <span>Shipping</span>
+                                <span>{shippingTotal > 0 ? `PKR ${shippingTotal.toFixed(2)}` : 'Free'}</span>
+                                </div>
+                                <p className="text-xs text-muted-foreground text-right">You will receive your parcel in 4 to 7 business days.</p>
+                            </div>
                             <Separator className="my-2" />
                             <div className="flex justify-between font-bold text-lg"><span>Total</span><span>PKR {totalPrice.toFixed(2)}</span></div>
                         </div>
@@ -328,4 +334,5 @@ export default function CheckoutPage() {
       </div>
     );
 }
+
 

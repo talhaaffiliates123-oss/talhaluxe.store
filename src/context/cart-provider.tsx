@@ -1,7 +1,7 @@
 'use client';
 
 import type { Product, Variant, CartItem as CartItemType } from '@/lib/types';
-import React, { createContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useState, useEffect, ReactNode, useMemo } from 'react';
 
 interface CartContextType {
   items: CartItemType[];
@@ -79,18 +79,19 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     0
   );
   
-  const shippingTotal = items.reduce((total, item) => {
-    // Basic implementation: add shipping cost for each unique product.
-    // To avoid charging shipping per quantity, we find if this product is already added.
-    const isProductAlreadyCounted = items.slice(0, items.indexOf(item)).some(i => i.product.id === item.product.id);
-    if (!isProductAlreadyCounted) {
-      return total + (item.product.shippingCost ?? 0);
+  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
+
+  const shippingTotal = useMemo(() => {
+    if (totalItems === 0) {
+      return 0;
     }
-    return total;
-  }, 0);
+    if (totalItems === 1) {
+      return 150;
+    }
+    return totalItems * 100;
+  }, [totalItems]);
 
   const totalPrice = subtotal + shippingTotal;
-  const totalItems = items.reduce((total, item) => total + item.quantity, 0);
 
   return (
     <CartContext.Provider
