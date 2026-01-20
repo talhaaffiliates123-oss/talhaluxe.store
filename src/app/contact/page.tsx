@@ -27,7 +27,7 @@ export default function ContactPage() {
                     Contact Us
                 </h1>
                 <p className="mt-4 max-w-2xl text-lg md:text-xl text-gray-200">
-                    We&apos;re here to help. Reach out to us with any questions or feedback.
+                    We're here to help. Reach out to us with any questions or feedback.
                 </p>
             </div>
         </section>
@@ -37,7 +37,7 @@ export default function ContactPage() {
             <div className="space-y-8">
                 <h2 className="text-3xl font-bold font-headline">Get in Touch</h2>
                 <p className="text-muted-foreground">
-                    Our customer service team is available from 9 AM to 5 PM, Monday to Friday. We&apos;d love to hear from you.
+                    Our customer service team is available from 9 AM to 5 PM, Monday to Friday. We'd love to hear from you.
                 </p>
                 <div className="space-y-4">
                     <div className="flex items-center gap-4">

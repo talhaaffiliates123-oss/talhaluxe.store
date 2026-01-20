@@ -127,7 +127,7 @@ export default function HomePageContent({ products: initialProducts, deals: init
                 Special Collection Sale
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
-                For a limited time, enjoy up to 30% off on our exclusive collections. Don&apos;t miss out on these incredible savings.
+                For a limited time, enjoy up to 30% off on our exclusive collections. Don't miss out on these incredible savings.
               </p>
               <Button
                 asChild
