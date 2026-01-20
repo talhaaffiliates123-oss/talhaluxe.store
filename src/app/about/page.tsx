@@ -3,7 +3,7 @@ import { Gem, Target, Award } from 'lucide-react';
 import Image from 'next/image';
 
 export default function AboutPage() {
-  const aboutImageUrl = "https://images.unsplash.com/photo-1683115096447-5d01c11d3ead?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxjcmFmdHNtYW4lMjB3b3Jrc2hvcHxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
+  const aboutImageUrl = "https://picsum.photos/seed/craftsman/1200/800";
 
   return (
     <div className="bg-background">
@@ -23,7 +23,7 @@ export default function AboutPage() {
                 width={1200}
                 height={800}
                 className="object-cover"
-                data-ai-hint="craftsman workshop"
+                data-ai-hint="dark workshop"
               />
             </div>
           <div className="space-y-6">

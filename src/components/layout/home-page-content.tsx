@@ -17,7 +17,7 @@ interface HomePageContentProps {
 }
 
 export default function HomePageContent({ products: initialProducts, deals: initialDeals }: HomePageContentProps) {
-  const heroImageUrl = "https://images.unsplash.com/photo-1614208194190-5bf690ad8a98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYXNoaW9uJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
+  const heroImageUrl = "https://picsum.photos/seed/luxurydark/1920/1080";
   
   const products = initialProducts || [];
   const deals = initialDeals || [];
@@ -45,7 +45,7 @@ export default function HomePageContent({ products: initialProducts, deals: init
             fill
             className="object-cover"
             priority
-            data-ai-hint="fashion background"
+            data-ai-hint="dark luxury"
           />
         <div className="absolute inset-0 bg-black/50" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center text-white p-4">
@@ -59,7 +59,7 @@ export default function HomePageContent({ products: initialProducts, deals: init
           <Button
             asChild
             size="lg"
-            className="mt-8 bg-accent text-accent-foreground hover:bg-accent/90"
+            className="mt-8 bg-primary text-primary-foreground hover:bg-primary/90"
           >
             <Link href="/shop">Shop Now</Link>
           </Button>
@@ -187,7 +187,7 @@ export default function HomePageContent({ products: initialProducts, deals: init
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
                     <Input type="email" placeholder="Enter your email" className="pl-10 h-12" />
                 </div>
-                <Button type="submit" className="h-12 ml-2 bg-accent text-accent-foreground hover:bg-accent/90">
+                <Button type="submit" className="h-12 ml-2 bg-primary text-primary-foreground hover:bg-primary/90">
                     Subscribe
                 </Button>
             </form>

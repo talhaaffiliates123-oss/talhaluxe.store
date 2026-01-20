@@ -8,7 +8,7 @@ import { Mail, Phone, Pin } from "lucide-react";
 import Image from 'next/image';
 
 export default function ContactPage() {
-  const contactImageUrl = "https://images.unsplash.com/photo-1577563908411-5077b6dc7624?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwzfHxjb250YWN0JTIwZmxhdGxheXxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
+  const contactImageUrl = "https://picsum.photos/seed/darkcontact/1080/432";
 
   return (
     <div>
@@ -19,7 +19,7 @@ export default function ContactPage() {
                 fill
                 className="object-cover"
                 priority
-                data-ai-hint="contact flatlay"
+                data-ai-hint="dark contact"
             />
             <div className="absolute inset-0 bg-black/60" />
             <div className="relative z-10 flex h-full flex-col items-center justify-center text-center text-white p-4">

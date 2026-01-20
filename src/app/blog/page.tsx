@@ -29,12 +29,12 @@ export default function BlogListPage() {
     <div className="bg-background">
       <section className="relative h-[40vh] w-full bg-muted">
         <Image
-            src="https://images.unsplash.com/photo-1499750310107-5fef28a66643?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxibG9nJTIwYmFubmVyfGVufDB8fHx8fDE3MDM1OTEzMTZ8MA&ixlib=rb-4.0.3&q=80&w=1080"
+            src="https://picsum.photos/seed/darkblog/1080/432"
             alt="A stylish desk with a laptop, notebook, and coffee, suggesting a blog or writing theme."
             fill
             className="object-cover"
             priority
-            data-ai-hint="blog banner"
+            data-ai-hint="dark desk"
         />
         <div className="absolute inset-0 bg-black/60" />
         <div className="relative z-10 flex h-full flex-col items-center justify-center text-center text-white p-4">

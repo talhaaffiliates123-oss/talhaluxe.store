@@ -24,7 +24,7 @@ export default function RootLayout({
   const title = "Talha Luxe | Premium Watches, Bags & Jewelry in Pakistan";
   const description = "Shop premium watches, leather bags, and fine jewelry at Talha Luxe. Discover timeless style and quality craftsmanship with delivery across Pakistan.";
   const siteUrl = "https://talhaluxe.com";
-  const heroImageUrl = "https://images.unsplash.com/photo-1614208194190-5bf690ad8a98?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxmYXNoaW9uJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3Njc1NDQ0NTh8MA&ixlib=rb-4.1.0&q=80&w=1080";
+  const heroImageUrl = "https://picsum.photos/seed/luxurydarkmeta/1200/630";
 
   const jsonLd = {
     '@context': 'https.schema.org',
