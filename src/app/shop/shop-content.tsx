@@ -31,17 +31,20 @@ export default function ShopContent() {
   const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [priceRange, setPriceRange] = useState<[number, number]>([0, MAX_PRICE]);
   const [sortBy, setSortBy] = useState('newest');
+  const [searchQuery, setSearchQuery] = useState('');
 
   useEffect(() => {
-    // Set initial category from URL query parameter
     const categoryParam = searchParams.get('category');
     if (categoryParam) {
       setSelectedCategories([categoryParam]);
     }
-     // Set initial sort from URL query parameter
     const sortParam = searchParams.get('sort');
     if (sortParam) {
       setSortBy(sortParam);
+    }
+    const searchParam = searchParams.get('search');
+    if (searchParam) {
+      setSearchQuery(searchParam);
     }
   }, [searchParams]);
 
@@ -65,10 +68,16 @@ export default function ShopContent() {
     setSelectedCategories([]);
     setPriceRange([0, MAX_PRICE]);
     setSortBy('newest');
+    setSearchQuery('');
   };
 
   const filteredAndSortedProducts = useMemo(() => {
     let filtered = [...products];
+
+    // Search filter
+    if (searchQuery) {
+        filtered = filtered.filter(p => p.name.toLowerCase().includes(searchQuery.toLowerCase()));
+    }
 
     // Category filter
     if (selectedCategories.length > 0) {
@@ -100,9 +109,9 @@ export default function ShopContent() {
     }
 
     return filtered;
-  }, [products, selectedCategories, priceRange, sortBy]);
+  }, [products, selectedCategories, priceRange, sortBy, searchQuery]);
   
-  const hasActiveFilters = selectedCategories.length > 0 || priceRange[0] !== 0 || priceRange[1] !== MAX_PRICE;
+  const hasActiveFilters = selectedCategories.length > 0 || priceRange[0] !== 0 || priceRange[1] !== MAX_PRICE || !!searchQuery;
 
 
   return (
@@ -110,14 +119,6 @@ export default function ShopContent() {
       <div className="mb-8 text-center">
         <h1 className="text-4xl font-bold tracking-tight font-headline">Shop Our Collection</h1>
         <p className="mt-2 text-lg text-muted-foreground">Find your next favorite piece from our curated selection.</p>
-      </div>
-
-      <div className="my-8">
-        <Link href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="block bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
-            <span className="text-lg font-bold text-black">
-                🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
-            </span>
-        </Link>
       </div>
 
       <div className="grid md:grid-cols-4 gap-8">
@@ -209,17 +210,10 @@ export default function ShopContent() {
             ) : (
                 <div className="sm:col-span-2 lg:col-span-3 text-center py-16">
                     <p className="text-lg font-medium">No products match your filters.</p>
-                    <p className="text-muted-foreground">Try adjusting your search.</p>
+                    <p className="text-muted-foreground">Try adjusting your search or clearing the filters.</p>
                 </div>
             )}
           </div>
-            <div className="my-8">
-                <Link href="https://otieu.com/4/10452971" target="_blank" rel="noopener noreferrer" className="block bg-green-100 p-4 rounded-lg text-center hover:bg-green-200/90 transition-colors shadow-lg border border-green-300/50">
-                    <span className="text-lg font-bold text-black">
-                        🤫 Secret Flash Sale: Up to 90% Off Unlocked for the Next 10 Minutes Only!
-                    </span>
-                </Link>
-            </div>
         </main>
       </div>
     </div>

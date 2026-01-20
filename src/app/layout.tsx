@@ -90,9 +90,6 @@ export default function RootLayout({
             </CartProvider>
           </FirebaseErrorListener>
         </FirebaseClientProvider>
-        <Script id="ad-script-1" strategy="afterInteractive">
-          {`(function(s){s.dataset.zone='10453217',s.src='https://3nbf4.com/act/files/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))`}
-        </Script>
       </body>
     </html>
   );

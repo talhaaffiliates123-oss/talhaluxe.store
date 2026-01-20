@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -16,6 +17,14 @@ import {
   SheetTrigger,
   SheetClose,
 } from '@/components/ui/sheet';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
 import { UserNav } from './user-nav';
 import { useCart } from '@/hooks/use-cart';
 import { useUser, useFirestore } from '@/firebase';
@@ -23,14 +32,18 @@ import { useEffect, useState } from 'react';
 import { doc, getDoc } from 'firebase/firestore';
 import type { SiteSettings } from '@/lib/types';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export function Header() {
   const { items } = useCart();
   const { user } = useUser();
   const firestore = useFirestore();
   const cartItemCount = items.reduce((sum, item) => sum + item.quantity, 0);
+  const router = useRouter();
 
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (firestore) {
@@ -62,6 +75,16 @@ export function Header() {
       <span className="font-bold text-lg font-headline">Talha Luxe</span>
     )
   );
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (searchTerm.trim()) {
+        router.push(`/shop?search=${encodeURIComponent(searchTerm.trim())}`);
+        setSearchTerm('');
+        setSearchOpen(false); // Close the dialog
+    }
+  };
+
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -122,9 +145,26 @@ export function Header() {
         </Sheet>
         
         <div className="flex w-full items-center justify-end gap-2 md:ml-auto">
-          <Button variant="ghost" size="icon" aria-label="Search">
-            <Search className="h-5 w-5" />
-          </Button>
+          <Dialog open={searchOpen} onOpenChange={setSearchOpen}>
+            <DialogTrigger asChild>
+                <Button variant="ghost" size="icon" aria-label="Search">
+                    <Search className="h-5 w-5" />
+                </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[425px]">
+                <DialogHeader>
+                    <DialogTitle>Search Products</DialogTitle>
+                </DialogHeader>
+                <form onSubmit={handleSearchSubmit} className="flex gap-2">
+                    <Input 
+                        placeholder="e.g. ChronoGold Watch" 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                    />
+                    <Button type="submit">Search</Button>
+                </form>
+            </DialogContent>
+          </Dialog>
           <Button variant="ghost" size="icon" aria-label="Wishlist" asChild>
              <Link href="/wishlist">
                 <Heart className="h-5 w-5" />
