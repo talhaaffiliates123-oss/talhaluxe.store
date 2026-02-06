@@ -24,37 +24,41 @@ export function useUser() {
     // Auth is available, so we can set up the listener.
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (user) {
-        setUser(user);
-        
+        // User is authenticated, now check/create their profile.
         if (firestore) {
           const userDocRef = doc(firestore, 'users', user.uid);
-          // Check if user profile exists before trying to create it.
-          // This avoids unnecessary writes on every auth state change.
-          const userDoc = await getDoc(userDocRef);
-
-          if (!userDoc.exists()) {
-             const userData = {
+          try {
+            const userDoc = await getDoc(userDocRef);
+            if (!userDoc.exists()) {
+              // User document doesn't exist, so create it.
+              const userData = {
                 name: user.displayName,
                 email: user.email,
                 createdAt: serverTimestamp(),
-            };
-            // Set the document only if it doesn't exist.
-            setDoc(userDocRef, userData, { merge: true })
-            .catch(async (serverError) => {
-                const permissionError = new FirestorePermissionError({
-                    path: userDocRef.path,
-                    operation: 'create',
-                    requestResourceData: userData,
-                });
-                errorEmitter.emit('permission-error', permissionError);
+              };
+              // Wait for the document to be created before proceeding.
+              await setDoc(userDocRef, userData);
+            }
+          } catch (e: any) {
+            // This catch block handles errors from getDoc or setDoc.
+            console.error("Error managing user document in useUser hook:", e);
+            const permissionError = new FirestorePermissionError({
+              path: userDocRef.path,
+              operation: 'get/create',
             });
+            errorEmitter.emit('permission-error', permissionError);
+            // Even if Firestore fails, we still have an auth user.
+            // Let the app proceed instead of getting stuck.
           }
         }
+        // Finally, set the user state and stop loading.
+        setUser(user);
+        setLoading(false);
       } else {
+        // User is not authenticated.
         setUser(null);
+        setLoading(false);
       }
-      // Only set loading to false after the auth state has been determined.
-      setLoading(false);
     });
 
     // Cleanup subscription on unmount

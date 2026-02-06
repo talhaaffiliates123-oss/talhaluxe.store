@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -81,7 +82,8 @@ export default function SignupPage() {
       // 2. Update Firebase Auth profile
       await updateProfile(user, { displayName: name });
 
-      // 3. Create user profile in Firestore
+      // 3. Create user profile in Firestore (This is now handled by the useUser hook,
+      // but we keep it here for email sign up as a fallback).
       const userDocRef = doc(firestore, 'users', user.uid);
       
       const userData = {
@@ -90,15 +92,15 @@ export default function SignupPage() {
         createdAt: serverTimestamp(),
       };
 
-      setDoc(userDocRef, userData)
-      .catch(async (serverError) => {
-        const permissionError = new FirestorePermissionError({
-          path: userDocRef.path,
-          operation: 'create',
-          requestResourceData: userData,
+      await setDoc(userDocRef, userData)
+        .catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+            path: userDocRef.path,
+            operation: 'create',
+            requestResourceData: userData,
+            });
+            errorEmitter.emit('permission-error', permissionError);
         });
-        errorEmitter.emit('permission-error', permissionError);
-      });
 
       toast({
         title: 'Account Created!',
@@ -120,26 +122,15 @@ export default function SignupPage() {
   };
 
   const handleGoogleSignUp = async () => {
-    if (!auth || !firestore) {
+    if (!auth) {
         toast({ variant: 'destructive', title: 'Error', description: 'Firebase is not available.' });
         return;
     }
     setLoading(true);
     try {
         const provider = new GoogleAuthProvider();
-        const result = await signInWithPopup(auth, provider);
-        const additionalInfo = getAdditionalUserInfo(result);
-        
-        // If it's a new user, create their profile in Firestore
-        if (additionalInfo?.isNewUser) {
-            const userDocRef = doc(firestore, 'users', result.user.uid);
-            await setDoc(userDocRef, {
-                name: result.user.displayName,
-                email: result.user.email,
-                createdAt: serverTimestamp(),
-            });
-        }
-        
+        await signInWithPopup(auth, provider);
+        // The useUser hook will handle profile creation and redirection.
         toast({ title: 'Account Created!', description: 'Welcome to Talha Luxe!' });
         router.push('/');
 

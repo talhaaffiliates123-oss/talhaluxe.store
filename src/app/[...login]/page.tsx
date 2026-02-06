@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -134,7 +135,7 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!auth || !firestore) {
+    if (!auth) {
         toast({ variant: 'destructive', title: 'Error', description: 'Firebase is not available.' });
         return;
     }
@@ -144,14 +145,9 @@ export default function LoginPage() {
         const result = await signInWithPopup(auth, provider);
         const additionalInfo = getAdditionalUserInfo(result);
         
-        // If it's a new user, create their profile in Firestore
+        // The useUser hook now handles Firestore profile creation.
+        // We just show a toast for immediate feedback.
         if (additionalInfo?.isNewUser) {
-            const userDocRef = doc(firestore, 'users', result.user.uid);
-            await setDoc(userDocRef, {
-                name: result.user.displayName,
-                email: result.user.email,
-                createdAt: serverTimestamp(),
-            });
              toast({ title: 'Account Created!', description: 'Welcome to Talha Luxe!' });
         } else {
             toast({ title: 'Login Successful', description: 'Welcome back!' });
