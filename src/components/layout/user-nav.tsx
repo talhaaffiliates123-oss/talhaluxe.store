@@ -37,13 +37,13 @@ export function UserNav() {
   };
 
   if (userLoading) {
-    return <Skeleton className="h-8 w-8 rounded-full" />;
+    return <Skeleton className="h-10 w-10 rounded-full" />;
   }
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        <Button variant="ghost" size="icon" className="relative rounded-full">
           <Avatar className="h-8 w-8">
             <AvatarImage
               src={user?.photoURL ?? 'https://picsum.photos/seed/user-avatar/100/100'}
