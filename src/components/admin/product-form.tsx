@@ -19,7 +19,7 @@ import { Label } from '@/components/ui/label';
 import { categories } from '@/lib/data';
 import type { Product } from '@/lib/types';
 import { useRouter } from 'next/navigation';
-import { useFirestore } from '@/firebase';
+import { useFirestore, useStorage } from '@/firebase';
 import { addProduct, updateProduct } from '@/lib/products';
 import { useToast } from '@/hooks/use-toast';
 import {
@@ -29,11 +29,12 @@ import {
     CardTitle,
     CardDescription,
   } from '@/components/ui/card';
-import { useState, useRef } from 'react';
+import { useState } from 'react';
 import { PlusCircle, Trash2, X, UploadCloud } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import { cn } from '@/lib/utils';
 import { buttonVariants } from '@/components/ui/button';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
 
 const variantSchema = z.object({
@@ -72,6 +73,7 @@ interface ProductFormProps {
 export default function ProductForm({ initialData }: ProductFormProps) {
   const router = useRouter();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -113,31 +115,21 @@ export default function ProductForm({ initialData }: ProductFormProps) {
 
   const handleImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const files = event.target.files;
-    if (!files) return;
+    if (!files || !storage) return;
 
     setIsUploading(true);
     let uploadedCount = 0;
     
     for (const file of Array.from(files)) {
-        const formData = new FormData();
-        formData.append('file', file);
-
         try {
-            const response = await fetch('/api/upload-image', {
-                method: 'POST',
-                body: formData,
-            });
-
-            if (!response.ok) {
-                const result = await response.json();
-                throw new Error(result.error || 'Upload failed');
-            }
-
-            const result = await response.json();
-            appendImageUrl({ value: result.url });
+            const fileRef = ref(storage, `products/${uuidv4()}-${file.name}`);
+            const snapshot = await uploadBytes(fileRef, file);
+            const downloadUrl = await getDownloadURL(snapshot.ref);
+            
+            appendImageUrl({ value: downloadUrl });
             uploadedCount++;
-
         } catch (error: any) {
+            console.error("Upload error:", error);
             toast({
                 variant: 'destructive',
                 title: 'Upload Failed',
@@ -149,32 +141,22 @@ export default function ProductForm({ initialData }: ProductFormProps) {
     setIsUploading(false);
     toast({
         title: 'Upload Complete',
-        description: `${uploadedCount} of ${files.length} images uploaded successfully.`,
+        description: `${uploadedCount} of ${files.length} images uploaded successfully to Firebase Storage.`,
     });
     event.target.value = '';
   };
 
   const handleVariantImageUpload = async (event: React.ChangeEvent<HTMLInputElement>, index: number) => {
     const file = event.target.files?.[0];
-    if (!file) return;
+    if (!file || !storage) return;
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append('file', file);
-
     try {
-        const response = await fetch('/api/upload-image', {
-            method: 'POST',
-            body: formData,
-        });
+        const fileRef = ref(storage, `variants/${uuidv4()}-${file.name}`);
+        const snapshot = await uploadBytes(fileRef, file);
+        const downloadUrl = await getDownloadURL(snapshot.ref);
 
-        if (!response.ok) {
-            const result = await response.json();
-            throw new Error(result.error || 'Upload failed');
-        }
-
-        const result = await response.json();
-        setValue(`variants.${index}.imageUrl`, result.url, { shouldValidate: true });
+        setValue(`variants.${index}.imageUrl`, downloadUrl, { shouldValidate: true });
 
         toast({
             title: 'Variant Image Uploaded',
@@ -182,6 +164,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         });
 
     } catch (error: any) {
+        console.error("Variant upload error:", error);
         toast({
             variant: 'destructive',
             title: 'Upload Failed',
@@ -277,7 +260,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         <Card>
             <CardHeader>
                 <CardTitle>Image Upload</CardTitle>
-                <CardDescription>Upload JPG or PNG files. They will be added to the image URL list below.</CardDescription>
+                <CardDescription>Upload JPG or PNG files directly to Firebase Storage.</CardDescription>
             </CardHeader>
             <CardContent>
                 <div className="space-y-2">
@@ -291,7 +274,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
                         disabled={isUploading}
                     />
                 </div>
-                {isUploading && <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2"><UploadCloud className="animate-pulse" />Uploading images...</p>}
+                {isUploading && <p className="text-sm text-muted-foreground mt-2 flex items-center gap-2"><UploadCloud className="animate-pulse" />Uploading to storage...</p>}
             </CardContent>
         </Card>
         <Card>
@@ -326,7 +309,7 @@ export default function ProductForm({ initialData }: ProductFormProps) {
         <Card>
             <CardHeader>
                 <CardTitle>Variants</CardTitle>
-                <CardDescription>Add product variants like different colors or sizes. Each variant requires an image URL.</CardDescription>
+                <CardDescription>Add product variants like different colors or sizes.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
                 {variantsFields.map((field, index) => {
